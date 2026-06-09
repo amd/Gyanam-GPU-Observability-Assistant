@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Error {{ status_code }} - GYANAM{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px; margin: 48px auto; text-align: center;">
+    <div style="font-size: 3.2rem; font-weight: 700; color: #dc2626; line-height: 1;">
+        {{ status_code }}
+    </div>
+    <h2 style="margin: 12px 0 6px 0; color: #1e293b;">{{ title or 'Something went wrong' }}</h2>
+    <p style="color: #475569; margin: 0 0 20px 0;">{{ message }}</p>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+        <a href="javascript:history.back()" class="btn btn-sm" style="background:#e2e8f0; color:#475569;">← Go back</a>
+        <a href="/targets" class="btn btn-sm" style="background:#6366f1; color:#fff;">Home</a>
+    </div>
+</div>
+{% endblock %}

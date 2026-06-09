@@ -1,0 +1,36 @@
+services:
+  collector:
+    environment:
+      - METRICS_BACKEND=prometheus
+    depends_on: {}
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    mem_limit: 2g
+    cpus: 1.0
+    networks:
+      - monitoring
+
+  grafana:
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning/datasources-prometheus:/etc/grafana/provisioning/datasources:ro
+
+volumes:
+  prometheus_data:

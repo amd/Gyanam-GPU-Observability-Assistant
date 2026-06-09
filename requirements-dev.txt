@@ -1,0 +1,19 @@
+# Development dependencies for linting and testing
+
+# Pre-commit framework
+pre-commit>=3.6.0
+
+# Python linting and formatting
+ruff>=0.3.4
+
+# Type checking
+mypy>=1.9.0
+types-requests
+types-PyYAML
+types-paramiko
+
+# YAML linting
+yamllint>=1.35.0
+
+# Shell linting (pre-commit will use shellcheck-py)
+# shellcheck is installed via pre-commit hook

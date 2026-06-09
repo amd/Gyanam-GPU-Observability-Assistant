@@ -1,0 +1,779 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts - GPU Metrics Collector{% endblock %}
+
+{% block content %}
+<style>
+    .expandable-section {
+        margin-bottom: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+    }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: linear-gradient(to right, #f8fafc, #ffffff);
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .section-header:hover {
+        background: linear-gradient(to right, #f1f5f9, #f8fafc);
+    }
+    .section-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-toggle {
+        font-size: 1.2rem;
+        color: #64748b;
+        transition: transform 0.2s;
+    }
+    .section-toggle.expanded {
+        transform: rotate(180deg);
+    }
+    .section-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    .section-content.expanded {
+        /* Large cap so long alert lists are never clipped (was 2000px, which
+           cut off the bottom rows once many events were shown). */
+        max-height: 1000000px;
+        overflow: visible;
+        transition: max-height 0.5s ease-in;
+    }
+    .section-body {
+        padding: 16px;
+    }
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .status-connected {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .status-reconnecting {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    .status-degraded {
+        background: #fed7aa;
+        color: #9a3412;
+    }
+    .status-on-cooldown {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+    .status-failed {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    .status-not-subscribed {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .subscription-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+    }
+    .subscription-card {
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+    }
+    .subscription-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .alert-summary-card {
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+    }
+    .alert-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
+    .alert-count-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 4px;
+    }
+    .summary-stats {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+</style>
+
+<div class="card" style="border: none; box-shadow: none;">
+    <div class="card-header">
+        <h2>🔔 Alert Management</h2>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-sm" style="background-color: #64748b; color: white;" onclick="location.reload()">🔄 Refresh All</button>
+        </div>
+    </div>
+</div>
+
+<!-- Section 1: Subscription Status (Collapsed by default) -->
+<div class="expandable-section">
+    <div class="section-header" onclick="toggleSection('subscription-status')">
+        <h3>
+            <span>📡 Alert Subscription Status</span>
+            <span id="subscription-summary-badge" style="font-size: 0.75rem; color: #64748b;"></span>
+        </h3>
+        <span class="section-toggle" id="subscription-status-toggle">▼</span>
+    </div>
+    <div class="section-content" id="subscription-status-content">
+        <div class="section-body">
+            <div class="summary-stats" id="subscription-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="total-targets">-</div>
+                    <div class="stat-label">Total Targets</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #16a34a;" id="active-count">-</div>
+                    <div class="stat-label">🟢 Active</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #f59e0b;" id="disconnected-count">-</div>
+                    <div class="stat-label">🟡 Degraded</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #dc2626;" id="failed-count">-</div>
+                    <div class="stat-label">🔴 Failed</div>
+                </div>
+                <div class="stat-item" title="CPER records awaiting decode / failed decode">
+                    <div class="stat-value" id="cper-backlog">-</div>
+                    <div class="stat-label">🔎 CPER pending / failed</div>
+                </div>
+            </div>
+            <div class="subscription-grid" id="subscription-list">
+                <p style="color: #64748b; text-align: center;">Loading subscription status...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Alert Summary by Target (Collapsed by default) -->
+<div class="expandable-section">
+    <div class="section-header" onclick="toggleSection('alert-summary')">
+        <h3>
+            <span>📊 Top Targets by Alert Volume</span>
+            <span style="font-size: 0.75rem; color: #64748b;">(Last 24 hours)</span>
+        </h3>
+        <span class="section-toggle" id="alert-summary-toggle">▼</span>
+    </div>
+    <div class="section-content" id="alert-summary-content">
+        <div class="section-body">
+            <div class="alert-summary-grid" id="alert-summary-list">
+                <p style="color: #64748b; text-align: center;">Loading alert summary...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 3: Recent Alerts (Expanded by default) -->
+<div class="expandable-section">
+    <div class="section-header" onclick="toggleSection('recent-alerts')">
+        <h3>
+            <span>📋 Recent Critical and Warning Alerts</span>
+            <span style="font-size: 0.75rem; color: #64748b;">
+                {% if total %}Showing {{ page_start }}–{{ page_end }} of <strong>{{ total }}</strong>{% else %}<strong>0</strong> showing{% endif %} |
+                🔴 {{ window_critical }} Critical |
+                🟡 {{ window_warning }} Warning
+            </span>
+        </h3>
+        <span class="section-toggle expanded" id="recent-alerts-toggle">▼</span>
+    </div>
+    <div class="section-content expanded" id="recent-alerts-content">
+        <div style="padding: 0;">
+            <!-- Search and Filter Bar (server-side, GET; resets to page 1) -->
+            <form method="get" action="/alerts" style="display: flex; gap: 12px; padding: 12px 16px; align-items: center; border-bottom: 1px solid #e2e8f0; background: #f8fafc; flex-wrap: wrap;">
+                <input type="text" name="q" value="{{ f_q }}" placeholder="🔍 Search by target name, BMC, or message..."
+                       style="flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem;">
+                <select name="severity" onchange="this.form.submit()" style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem;">
+                    <option value="">All Severities</option>
+                    <option value="Critical" {% if f_severity == 'Critical' %}selected{% endif %}>Critical</option>
+                    <option value="Warning" {% if f_severity == 'Warning' %}selected{% endif %}>Warning</option>
+                </select>
+                <select name="target_id" onchange="this.form.submit()" style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem;">
+                    <option value="">All Targets</option>
+                    {% for target in targets %}
+                    <option value="{{ target.id }}" {% if f_target_id == target.id|string %}selected{% endif %}>{{ target.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="hours" onchange="this.form.submit()" style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem;">
+                    <option value="24" {% if selected_hours == 24 %}selected{% endif %}>Last 24 hours</option>
+                    <option value="168" {% if selected_hours == 168 %}selected{% endif %}>Last 7 days</option>
+                    <option value="720" {% if selected_hours == 720 %}selected{% endif %}>Last 30 days</option>
+                    <option value="0" {% if selected_hours == 0 %}selected{% endif %}>All time</option>
+                </select>
+                <button type="submit" class="btn btn-sm" style="padding: 8px 14px; background:#3b82f6; color:white; border:none; border-radius:6px; font-size:0.875rem;">Apply</button>
+            </form>
+
+            {% if alerts %}
+            <div style="overflow-x: auto;">
+            <table style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Target</th>
+                        <th>Severity</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alert in alerts %}
+                    <tr>
+                        <td style="white-space: nowrap; font-size: 0.875rem;">
+                            {# Original creation time (EventTimestamp/Created), else received. #}
+                            {% set created = alert.event_timestamp or alert.received_at %}
+                            <span title="{{ created.strftime('%Y-%m-%d %H:%M:%S UTC') }}{% if not alert.event_timestamp %} (received){% endif %}">
+                                {{ format_time_ago(created) }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong>{{ alert.target_name }}</strong>
+                            <br><small style="color: #64748b;">{{ alert.target_bmc }}</small>
+                        </td>
+                        <td>
+                            {% if alert.severity == 'Critical' %}
+                                <span class="status" style="background-color: #dc2626; color: white;">Critical</span>
+                            {% elif alert.severity == 'Warning' %}
+                                <span class="status" style="background-color: #f59e0b; color: white;">Warning</span>
+                            {% else %}
+                                <span class="status status-pending">{{ alert.severity }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="max-width: 600px;">
+                                <div class="alert-message">{{ alert.message or '(no message text)' }}</div>
+                                {% if alert.refined_message %}
+                                <div class="cper-refined" style="margin-top: 4px; padding: 6px 8px; background: #eef2ff; border-left: 3px solid #6366f1; border-radius: 4px; font-size: 0.8rem; color: #3730a3;">
+                                    <strong>🔎 Decoded CPER:</strong> {{ alert.refined_message }}
+                                </div>
+                                {% elif alert.cper_status == 'pending' %}
+                                <div class="cper-tag" style="margin-top: 4px; padding: 4px 8px; background: #fef9c3; border-left: 3px solid #eab308; border-radius: 4px; font-size: 0.78rem; color: #854d0e;">
+                                    ⏳ CPER decode in progress…
+                                </div>
+                                {% elif alert.cper_status in ('fetch_failed', 'decode_failed') %}
+                                <div class="cper-tag" style="margin-top: 4px; padding: 4px 8px; background: #fee2e2; border-left: 3px solid #ef4444; border-radius: 4px; font-size: 0.78rem; color: #991b1b;">
+                                    ⚠ CPER decode failed — will retry
+                                </div>
+                                {% elif alert.cper_status == 'unavailable' %}
+                                <div class="cper-tag" style="margin-top: 4px; padding: 4px 8px; background: #f1f5f9; border-left: 3px solid #94a3b8; border-radius: 4px; font-size: 0.78rem; color: #475569;">
+                                    ℹ CPER attachment no longer available on the BMC
+                                </div>
+                                {% endif %}
+                                <div class="alert-details" style="display: none; margin-top: 8px; padding: 8px; background: #f8fafc; border-radius: 4px; font-size: 0.8rem; color: #475569;">
+                                    {% if alert.message_id %}<div><strong>Message ID:</strong> {{ alert.message_id }}</div>{% endif %}
+                                    {% if alert.cper_status %}<div><strong>CPER status:</strong> {{ alert.cper_status }}</div>{% endif %}
+                                    <div><strong>Severity:</strong> {{ alert.severity }}</div>
+                                    {% if alert.event_type %}<div><strong>Event Type:</strong> {{ alert.event_type }}</div>{% endif %}
+                                    {% if alert.origin_of_condition %}<div><strong>Origin:</strong> {{ alert.origin_of_condition }}</div>{% endif %}
+                                    <div><strong>Created:</strong> {% if alert.event_timestamp %}{{ alert.event_timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}{% else %}—{% endif %}</div>
+                                    <div><strong>Received:</strong> {{ alert.received_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</div>
+                                    <div><strong>Target BMC:</strong> {{ alert.target_bmc }}</div>
+                                    <div style="margin-top: 6px;">
+                                        {# Raw JSON and decoded CPER are fetched on demand to keep the list light. #}
+                                        <button type="button" class="btn btn-sm" style="padding: 2px 8px; font-size: 0.72rem; background:#e2e8f0; color:#475569;" onclick="loadRaw(this, {{ alert.id }})">Load raw event data</button>
+                                        {# Show whenever decoded data exists (refined_message always
+                                           accompanies cper_decoded), so it stays available even while a
+                                           row is queued for re-decoding. #}
+                                        {% if alert.refined_message %}
+                                        <button type="button" class="btn btn-sm" style="padding: 2px 8px; font-size: 0.72rem; background:#e0e7ff; color:#3730a3;" onclick="loadCper(this, {{ alert.id }})">Load decoded CPER</button>
+                                        {% endif %}
+                                        <pre class="raw-json" style="display:none; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow:auto; background:#0f172a; color:#e2e8f0; padding:8px; border-radius:4px; font-size:0.72rem; margin-top:4px;"></pre>
+                                        <div class="cper-view" style="display:none; max-height: 420px; overflow:auto; background:#f8fafc; border:1px solid #e2e8f0; padding:8px; border-radius:4px; font-size:0.72rem; margin-top:4px;"></div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm" style="margin-top: 4px; padding: 2px 8px; font-size: 0.75rem; background: #e2e8f0; color: #475569;" onclick="toggleDetails(this)">Show Details</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% if total_pages > 1 %}
+            {% set qs = 'hours=' ~ selected_hours ~ ('&severity=' ~ (f_severity|urlencode) if f_severity else '') ~ ('&target_id=' ~ (f_target_id|urlencode) if f_target_id else '') ~ ('&q=' ~ (f_q|urlencode) if f_q else '') %}
+            <div style="display:flex; gap:8px; align-items:center; justify-content:center; padding:12px; border-top:1px solid #e2e8f0;">
+                {% if page > 1 %}<a class="btn btn-sm" href="/alerts?{{ qs }}&page={{ page - 1 }}">← Prev</a>{% endif %}
+                <span style="font-size:0.85rem; color:#64748b;">Page {{ page }} of {{ total_pages }}</span>
+                {% if page < total_pages %}<a class="btn btn-sm" href="/alerts?{{ qs }}&page={{ page + 1 }}">Next →</a>{% endif %}
+            </div>
+            {% endif %}
+            {% else %}
+            <div style="padding: 40px; text-align: center; color: #64748b;">
+                <p style="font-size: 1.2rem; margin-bottom: 8px;">No Critical or Warning alerts</p>
+                <p style="font-size: 0.9rem;">Critical and Warning events will appear here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Scope note: informational/OK events are intentionally not collected -->
+<div style="margin-top: 16px; padding: 12px 16px; background: #f1f5f9; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6; border-radius: 6px; color: #475569; font-size: 0.85rem;">
+    &#8505;&#65039; <strong>Informational / OK events are out of scope for this tool.</strong>
+    GYANAM collects only actionable <strong>Critical</strong> and <strong>Warning</strong> alerts.
+    High-volume OK/informational log entries are intentionally not ingested, keeping the tool simple and scalable.
+</div>
+
+<script>
+// Section expand/collapse functionality
+function toggleSection(sectionId) {
+    const content = document.getElementById(sectionId + '-content');
+    const toggle = document.getElementById(sectionId + '-toggle');
+
+    content.classList.toggle('expanded');
+    toggle.classList.toggle('expanded');
+}
+
+// Load subscription status
+async function loadSubscriptionStatus() {
+    try {
+        const response = await fetch('/alerts/api/subscription-status');
+        const data = await response.json();
+
+        if (!data.enabled) {
+            document.getElementById('subscription-list').innerHTML = '<p style="color: #64748b; text-align: center;">Alert subscriptions are disabled</p>';
+            return;
+        }
+
+        // Get configured severities to determine what to show
+        const configuredSeverities = data.configured_severities || [];
+        const showOK = configuredSeverities.includes('OK');
+
+        // Update summary stats
+        const summary = data.summary;
+        document.getElementById('total-targets').textContent = summary.total_targets;
+        document.getElementById('active-count').textContent = summary.active;
+        document.getElementById('disconnected-count').textContent = summary.disconnected;
+        document.getElementById('failed-count').textContent = summary.failed;
+
+        // CPER decode backlog (pending / failed) for operator visibility.
+        const cper = data.cper || {};
+        const cperBacklog = cper.backlog || {};
+        const cperEl = document.getElementById('cper-backlog');
+        if (cperEl) {
+            const pend = cperBacklog.pending || 0;
+            const failed = (cperBacklog.fetch_failed || 0) + (cperBacklog.decode_failed || 0);
+            cperEl.textContent = `${pend} / ${failed}`;
+            cperEl.style.color = failed > 0 ? '#dc2626' : (pend > 0 ? '#f59e0b' : '#16a34a');
+        }
+
+        // Update header badge
+        const badge = document.getElementById('subscription-summary-badge');
+        badge.textContent = `${summary.active}/${summary.total_targets} active`;
+
+        // Render subscription cards
+        const subscriptions = data.subscriptions;
+        if (subscriptions.length === 0) {
+            document.getElementById('subscription-list').innerHTML = '<p style="color: #64748b; text-align: center;">No targets configured for alert subscriptions</p>';
+            return;
+        }
+
+        const html = subscriptions.map(sub => {
+            let statusClass = 'status-not-subscribed';
+            let statusIcon = '⚪';
+            let statusText = 'Not Subscribed';
+
+            if (sub.status === 'connected') {
+                statusClass = 'status-connected';
+                statusIcon = '🟢';
+                statusText = 'Connected';
+            } else if (sub.status === 'reconnecting') {
+                statusClass = 'status-reconnecting';
+                statusIcon = '🟡';
+                statusText = 'Reconnecting';
+            } else if (sub.status === 'degraded') {
+                statusClass = 'status-degraded';
+                statusIcon = '🟠';
+                statusText = 'Degraded';
+            } else if (sub.status === 'on_cooldown') {
+                statusClass = 'status-on-cooldown';
+                statusIcon = '🕐';
+                statusText = 'On Cooldown';
+            } else if (sub.status === 'failed_permanent') {
+                statusClass = 'status-failed';
+                statusIcon = '🔴';
+                statusText = 'Failed (Permanent)';
+            } else if (sub.status === 'stopped') {
+                statusClass = 'status-failed';
+                statusIcon = '⏹️';
+                statusText = 'Stopped';
+            } else {
+                statusClass = 'status-failed';
+                statusIcon = '🔴';
+                statusText = 'Failed';
+            }
+
+            const lastEvent = sub.last_event_time
+                ? formatTimeAgo(new Date(sub.last_event_time))
+                : 'Never';
+
+            // Format time in state
+            let timeInState = '';
+            if (sub.time_in_state_hours !== null && sub.time_in_state_hours !== undefined) {
+                const hours = sub.time_in_state_hours;
+                if (hours < 1) {
+                    timeInState = `${Math.floor(hours * 60)}m`;
+                } else if (hours < 24) {
+                    timeInState = `${hours.toFixed(1)}h`;
+                } else {
+                    timeInState = `${Math.floor(hours / 24)}d ${Math.floor(hours % 24)}h`;
+                }
+            }
+
+            // Format next retry time
+            let nextRetry = '';
+            if (sub.next_retry_time) {
+                const retryTime = new Date(sub.next_retry_time);
+                const now = new Date();
+                const diffSec = Math.max(0, (retryTime - now) / 1000);
+                if (diffSec < 60) {
+                    nextRetry = `${Math.floor(diffSec)}s`;
+                } else {
+                    nextRetry = `${Math.floor(diffSec / 60)}m ${Math.floor(diffSec % 60)}s`;
+                }
+            }
+
+            return `
+                <div class="subscription-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                        <div>
+                            <div style="font-weight: 600; color: #1e293b;">${sub.target_name}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">${sub.target_bmc}</div>
+                        </div>
+                        <span class="status-badge ${statusClass}">${statusIcon} ${statusText}</span>
+                    </div>
+                    ${sub.failure_reason ? `
+                    <div style="font-size: 0.75rem; color: #991b1b; background: #fef2f2; padding: 4px 8px; border-radius: 4px; margin-top: 4px;">
+                        ${sub.failure_reason}
+                    </div>
+                    ` : ''}
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 8px; display: flex; flex-direction: column; gap: 2px;">
+                        <div>Last event: <strong>${lastEvent}</strong></div>
+                        ${timeInState ? `<div>In ${statusText} for: <strong>${timeInState}</strong></div>` : ''}
+                        ${nextRetry ? `<div>Next retry in: <strong>${nextRetry}</strong></div>` : ''}
+                        ${sub.consecutive_failures > 0 ? `<div>Consecutive failures: <strong>${sub.consecutive_failures}</strong></div>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; gap: 8px;">
+                            ${sub.critical_count > 0 ? `<span style="color: #dc2626;">🔴 ${sub.critical_count}</span>` : ''}
+                            ${sub.warning_count > 0 ? `<span style="color: #f59e0b;">🟡 ${sub.warning_count}</span>` : ''}
+                            ${showOK && sub.ok_count > 0 ? `<span style="color: #16a34a;">🟢 ${sub.ok_count}</span>` : ''}
+                            ${sub.alerts_24h === 0 ? '<span style="color: #94a3b8;">No alerts</span>' : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('subscription-list').innerHTML = html;
+
+        // Update alert summary (top 10 targets by alert count)
+        const topTargets = subscriptions.filter(s => s.alerts_24h > 0).slice(0, 10);
+        if (topTargets.length === 0) {
+            document.getElementById('alert-summary-list').innerHTML = '<p style="color: #64748b; text-align: center;">No alerts in the last 24 hours</p>';
+        } else {
+            const summaryHtml = topTargets.map(sub => `
+                <div class="alert-summary-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 1.1rem; color: #1e293b;">${sub.target_name}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">${sub.target_bmc}</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #64748b;">${sub.alerts_24h}</div>
+                    </div>
+                    <div style="display: flex; gap: 12px; font-size: 0.875rem;">
+                        ${sub.critical_count > 0 ? `
+                            <div>
+                                <span class="alert-count-badge" style="background: #fee2e2; color: #991b1b;">Critical</span>
+                                <strong style="margin-left: 4px;">${sub.critical_count}</strong>
+                            </div>
+                        ` : ''}
+                        ${sub.warning_count > 0 ? `
+                            <div>
+                                <span class="alert-count-badge" style="background: #fef3c7; color: #92400e;">Warning</span>
+                                <strong style="margin-left: 4px;">${sub.warning_count}</strong>
+                            </div>
+                        ` : ''}
+                        ${showOK && sub.ok_count > 0 ? `
+                            <div>
+                                <span class="alert-count-badge" style="background: #dcfce7; color: #166534;">OK</span>
+                                <strong style="margin-left: 4px;">${sub.ok_count}</strong>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('alert-summary-list').innerHTML = summaryHtml;
+        }
+
+    } catch (error) {
+        console.error('Failed to load subscription status:', error);
+        document.getElementById('subscription-list').innerHTML = '<p style="color: #dc2626; text-align: center;">Failed to load subscription status</p>';
+    }
+}
+
+// Helper function to format time ago
+function formatTimeAgo(date) {
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+// Filtering/search/pagination are handled server-side (GET form). See routes/alerts.py.
+
+function toggleDetails(button) {
+    const details = button.previousElementSibling;
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        button.textContent = 'Hide Details';
+    } else {
+        details.style.display = 'none';
+        button.textContent = 'Show Details';
+    }
+}
+
+// Generic lazy-loader for a JSON blob shown in a <pre> next to a toggle button.
+async function _loadJson(button, alertId, {selector, url, extract, labelShow, labelHide}) {
+    const pre = button.parentElement.querySelector(selector);
+    if (pre.style.display !== 'none') {
+        pre.style.display = 'none';
+        button.textContent = labelShow;
+        return;
+    }
+    if (!pre.dataset.loaded) {
+        pre.textContent = 'Loading…';
+        pre.style.display = 'block';
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            pre.textContent = JSON.stringify(extract(data), null, 2);
+            pre.dataset.loaded = '1';
+        } catch (e) {
+            pre.textContent = 'Failed to load data';
+        }
+    } else {
+        pre.style.display = 'block';
+    }
+    button.textContent = labelHide;
+}
+
+// Lazily fetch the raw event JSON for one alert (kept out of the list payload).
+async function loadRaw(button, alertId) {
+    await _loadJson(button, alertId, {
+        selector: '.raw-json',
+        url: `/alerts/api/${alertId}/raw`,
+        extract: (d) => d.raw_data,
+        labelShow: 'Load raw event data',
+        labelHide: 'Hide raw event data',
+    });
+}
+
+// ---- structured CPER rendering ----
+function _esc(v) {
+    return String(v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+// Friendly labels for known decoded keys (improves readability of the panel).
+const _CPER_LABELS = {
+    error_class: 'Error class', description: 'Summary', ip_block: 'IP block',
+    ip_block_source: 'IP mapping', firmware_id: 'Firmware', hardware_id: 'HardwareID',
+    mca_type: 'MCA type', instance_id_hi: 'Instance ID (hi)', instance_id_lo: 'Instance ID (lo)',
+    error_code: 'Error code', error_code_ext: 'Error code (ext)', error_type: 'Error type GUID',
+    apic_id: 'APIC ID', ms_check: 'MS check', syndrome: 'Syndrome', address: 'Address',
+    registers: 'ACA registers', identifiers: 'Identifiers', context: 'Context',
+    valid_bits: 'Valid bits', oam_messages: 'OAM messages', reg_ctx_type: 'Reg ctx type',
+    uc: 'Uncorrected', uecc: 'Uncorrectable ECC', cecc: 'Correctable ECC', pcc: 'Processor context corrupt',
+    poison: 'Poison', deferred: 'Deferred', overflow: 'Overflow', val: 'Valid', addrv: 'Address valid',
+    miscv: 'Misc valid', syndv: 'Syndrome valid', scrub: 'Scrub', en: 'Enabled', raw: 'Raw',
+    uncorrected: 'Uncorrected', err_type: 'Error type', tcc: 'Task context corrupt',
+    errcoreid: 'Error core ID', errcoreid_valid: 'Error core ID valid', addr_lsb: 'Address LSB',
+    error_count: 'Error count', error_information: 'Error information', valid_address: 'Valid address',
+    address_valid: 'Address valid', error_code_ext_meaning: 'Ext code meaning',
+    sub_block_error_code: 'Sub-block error code', from_status_errorcode: 'from STATUS.ErrorCode',
+    from_synd_errorinformation: 'from SYND.ErrorInformation', STATUS: 'STATUS', ADDR: 'ADDR',
+    IPID: 'IPID', SYND: 'SYND', MISC0: 'MISC0', CONFIG: 'CONFIG', CTL: 'CTL', CTL_MASK: 'CTL_MASK',
+    DESTAT: 'DESTAT (deferred status)', DEADDR: 'DEADDR (deferred address)',
+    platformID_ascii: 'Platform (ASCII)', creatorID_ascii: 'Creator (ASCII)',
+    fruID_ascii: 'FRU part (ASCII)', timestamp_note: 'Timestamp note',
+    umc_location: 'HBM/UMC location', socket_id: 'Socket', aid_die_id: 'AID (die)',
+    channel: 'Channel', umc_instance: 'UMC instance', note: 'Note',
+};
+function _label(k) { return _CPER_LABELS[k] || k; }
+// Recursively render a decoded value (object/array/scalar) as nested key/value HTML.
+function _renderKv(val) {
+    if (val === null || val === undefined) return '<span style="color:#94a3b8;">—</span>';
+    if (Array.isArray(val)) {
+        if (!val.length) return '<span style="color:#94a3b8;">[]</span>';
+        return val.map(v => `<div>${_renderKv(v)}</div>`).join('');
+    }
+    if (typeof val === 'object') {
+        let rows = '';
+        for (const [k, v] of Object.entries(val)) {
+            rows += `<tr><td style="vertical-align:top;padding:1px 8px 1px 0;color:#475569;white-space:nowrap;">${_esc(_label(k))}</td>`
+                 +  `<td style="vertical-align:top;padding:1px 0;font-family:monospace;">${_renderKv(v)}</td></tr>`;
+        }
+        return `<table style="border-collapse:collapse;">${rows}</table>`;
+    }
+    if (typeof val === 'boolean') {
+        return val ? '<span style="color:#dc2626;font-weight:600;">true</span>' : '<span style="color:#94a3b8;">false</span>';
+    }
+    return _esc(val);
+}
+function _section(title, bodyHtml) {
+    return `<div style="margin:6px 0;padding:6px 8px;background:#fff;border:1px solid #e2e8f0;border-radius:4px;">`
+         + `<div style="font-weight:600;color:#334155;margin-bottom:3px;">${_esc(title)}</div>${bodyHtml}</div>`;
+}
+function renderCperDecoded(data) {
+    const d = (data && data.cper_decoded) || null;
+    if (!d) return '<em>No decoded CPER available.</em>';
+    let html = '';
+    const h = d.header || {};
+    const hdr = {
+        'Record severity': (h.severity || {}).name,
+        'Notification': (h.notificationType || {}).type,
+        'Timestamp': h.timestamp + (h.timestamp_note ? ` (${h.timestamp_note})` : ''),
+        'Record ID': h.recordID,
+        'Platform': h.platformID_ascii || h.platformID,
+        'Creator': h.creatorID_ascii || h.creatorID,
+        'Sections': h.sectionCount,
+    };
+    html += _section('CPER record', _renderKv(hdr));
+    const secs = d.sections || [];
+    const descs = d.sectionDescriptors || [];
+    // Deduplicate identical sections (a CPER record can repeat the same section);
+    // render each unique one once with an occurrence count. Raw JSON keeps all.
+    const groups = [];
+    const bySig = {};
+    secs.forEach((sec, i) => {
+        const desc = descs[i] || {};
+        const sig = JSON.stringify([sec.amd || sec, (desc.sectionType || {}).data, desc.fruText]);
+        if (bySig[sig] === undefined) {
+            bySig[sig] = groups.length;
+            groups.push({ sec, desc, first: i, indices: [i] });
+        } else {
+            groups[bySig[sig]].indices.push(i);
+        }
+    });
+    if (groups.length < secs.length) {
+        html = _section('CPER record',
+            _renderKv(hdr) + `<div style="color:#64748b;margin-top:3px;">${secs.length} sections (${groups.length} unique after de-duplication)</div>`);
+    }
+    groups.forEach((g) => {
+        const sec = g.sec, desc = g.desc, i = g.first;
+        const st = desc.sectionType || {};
+        const dup = g.indices.length > 1 ? ` ×${g.indices.length} (sections ${g.indices.join(', ')})` : '';
+        const fru = desc.fruText || desc.fruID_ascii || '';
+        const title = `Section ${i}: ${st.type || 'Unknown'}`
+            + (desc.severity ? ` — ${(desc.severity || {}).name}` : '')
+            + (fru ? ` [${fru}]` : '')
+            + dup;
+        // Surface the descriptor flags that are set (primary/propagated/etc.).
+        const setFlags = Object.entries(desc.flags || {}).filter(([, v]) => v === true).map(([k]) => k);
+        // Prefer our AMD decode; else libcper's own decoded fields (drop the raw blob).
+        let body;
+        if (sec.amd) {
+            const a = sec.amd;
+            let head = '';
+            if (a.description) {
+                head += `<div style="margin-bottom:4px;color:#3730a3;font-weight:600;">${_esc(a.description)}</div>`;
+            }
+            if (a.error_class) {
+                head += `<div style="display:inline-block;margin-bottom:4px;padding:1px 6px;border-radius:3px;background:#e0e7ff;color:#3730a3;font-size:0.7rem;">${_esc(a.error_class)}</div> `;
+            }
+            body = head + _renderKv(a);
+        } else {
+            const clone = Object.assign({}, sec);
+            for (const k of Object.keys(clone)) {
+                if (clone[k] && typeof clone[k] === 'object' && clone[k].data) delete clone[k];
+            }
+            body = _renderKv(clone);
+        }
+        const flagsHtml = setFlags.length
+            ? `<div style="color:#64748b;margin-bottom:3px;">Flags: ${_esc(setFlags.join(', '))}</div>` : '';
+        html += _section(title, flagsHtml + body);
+    });
+    return html;
+}
+// Lazily fetch + render the decoded CPER for one alert (structured, with raw toggle).
+async function loadCper(button, alertId) {
+    const view = button.parentElement.querySelector('.cper-view');
+    if (view.style.display !== 'none') {
+        view.style.display = 'none';
+        button.textContent = 'Load decoded CPER';
+        return;
+    }
+    if (!view.dataset.loaded) {
+        view.innerHTML = 'Loading…';
+        view.style.display = 'block';
+        try {
+            const resp = await fetch(`/alerts/api/${alertId}/cper`);
+            const data = await resp.json();
+            const raw = _esc(JSON.stringify(data.cper_decoded, null, 2));
+            view.innerHTML = renderCperDecoded(data)
+                + `<details style="margin-top:6px;"><summary style="cursor:pointer;color:#475569;">Raw JSON</summary>`
+                + `<pre style="white-space:pre-wrap;word-break:break-word;background:#0f172a;color:#e2e8f0;padding:8px;border-radius:4px;margin-top:4px;">${raw}</pre></details>`;
+            view.dataset.loaded = '1';
+        } catch (e) {
+            view.innerHTML = 'Failed to load decoded CPER';
+        }
+    } else {
+        view.style.display = 'block';
+    }
+    button.textContent = 'Hide decoded CPER';
+}
+
+// Load subscription status on page load and auto-refresh every 30 seconds
+loadSubscriptionStatus();
+setInterval(loadSubscriptionStatus, 30000);
+</script>
+
+{% endblock %}

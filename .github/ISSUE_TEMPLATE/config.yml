@@ -1,0 +1,7 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/amd/Gyanam-GPU-Observability-Assistant/security/advisories/new
+    about: >
+      Do not file security vulnerabilities as public issues. Report them
+      privately via GitHub security advisories (see SECURITY.md).

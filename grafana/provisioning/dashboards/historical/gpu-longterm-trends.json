@@ -1,0 +1,383 @@
+{
+  "uid": "gpu-longterm-trends",
+  "title": "GPU Long-Term Trends (15m Downsampled)",
+  "description": "Min/Avg/Max temperature, power, and utilization over months (separated views)",
+  "tags": [
+    "gpu",
+    "trends",
+    "downsampled"
+  ],
+  "timezone": "browser",
+  "refresh": "15m",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "target_name",
+        "type": "query",
+        "datasource": {
+          "uid": "influxdb-downsampled",
+          "type": "influxdb"
+        },
+        "query": "from(bucket: \"gpu_metrics_downsampled\") |> range(start: -30d) |> keep(columns: [\"target_name\"]) |> group() |> distinct(column: \"target_name\")",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "GPU Die Temperature - Minimum",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "uid": "influxdb-downsampled",
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "influxdb-downsampled",
+            "type": "influxdb"
+          },
+          "query": "from(bucket: \"gpu_metrics_downsampled\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"gpu_metrics_15m\")\n  |> filter(fn: (r) => r._field == \"gpu_die_temp_celsius_min\")\n  |> filter(fn: (r) => r.target_name =~ /^${target_name:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: min, createEmpty: false)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "GPU Die Temperature - Average",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "datasource": {
+        "uid": "influxdb-downsampled",
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "influxdb-downsampled",
+            "type": "influxdb"
+          },
+          "query": "from(bucket: \"gpu_metrics_downsampled\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"gpu_metrics_15m\")\n  |> filter(fn: (r) => r._field == \"gpu_die_temp_celsius_avg\")\n  |> filter(fn: (r) => r.target_name =~ /^${target_name:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "GPU Die Temperature - Maximum",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "datasource": {
+        "uid": "influxdb-downsampled",
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "influxdb-downsampled",
+            "type": "influxdb"
+          },
+          "query": "from(bucket: \"gpu_metrics_downsampled\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"gpu_metrics_15m\")\n  |> filter(fn: (r) => r._field == \"gpu_die_temp_celsius_max\")\n  |> filter(fn: (r) => r.target_name =~ /^${target_name:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "GPU Memory Temperature - Minimum",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 6
+      },
+      "datasource": {
+        "uid": "influxdb-downsampled",
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "influxdb-downsampled",
+            "type": "influxdb"
+          },
+          "query": "from(bucket: \"gpu_metrics_downsampled\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"gpu_metrics_15m\")\n  |> filter(fn: (r) => r._field == \"gpu_memory_temp_celsius_min\")\n  |> filter(fn: (r) => r.target_name =~ /^${target_name:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: min, createEmpty: false)"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "GPU Memory Temperature - Average",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 6
+      },
+      "datasource": {
+        "uid": "influxdb-downsampled",
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "influxdb-downsampled",
+            "type": "influxdb"
+          },
+          "query": "from(bucket: \"gpu_metrics_downsampled\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"gpu_metrics_15m\")\n  |> filter(fn: (r) => r._field == \"gpu_memory_temp_celsius_avg\")\n  |> filter(fn: (r) => r.target_name =~ /^${target_name:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "GPU Memory Temperature - Maximum",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 6
+      },
+      "datasource": {
+        "uid": "influxdb-downsampled",
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "influxdb-downsampled",
+            "type": "influxdb"
+          },
+          "query": "from(bucket: \"gpu_metrics_downsampled\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"gpu_metrics_15m\")\n  |> filter(fn: (r) => r._field == \"gpu_memory_temp_celsius_max\")\n  |> filter(fn: (r) => r.target_name =~ /^${target_name:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "GPU Power - Minimum",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 12
+      },
+      "datasource": {
+        "uid": "influxdb-downsampled",
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "influxdb-downsampled",
+            "type": "influxdb"
+          },
+          "query": "from(bucket: \"gpu_metrics_downsampled\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"gpu_metrics_15m\")\n  |> filter(fn: (r) => r._field == \"gpu_power_watts_min\")\n  |> filter(fn: (r) => r.target_name =~ /^${target_name:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: min, createEmpty: false)"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "GPU Power - Average",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 12
+      },
+      "datasource": {
+        "uid": "influxdb-downsampled",
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "influxdb-downsampled",
+            "type": "influxdb"
+          },
+          "query": "from(bucket: \"gpu_metrics_downsampled\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"gpu_metrics_15m\")\n  |> filter(fn: (r) => r._field == \"gpu_power_watts_avg\")\n  |> filter(fn: (r) => r.target_name =~ /^${target_name:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "GPU Power - Maximum",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 12
+      },
+      "datasource": {
+        "uid": "influxdb-downsampled",
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "spanNulls": true
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "influxdb-downsampled",
+            "type": "influxdb"
+          },
+          "query": "from(bucket: \"gpu_metrics_downsampled\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"gpu_metrics_15m\")\n  |> filter(fn: (r) => r._field == \"gpu_power_watts_max\")\n  |> filter(fn: (r) => r.target_name =~ /^${target_name:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)"
+        }
+      ]
+    }
+  ],
+  "editable": true,
+  "schemaVersion": 36,
+  "version": 1
+}

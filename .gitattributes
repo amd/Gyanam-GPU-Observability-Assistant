@@ -1,0 +1,15 @@
+# GitHub linguist hints — keep documentation assets out of the
+# repo language-statistic breakdown.
+
+# Documentation assets — screenshots, rendered diagrams, sample artefacts
+docs/screenshots/*    linguist-documentation
+docs/*.pdf            linguist-documentation
+docs/*.mmd            linguist-documentation
+reference_artifacts/* linguist-documentation
+
+# Always treat binary so git doesn't try to diff them as text
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.pdf  binary
+*.sarif binary

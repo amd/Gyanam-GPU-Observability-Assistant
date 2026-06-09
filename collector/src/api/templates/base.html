@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GYANAM - GPU Observability Assistant{% endblock %}</title>
+    <link rel="stylesheet" href="/static/gyanam.css?v=1">
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+    {% block nav %}
+    <nav>
+        <div class="container">
+            <div class="brand">
+                <h1>
+                    <span class="product-line">GYANAM</span>
+                    <span class="product-name">GPU Observability Assistant</span>
+                </h1>
+            </div>
+            <div style="display: flex; align-items: flex-end; gap: 20px;">
+                <ul>
+                    <li><a href="/targets" class="{% if request.url.path.startswith('/targets') %}active{% endif %}">🎯 Targets</a></li>
+                    <li><a href="/alerts" class="{% if request.url.path.startswith('/alerts') %}active{% endif %}">🔔 Alerts</a></li>
+                    <li><a href="/logs" class="{% if request.url.path.startswith('/logs') %}active{% endif %}">📋 Logs</a></li>
+                    <li class="external-links">
+                        <a href="http://{{ request.url.hostname }}:{{ grafana_port }}" target="_blank" title="Open Grafana Dashboard">📊 Grafana</a>
+                    </li>
+                    <li>
+                        {% if metrics_backend == 'prometheus' %}
+                        <a href="http://{{ request.url.hostname }}:{{ prometheus_port }}" target="_blank" title="Open Prometheus">📈 Prometheus</a>
+                        {% else %}
+                        <a href="http://{{ request.url.hostname }}:{{ influxdb_port }}" target="_blank" title="Open InfluxDB">📈 InfluxDB</a>
+                        {% endif %}
+                    </li>
+                </ul>
+                {% if user %}
+                <div class="user-section">
+                    <details class="settings-dropdown">
+                        <summary>⚙️ Settings</summary>
+                        <div class="settings-menu">
+                            <a href="/schemas" class="{% if request.url.path.startswith('/schemas') %}active{% endif %}">📐 Schemas</a>
+                            <a href="/status" class="{% if request.url.path.startswith('/status') %}active{% endif %}">🩺 Diagnostics</a>
+                        </div>
+                    </details>
+                    <div class="logout-section" style="padding: 0;">
+                        <form method="post" action="/logout" style="margin: 0;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or gen_csrf_token() }}">
+                            <button type="submit" class="btn btn-sm" title="Signed in as {{ user }}">Logout</button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    {% endblock %}
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="container">
+            <strong>GYANAM</strong> - GPU Observability Assistant v0.1.0
+            <br>
+            <span style="font-size: 0.75rem;">Developed by AMD Instinct Full Stack AI System Debug Team</span>
+        </div>
+    </footer>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

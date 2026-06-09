@@ -1,0 +1,592 @@
+/* GYANAM shared styles + design tokens.
+   Served statically (cacheable) and linked from base.html. */
+        :root {
+            /* ============================================================
+               DESIGN TOKENS
+               Two-tier system: primitives (raw scales) -> semantic (intent).
+               Components should reference the semantic/component tokens, not
+               the primitives, so values change in one place.
+               ============================================================ */
+
+            /* ---- Primitives: neutral (slate) palette ---- */
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+
+            /* ---- Primitives: brand & status ---- */
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --blue-700: #1d4ed8;
+            --indigo-100: #e0e7ff;
+            --indigo-500: #6366f1;
+            --indigo-800: #3730a3;
+            --green-600: #16a34a;
+            --amber-600: #d97706;
+            --red-600: #dc2626;
+
+            /* ---- Primitives: spacing scale (4px base) ---- */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 20px;
+            --space-6: 24px;
+            --space-8: 32px;
+
+            /* ---- Primitives: radius / shadow / motion / z-index ---- */
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --radius-full: 9999px;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 6px 18px rgba(0, 0, 0, 0.25);
+            --transition-fast: 0.15s ease;
+            --z-nav: 100;
+            --z-dropdown: 200;
+
+            /* ---- Primitives: typography ---- */
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            --text-xs: 0.72rem;
+            --text-sm: 0.8rem;
+            --text-base: 0.9rem;
+            --text-md: 1rem;
+            --text-lg: 1.2rem;
+            --text-xl: 1.5rem;
+            --font-normal: 400;
+            --font-medium: 500;
+            --font-semibold: 600;
+            --font-bold: 700;
+
+            /* ---- Semantic tokens (intent -> primitive) ---- */
+            --color-bg: var(--slate-50);
+            --color-surface: #ffffff;
+            --color-text: var(--slate-800);
+            --color-text-muted: var(--slate-600);
+            --color-text-subtle: var(--slate-400);
+            --color-border: var(--slate-200);
+            --color-primary: var(--blue-600);
+            --color-success: var(--green-600);
+            --color-warning: var(--amber-600);
+            --color-danger: var(--red-600);
+            --color-accent: var(--indigo-500);
+
+            /* ---- Backward-compatible aliases (pre-existing names) ---- */
+            --primary-color: var(--color-primary);
+            --success-color: var(--color-success);
+            --warning-color: var(--color-warning);
+            --danger-color: var(--color-danger);
+            --bg-color: var(--color-bg);
+            --card-bg: var(--color-surface);
+            --text-color: var(--color-text);
+            --border-color: var(--color-border);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        nav {
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2d2d2d 100%);
+            border-bottom: 3px solid #39FF14;
+            padding: 0;
+            margin-bottom: 30px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-top: 16px;
+            padding-bottom: 0;
+        }
+
+        nav .brand {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding-bottom: 16px;
+        }
+
+        nav h1 {
+            color: white;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            line-height: 1.25;
+        }
+
+        nav h1 .product-line {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #39FF14;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(57, 255, 20, 0.6), 0 0 20px rgba(57, 255, 20, 0.4);
+        }
+
+        nav h1 .product-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: -0.01em;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2px;
+            align-items: flex-end;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav a {
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            padding: 11px 18px 12px 18px;
+            border-radius: 6px 6px 0 0;
+            transition: all 0.25s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
+            position: relative;
+            background: rgba(255, 255, 255, 0.06);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            display: inline-block;
+        }
+
+        nav a:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            border-top-color: rgba(255, 255, 255, 0.15);
+            border-left-color: rgba(255, 255, 255, 0.15);
+            border-right-color: rgba(255, 255, 255, 0.15);
+        }
+
+        nav a.active {
+            background: #ffffff;
+            color: #000000;
+            box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
+            border-top: 1px solid #e5e7eb;
+            border-left: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #ED1C24;
+        }
+
+        nav .external-links {
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            padding-left: 6px;
+            margin-left: 2px;
+        }
+
+        nav .logout-section {
+            padding-bottom: 12px;
+            padding-left: 12px;
+        }
+
+        /* Compact nav control (shared by Logout button + Settings trigger) —
+           normalized so both render at exactly the same size (a matched pair). */
+        nav .logout-section .btn,
+        nav .settings-dropdown > summary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            min-width: 104px;
+            height: 30px;
+            background: rgba(156, 163, 175, 0.25);
+            border: 1px solid rgba(156, 163, 175, 0.4);
+            color: #d1d5db;
+            font-family: var(--font-sans);
+            font-size: var(--text-xs);
+            font-weight: var(--font-medium);
+            line-height: 1;
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-sm);
+        }
+
+        nav .logout-section .btn:hover {
+            background: rgba(156, 163, 175, 0.35);
+            border-color: rgba(156, 163, 175, 0.6);
+            box-shadow: var(--shadow-md);
+            color: #f3f4f6;
+        }
+
+        /* Account cluster: Tool Settings + Logout grouped and divided from the
+           page-navigation tabs for a clearer visual hierarchy. */
+        nav .user-section {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 12px;
+            padding-left: 16px;
+            margin-left: 6px;
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        nav .settings-dropdown {
+            position: relative;
+        }
+
+        /* Rotating caret on the Settings trigger. */
+        nav .settings-dropdown > summary::after {
+            content: "▾";
+            display: inline-block;
+            margin-left: var(--space-1);
+            transition: transform var(--transition-fast);
+        }
+
+        nav .settings-dropdown[open] > summary::after {
+            transform: rotate(180deg);
+        }
+
+        nav .settings-dropdown > summary {
+            list-style: none;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        nav .settings-dropdown > summary::-webkit-details-marker { display: none; }
+        nav .settings-dropdown > summary::marker { content: ""; }
+
+        nav .settings-dropdown > summary:hover,
+        nav .settings-dropdown[open] > summary {
+            background: rgba(156, 163, 175, 0.35);
+            border-color: rgba(156, 163, 175, 0.6);
+            color: #f3f4f6;
+        }
+
+        nav .settings-menu {
+            position: absolute;
+            right: 0;
+            top: calc(100% + var(--space-1));
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            min-width: 190px;
+            z-index: var(--z-dropdown);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        nav .settings-menu a {
+            display: block;
+            padding: var(--space-2) var(--space-3);
+            color: var(--color-text-muted);
+            text-decoration: none;
+            font-size: var(--text-base);
+            border-bottom: 1px solid var(--slate-100);
+        }
+
+        nav .settings-menu a::after { display: none; }
+        nav .settings-menu a:last-child { border-bottom: none; }
+        nav .settings-menu a:hover { background: var(--slate-100); color: var(--color-text); }
+        nav .settings-menu a.active { background: var(--indigo-100); color: var(--indigo-800); font-weight: var(--font-semibold); }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-header h2 {
+            font-size: 1.25rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            font-weight: 600;
+            background-color: var(--bg-color);
+        }
+
+        tr:hover {
+            background-color: var(--bg-color);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 4px 12px;
+            font-size: 0.875rem;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-success {
+            background-color: #dcfce7;
+            color: var(--success-color);
+        }
+
+        .status-error {
+            background-color: #fee2e2;
+            color: var(--danger-color);
+        }
+
+        .status-pending {
+            background-color: #fef3c7;
+            color: var(--warning-color);
+        }
+
+        .status-enabled {
+            background-color: #dbeafe;
+            color: var(--primary-color);
+        }
+
+        .status-disabled {
+            background-color: #f1f5f9;
+            color: #64748b;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input {
+            width: auto;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: var(--danger-color);
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background-color: #dcfce7;
+            color: var(--success-color);
+            border: 1px solid #bbf7d0;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        footer {
+            text-align: center;
+            padding: 32px 20px;
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-top: 60px;
+            border-top: 1px solid var(--border-color);
+            background: linear-gradient(to bottom, transparent, rgba(248, 250, 252, 0.8));
+        }
+
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Loading animation for page transitions */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        main {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* Responsive design for tablets and smaller screens */
+        @media (max-width: 1200px) {
+            nav .container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0;
+            }
+
+            nav .brand {
+                justify-content: center;
+                padding-bottom: 12px;
+                border-bottom: 2px solid rgba(237, 28, 36, 0.3);
+            }
+
+            nav > .container > div:last-child {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            nav ul {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 2px;
+            }
+
+            nav a {
+                font-size: 0.85rem;
+                padding: 9px 14px 10px 14px;
+            }
+
+            nav .logout-section {
+                padding: 12px 16px;
+                text-align: center;
+            }
+
+            .container {
+                max-width: 100%;
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav h1 .product-line {
+                font-size: 0.75rem;
+                letter-spacing: 0.18em;
+            }
+
+            nav h1 .product-name {
+                font-size: 1.2rem;
+            }
+
+            nav a {
+                font-size: 0.8rem;
+                padding: 8px 11px 9px 11px;
+            }
+        }
