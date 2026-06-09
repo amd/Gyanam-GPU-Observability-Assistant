@@ -1,0 +1,279 @@
+---
+title: GYANAM — GPU Observability Assistant — Class Relationships
+---
+%% Source of truth: this .mmd file.
+%% Rendered PDF (docs/class-diagram.pdf) is regenerated separately —
+%% see scripts/README.md "Regenerating diagrams".
+classDiagram
+    direction LR
+
+    %% ============ COLLECTION LAYER (Blue) ============
+    namespace Collection {
+        class RedfishPoller {
+            +start()
+            +stop()
+            +poll_single(target_id)
+            +get_results() list
+            +get_stats() dict
+            -_schedule_due_polls()
+            -_run_poll(target)
+            -_status_writer_loop()
+            -_flush_pending_status()
+            -_get_client(target) RedfishClient
+            -_close_client(target_id)
+            -_clients: dict[int, RedfishClient]
+            -_inflight: dict[int, Task]
+            -_pending_status: dict[int, tuple]
+            -_next_poll_time: dict[int, datetime]
+            -_semaphore: Semaphore (max_concurrent=100)
+        }
+
+        class SSEManager {
+            +start()
+            +stop()
+            +active_connections int
+        }
+
+        class SSEConnection {
+            +start(queue)
+            +stop()
+        }
+
+        class RedfishClient {
+            +connect()
+            +collect_diagnostic_data()
+            +get_metric_report(uri)
+            +test_connection() tuple
+            -_http_get / _http_post / _http_delete
+        }
+
+        class SSHTransport {
+            +connect()
+            +get(url)
+            +post(url)
+            +delete(url)
+            +test_ssh_connection() tuple
+            +test_redfish_access(base_url) tuple
+        }
+    }
+
+    %% ============ ALERTING LAYER (Pink) ============
+    namespace Alerting {
+        class AlertManager {
+            +start()
+            +stop()
+            +process_webhook_event(target_id, payload)
+            +get_stats() dict
+            -_refresh_subscriptions_loop()
+            -_batch_processor_loop()
+            -_cleanup_loop()
+            -_on_alert(event)
+            -_permanently_failed: set[int]
+        }
+
+        class RateLimiter {
+            +allow(target_id) bool
+            -max_alerts_per_minute: int
+        }
+
+        class AlertSubscriber {
+            +start()
+            +stop()
+            +state: SubscriptionState
+            +consecutive_failures: int
+        }
+
+        class WebhookSubscriber {
+            +create_subscription() SubscriptionResult
+            +delete_subscription()
+            +parse_webhook_event(data) list
+        }
+
+        class AlertEvent {
+            +target_id, severity
+            +message, event_type
+            +event_timestamp
+        }
+    }
+
+    %% ============ PROCESSING LAYER (Green) ============
+    namespace Processing {
+        class MetricExtractor {
+            +extract_from_data(data) list
+        }
+
+        class MetricDiscovery {
+            +discover(data) list
+        }
+
+        class BlobUnpacker {
+            +unpack(content) list
+            +cleanup(files)
+        }
+
+        class SchemaLoader {
+            +load()
+            +get_schemas() list
+        }
+
+        class RedfishLogParser {
+            +parse_file(path) list
+        }
+    }
+
+    %% ============ EXPORT LAYER (Purple) ============
+    namespace Export {
+        class BaseExporter {
+            <<abstract>>
+            +write(metrics) bool
+            +health_check() tuple
+            +is_connected bool
+        }
+
+        class InfluxDBExporter {
+            +write(metrics) bool
+            +buffer_size int
+            +get_health_metrics() dict
+            -_flush_loop()
+            -_flush_buffer()
+            -_reconnect() bool
+            -_force_reset_connection()
+            -_flush_event: Event
+            -_consecutive_batch_failures: int
+            -_reconnect_count: int
+        }
+
+        class PrometheusExporter {
+            +write(metrics) bool
+            +generate_metrics() bytes
+        }
+    }
+
+    %% ============ DATA LAYER (Orange) ============
+    namespace Data {
+        class TargetRepository {
+            +create_target()
+            +get_all_targets()
+            +update_poll_status()
+            +update_poll_status_batch(updates)
+            +decrypt_password()
+            +create_alerts_batch(alerts) int
+        }
+
+        class Target {
+            +name, host, port
+            +connection_mode
+            +verify_ssl
+            +consecutive_failures
+        }
+
+        class CollectedLog {
+            +target_id, filename
+            +file_path, status
+            +file_size_bytes
+        }
+
+        class Alert {
+            +target_id, severity
+            +message, event_type
+            +received_at
+        }
+
+        class LogCollector {
+            +collect_single(target_id) dict
+            +collect_all() dict
+        }
+    }
+
+    %% ============ DATA OBJECTS (Gray) ============
+    namespace DataObjects {
+        class Metric {
+            +name, value, timestamp
+            +tags, unit, metric_type
+        }
+
+        class PollResult {
+            +target_id, success
+            +content, data
+            +collection_method
+            +duration_ms
+        }
+    }
+
+    %% ============ RELATIONSHIPS ============
+
+    %% Collection caches (NOT creates) RedfishClient per target
+    RedfishPoller --> RedfishClient : caches per target
+    RedfishClient --> SSHTransport : optional proxy
+
+    %% SSE
+    SSEManager --> SSEConnection : manages 0..*
+
+    %% Data flow: Collection → Processing → Export
+    RedfishPoller ..> PollResult : produces
+    SSEConnection ..> PollResult : produces
+
+    PollResult ..> BlobUnpacker : blob content
+    PollResult ..> MetricExtractor : JSON data
+    BlobUnpacker ..> MetricExtractor : extracted files
+    BlobUnpacker ..> RedfishLogParser : log files
+
+    MetricExtractor --> SchemaLoader : uses schemas
+    MetricDiscovery --> SchemaLoader : uses schemas
+    MetricExtractor ..> Metric : produces
+    MetricDiscovery ..> Metric : produces
+
+    Metric ..> BaseExporter : written to
+    BaseExporter <|-- InfluxDBExporter
+    BaseExporter <|-- PrometheusExporter
+
+    %% Alerting flow
+    AlertManager --> AlertSubscriber : manages SSE 0..*
+    AlertManager --> WebhookSubscriber : manages webhook 0..*
+    AlertManager --> RateLimiter : per-target throttle
+    AlertSubscriber ..> AlertEvent : produces
+    WebhookSubscriber ..> AlertEvent : produces
+    AlertEvent ..> TargetRepository : batched persist via create_alerts_batch
+
+    %% Data layer
+    RedfishPoller --> TargetRepository : reads targets + batched status writes
+    SSEManager --> TargetRepository : reads SSE targets
+    AlertManager --> TargetRepository : reads alert-subscription config
+    LogCollector --> TargetRepository : reads targets / writes CollectedLog
+    LogCollector --> RedfishClient : reuses cached or builds new
+    LogCollector --> SSHTransport : hwdiag + SCP path
+    TargetRepository --> Target : manages
+    TargetRepository --> CollectedLog : manages
+    TargetRepository --> Alert : manages
+
+    %% Styles
+    style RedfishPoller fill:#dbeafe,stroke:#3b82f6
+    style SSEManager fill:#dbeafe,stroke:#3b82f6
+    style SSEConnection fill:#dbeafe,stroke:#3b82f6
+    style RedfishClient fill:#dbeafe,stroke:#3b82f6
+    style SSHTransport fill:#dbeafe,stroke:#3b82f6
+
+    style AlertManager fill:#fce7f3,stroke:#ec4899
+    style RateLimiter fill:#fce7f3,stroke:#ec4899
+    style AlertSubscriber fill:#fce7f3,stroke:#ec4899
+    style WebhookSubscriber fill:#fce7f3,stroke:#ec4899
+    style AlertEvent fill:#fce7f3,stroke:#ec4899
+
+    style MetricExtractor fill:#dcfce7,stroke:#22c55e
+    style MetricDiscovery fill:#dcfce7,stroke:#22c55e
+    style BlobUnpacker fill:#dcfce7,stroke:#22c55e
+    style SchemaLoader fill:#dcfce7,stroke:#22c55e
+    style RedfishLogParser fill:#dcfce7,stroke:#22c55e
+
+    style BaseExporter fill:#f3e8ff,stroke:#a855f7
+    style InfluxDBExporter fill:#f3e8ff,stroke:#a855f7
+    style PrometheusExporter fill:#f3e8ff,stroke:#a855f7
+
+    style TargetRepository fill:#fff7ed,stroke:#f97316
+    style Target fill:#fff7ed,stroke:#f97316
+    style CollectedLog fill:#fff7ed,stroke:#f97316
+    style Alert fill:#fff7ed,stroke:#f97316
+    style LogCollector fill:#fff7ed,stroke:#f97316
+
+    style Metric fill:#f1f5f9,stroke:#94a3b8
+    style PollResult fill:#f1f5f9,stroke:#94a3b8

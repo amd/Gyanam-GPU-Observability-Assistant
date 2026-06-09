@@ -1,0 +1,175 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# GPU Metrics Collector Configuration
+
+polling:
+  # Interval between polling cycles (seconds)
+  interval_seconds: 300  # 5 minutes
+  # Timeout for individual Redfish HTTP requests (seconds)
+  timeout_seconds: 45
+  # Maximum concurrent polling operations
+  max_concurrent: 100
+  # Task polling settings (for async Redfish operations)
+  task_poll_interval: 5      # Seconds between task status checks
+  task_timeout: 600          # Maximum seconds to wait for task completion
+  # Timeout for downloading large attachment files (seconds)
+  download_timeout: 600
+  # Seconds to wait before retry on polling error
+  error_retry_interval: 10
+
+redfish:
+  # Default AMD Instinct diagnostic data collection endpoint
+  collect_endpoint: "/redfish/v1/Systems/UBB/LogServices/DiagLogs/Actions/LogService.CollectDiagnosticData"
+  # Default request body for collection
+  collect_body:
+    DiagnosticDataType: "OEM"
+    OEMDiagnosticDataType: "AllLogs"
+  # Delete completed tasks after successful download (cleanup task history)
+  cleanup_task_on_success: true
+  # Metric reports to collect via direct GET (tried before task-based fallback).
+  # Reports are processed in order: specific reports first claim their metrics,
+  # "All" fills only its exclusive metrics (VR/HSC/IBC current & voltage).
+  # Set to empty list [] to disable GET-first and always use task-based collection.
+  metric_reports:
+    - uri: "/redfish/v1/TelemetryService/MetricReports/OAM_ProcessorMetrics_0"
+      report_type: processor
+    - uri: "/redfish/v1/TelemetryService/MetricReports/OAM_MemoryMetrics_0"
+      report_type: memory
+    - uri: "/redfish/v1/TelemetryService/MetricReports/OAM_ProcessorPortMetrics_0"
+      report_type: interconnect
+    - uri: "/redfish/v1/TelemetryService/MetricReports/PlatformSensorsMetrics_0"
+      report_type: platform
+    - uri: "/redfish/v1/TelemetryService/MetricReports/HealthRollup"
+      report_type: health
+    - uri: "/redfish/v1/TelemetryService/MetricReports/All"
+      report_type: comprehensive
+
+influxdb:
+  # InfluxDB connection defaults.
+  # These are overridden by INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET
+  # environment variables when set (e.g., via docker-compose).
+  url: http://influxdb:8086
+  org: prometheus
+  bucket: gpu_metrics
+  # Batch settings for writing metrics.
+  # 5000 matches InfluxDB v2's recommended sweet spot. Larger batches
+  # (the previous 10000) increase per-write latency and amplify the cost
+  # of any single write timing out, which we observed in the lockup logs
+  # ("Can not write request body" mid-stream).
+  batch_size: 5000
+  flush_interval_seconds: 10
+  # Write timeout in milliseconds (90s for high-scale deployments)
+  write_timeout_ms: 90000
+  # Maximum concurrent write operations (parallel HTTP writes).
+  # Bumped to 10 — at 250+ targets the bottleneck is extraction CPU,
+  # not InfluxDB ingestion; more parallelism shortens flush latency.
+  max_concurrent_writes: 10
+  # Whether to verify SSL certificates when connecting to InfluxDB
+  verify_ssl: false
+
+ui:
+  # Config UI settings
+  port: 8080
+  host: "0.0.0.0"
+  auth:
+    # Default admin credentials (change in production!)
+    username: admin
+    # bcrypt hash of 'changeme' - CHANGE THIS IN PRODUCTION
+    # Generate with: python -c "import bcrypt; print(bcrypt.hashpw(b'yourpassword', bcrypt.gensalt()).decode())"
+    password_hash: "$2b$12$DDVvJVK1RdIj//rkWa7g8Op8Sc00hu64FJ9lwMZ/.8hvlXkF7jLaW"
+
+blob:
+  # Temporary directory for extracting compressed blobs
+  temp_dir: /tmp/telemetry
+  # Clean up extracted files after parsing
+  cleanup_after_parse: true
+  # Maximum blob size to process (bytes) - 100MB default
+  max_blob_size: 104857600
+  # Maximum age for old file cleanup (seconds) - 1 hour default
+  cleanup_max_age_seconds: 3600
+
+collected_logs:
+  # Directory for storing collected diagnostic log bundles
+  storage_dir: /app/data/collected_logs
+  # Number of days to retain collected logs before auto-cleanup
+  retention_days: 30
+  # Hours between cleanup runs
+  cleanup_interval_hours: 6
+  # Maximum concurrent log collection operations
+  max_concurrent_collections: 5
+  # Timeout for task-based log collection (seconds) — longer than metric polling
+  task_timeout: 600
+  # Timeout for downloading collected log bundles (seconds)
+  download_timeout: 600
+
+parser:
+  # Maximum recursion depth for JSON traversal in auto-discovery
+  max_recursion_depth: 50
+  # Number of parallel workers for metric extraction (increase for large fleets)
+  max_concurrent_processors: 16
+
+alerts:
+  # Enable SSE-based alert subscriptions
+  enabled: true
+  # Default SSE endpoint for alerts
+  sse_endpoint: "/redfish/v1/EventService/SSE"
+  # Event types to capture (Alert, StatusChange, ResourceAdded, ResourceRemoved)
+  event_types:
+    - "Alert"
+    - "StatusChange"
+  # Severities to capture (Critical, Warning, OK)
+  # Note: Add "OK" to enable informational/OK alerts (disabled by default to reduce noise)
+  #       UI will automatically show/hide OK alerts based on this configuration
+  severities:
+    - "Critical"
+    - "Warning"
+    # - "OK"  # Uncomment to enable informational alerts
+  # Seconds to wait before reconnecting on SSE connection error (initial delay)
+  reconnect_delay: 30
+  # Maximum hours to keep retrying failed connections before entering cooldown mode
+  # After this duration, subscription enters cooldown period
+  max_retry_duration_hours: 2
+  # Cooldown period (hours) after max retry duration exceeded
+  # After cooldown, one auto-resume attempt is made
+  cooldown_duration_hours: 4
+  # Hours of continuous failures to consider subscription "degraded" (warning state)
+  # This is an intermediate state between "reconnecting" and "on_cooldown"
+  degraded_threshold_hours: 0.5
+  # Number of alerts to batch before writing to database
+  batch_size: 100
+  # Seconds between batch writes (even if not full)
+  batch_interval: 5
+  # Maximum alerts in queue (prevents memory overflow with 300+ targets)
+  max_queue_size: 50000
+  # Days to retain alerts before auto-cleanup
+  retention_days: 30
+  # Hours between cleanup runs
+  cleanup_interval_hours: 6
+  # Rate limiting: max alerts per target per minute (prevents alert flooding)
+  max_alerts_per_minute: 100
+
+prometheus:
+  # Endpoint path for Prometheus scraping (only used when METRICS_BACKEND=prometheus)
+  metrics_path: /metrics
+
+logging:
+  level: INFO
+  format: "%(asctime)s UTC - %(name)s - %(levelname)s - %(message)s"

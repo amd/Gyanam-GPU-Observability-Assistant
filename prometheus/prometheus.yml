@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 60s
+  evaluation_interval: 60s
+
+scrape_configs:
+  - job_name: 'gyanam-collector'
+    static_configs:
+      - targets: ['collector:8080']
+    metrics_path: /metrics
+    scrape_interval: 60s

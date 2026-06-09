@@ -1,0 +1,159 @@
+{
+  "@odata.id": "/redfish/v1/TelemetryService/MetricReports/HealthRollup",
+  "@odata.type": "#MetricReport.v1_5_0.MetricReport",
+  "Id": "HealthRollup",
+  "MetricReportDefinition": {
+    "@odata.id": "/redfish/v1/TelemetryService/MetricReportDefinitions/HealthRollup"
+  },
+  "MetricValues": [
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/EROT",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/SYSTEM_HEALTH",
+      "MetricValue": "OK",
+      "Oem": {
+        "Description": "All UBB and OAMs components are operational"
+      },
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/VNIC_HEALTH",
+      "MetricValue": "OK",
+      "Oem": {
+        "Description": "VNIC is operational"
+      },
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_1",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_3",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_5",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_7",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/SMC_FPGA",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB_FPGA",
+      "MetricValue": "OK",
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/SMC_HEALTH",
+      "MetricValue": "OK",
+      "Oem": {
+        "Description": "SMC VNIC is connected "
+      },
+      "Timestamp": "2000-10-15T01:13:05+00:00"
+    }
+  ],
+  "MetricValues@odata.count": 23,
+  "Name": "HealthRollup"
+}

@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+.venv-linters/
+env/
+
+# Linter caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.pre-commit/
+
+# Environment files with secrets
+.env
+
+# SQLite databases
+*.db
+*.db-journal
+*.db-wal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker data (if mounted locally)
+data/
+
+# Temp files
+/tmp/
+*.tmp
+
+# Claude Code local settings
+.claude/
+
+# CodeQL local artifacts
+# - Keep .codeql-results/results.sarif (canonical run output, committed).
+# - Ignore everything else (intermediate raw SARIF, etc.).
+.codeql-results/results-raw.sarif

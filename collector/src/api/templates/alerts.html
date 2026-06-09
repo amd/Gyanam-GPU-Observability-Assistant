@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts - GPU Metrics Collector{% endblock %}
+
+{% block content %}
+<style>
+    .expandable-section {
+        margin-bottom: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+    }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: linear-gradient(to right, #f8fafc, #ffffff);
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .section-header:hover {
+        background: linear-gradient(to right, #f1f5f9, #f8fafc);
+    }
+    .section-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-toggle {
+        font-size: 1.2rem;
+        color: #64748b;
+        transition: transform 0.2s;
+    }
+    .section-toggle.expanded {
+        transform: rotate(180deg);
+    }
+    .section-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    .section-content.expanded {
+        max-height: 2000px;
+        transition: max-height 0.5s ease-in;
+    }
+    .section-body {
+        padding: 16px;
+    }
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .status-connected {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .status-reconnecting {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    .status-degraded {
+        background: #fed7aa;
+        color: #9a3412;
+    }
+    .status-on-cooldown {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+    .status-failed {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    .status-not-subscribed {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .subscription-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+    }
+    .subscription-card {
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+    }
+    .subscription-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .alert-summary-card {
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+    }
+    .alert-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
+    .alert-count-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 4px;
+    }
+    .summary-stats {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+</style>
+
+<div class="card" style="border: none; box-shadow: none;">
+    <div class="card-header">
+        <h2>🔔 Alert Management</h2>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-sm" style="background-color: #64748b; color: white;" onclick="location.reload()">🔄 Refresh All</button>
+            <button class="btn btn-danger btn-sm" onclick="clearAlerts()">🗑️ Clear Old</button>
+        </div>
+    </div>
+</div>
+
+<!-- Section 1: Subscription Status (Collapsed by default) -->
+<div class="expandable-section">
+    <div class="section-header" onclick="toggleSection('subscription-status')">
+        <h3>
+            <span>📡 Alert Subscription Status</span>
+            <span id="subscription-summary-badge" style="font-size: 0.75rem; color: #64748b;"></span>
+        </h3>
+        <span class="section-toggle" id="subscription-status-toggle">▼</span>
+    </div>
+    <div class="section-content" id="subscription-status-content">
+        <div class="section-body">
+            <div class="summary-stats" id="subscription-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="total-targets">-</div>
+                    <div class="stat-label">Total Targets</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #16a34a;" id="active-count">-</div>
+                    <div class="stat-label">🟢 Active</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #f59e0b;" id="disconnected-count">-</div>
+                    <div class="stat-label">🟡 Degraded</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #dc2626;" id="failed-count">-</div>
+                    <div class="stat-label">🔴 Failed</div>
+                </div>
+            </div>
+            <div class="subscription-grid" id="subscription-list">
+                <p style="color: #64748b; text-align: center;">Loading subscription status...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Alert Summary by Target (Collapsed by default) -->
+<div class="expandable-section">
+    <div class="section-header" onclick="toggleSection('alert-summary')">
+        <h3>
+            <span>📊 Top Targets by Alert Volume</span>
+            <span style="font-size: 0.75rem; color: #64748b;">(Last 24 hours)</span>
+        </h3>
+        <span class="section-toggle" id="alert-summary-toggle">▼</span>
+    </div>
+    <div class="section-content" id="alert-summary-content">
+        <div class="section-body">
+            <div class="alert-summary-grid" id="alert-summary-list">
+                <p style="color: #64748b; text-align: center;">Loading alert summary...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 3: Recent Alerts (Expanded by default) -->
+<div class="expandable-section">
+    <div class="section-header" onclick="toggleSection('recent-alerts')">
+        <h3>
+            <span>📋 Recent Alerts</span>
+            <span style="font-size: 0.75rem; color: #64748b;">
+                <strong>{{ alerts|length }}</strong> showing |
+                🔴 {{ stats.critical }} Critical |
+                🟡 {{ stats.warning }} Warning
+                {% if 'OK' in configured_severities %}
+                | 🟢 {{ stats.ok }} OK
+                {% endif %}
+            </span>
+        </h3>
+        <span class="section-toggle expanded" id="recent-alerts-toggle">▼</span>
+    </div>
+    <div class="section-content expanded" id="recent-alerts-content">
+        <div style="padding: 0;">
+            <!-- Search and Filter Bar -->
+            <div style="display: flex; gap: 12px; padding: 12px 16px; align-items: center; border-bottom: 1px solid #e2e8f0; background: #f8fafc; flex-wrap: wrap;">
+                <input type="text" id="search-input" placeholder="🔍 Search by target name, BMC, or message..."
+                       style="flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem;"
+                       oninput="filterAlerts()">
+                <select id="filter-severity" onchange="filterAlerts()" style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem;">
+                    <option value="">All Severities</option>
+                    <option value="Critical">Critical</option>
+                    <option value="Warning">Warning</option>
+                    {% if 'OK' in configured_severities %}
+                    <option value="OK">OK</option>
+                    {% endif %}
+                </select>
+                <select id="filter-target" onchange="filterAlerts()" style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem;">
+                    <option value="">All Targets</option>
+                    {% for target in targets %}
+                    <option value="{{ target.id }}">{{ target.name }}</option>
+                    {% endfor %}
+                </select>
+                <span id="filter-count" style="font-size: 0.8rem; color: #64748b;"></span>
+            </div>
+
+            {% if alerts %}
+            <div style="overflow-x: auto;">
+            <table style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Target</th>
+                        <th>Severity</th>
+                        <th>Message</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="alerts-tbody">
+                    {% for alert in alerts %}
+                    <tr class="alert-row"
+                        data-target-id="{{ alert.target_id }}"
+                        data-target-name="{{ alert.target_name|lower }}"
+                        data-target-bmc="{{ alert.target_bmc|lower }}"
+                        data-severity="{{ alert.severity }}"
+                        data-message="{{ alert.message|lower }}">
+                        <td style="white-space: nowrap; font-size: 0.875rem;">
+                            <!-- Safe: alert.received_at is a datetime object from DB, not user input.
+                                 Jinja2 auto-escapes all template variables by default. -->
+                            <span title="{{ alert.received_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}">
+                                {{ format_time_ago(alert.received_at) }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong>{{ alert.target_name }}</strong>
+                            <br><small style="color: #64748b;">{{ alert.target_bmc }}</small>
+                        </td>
+                        <td>
+                            {% if alert.severity == 'Critical' %}
+                                <span class="status" style="background-color: #dc2626; color: white;">Critical</span>
+                            {% elif alert.severity == 'Warning' %}
+                                <span class="status" style="background-color: #f59e0b; color: white;">Warning</span>
+                            {% elif alert.severity == 'OK' %}
+                                <span class="status status-success">OK</span>
+                            {% else %}
+                                <span class="status status-pending">{{ alert.severity }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="max-width: 500px;">
+                                <div class="alert-message">{{ alert.message }}</div>
+                                {% if alert.message_id or alert.origin_of_condition %}
+                                <div class="alert-details" style="display: none; margin-top: 8px; padding: 8px; background: #f8fafc; border-radius: 4px; font-size: 0.8rem; color: #64748b;">
+                                    {% if alert.message_id %}
+                                    <div><strong>Message ID:</strong> {{ alert.message_id }}</div>
+                                    {% endif %}
+                                    {% if alert.origin_of_condition %}
+                                    <div><strong>Origin:</strong> {{ alert.origin_of_condition }}</div>
+                                    {% endif %}
+                                    {% if alert.event_type %}
+                                    <div><strong>Event Type:</strong> {{ alert.event_type }}</div>
+                                    {% endif %}
+                                </div>
+                                <button class="btn btn-sm" style="margin-top: 4px; padding: 2px 8px; font-size: 0.75rem; background: #e2e8f0; color: #475569;" onclick="toggleDetails(this)">Show Details</button>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <form method="post" action="/alerts/{{ alert.id }}/delete" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this alert?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <div style="padding: 40px; text-align: center; color: #64748b;">
+                <p style="font-size: 1.2rem; margin-bottom: 8px;">No alerts found</p>
+                <p style="font-size: 0.9rem;">Alerts will appear here when received from subscribed targets</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Section expand/collapse functionality
+function toggleSection(sectionId) {
+    const content = document.getElementById(sectionId + '-content');
+    const toggle = document.getElementById(sectionId + '-toggle');
+
+    content.classList.toggle('expanded');
+    toggle.classList.toggle('expanded');
+}
+
+// Load subscription status
+async function loadSubscriptionStatus() {
+    try {
+        const response = await fetch('/alerts/api/subscription-status');
+        const data = await response.json();
+
+        if (!data.enabled) {
+            document.getElementById('subscription-list').innerHTML = '<p style="color: #64748b; text-align: center;">Alert subscriptions are disabled</p>';
+            return;
+        }
+
+        // Get configured severities to determine what to show
+        const configuredSeverities = data.configured_severities || [];
+        const showOK = configuredSeverities.includes('OK');
+
+        // Update summary stats
+        const summary = data.summary;
+        document.getElementById('total-targets').textContent = summary.total_targets;
+        document.getElementById('active-count').textContent = summary.active;
+        document.getElementById('disconnected-count').textContent = summary.disconnected;
+        document.getElementById('failed-count').textContent = summary.failed;
+
+        // Update header badge
+        const badge = document.getElementById('subscription-summary-badge');
+        badge.textContent = `${summary.active}/${summary.total_targets} active`;
+
+        // Render subscription cards
+        const subscriptions = data.subscriptions;
+        if (subscriptions.length === 0) {
+            document.getElementById('subscription-list').innerHTML = '<p style="color: #64748b; text-align: center;">No targets configured for alert subscriptions</p>';
+            return;
+        }
+
+        const html = subscriptions.map(sub => {
+            let statusClass = 'status-not-subscribed';
+            let statusIcon = '⚪';
+            let statusText = 'Not Subscribed';
+            let showRetry = false;
+
+            if (sub.status === 'connected') {
+                statusClass = 'status-connected';
+                statusIcon = '🟢';
+                statusText = 'Connected';
+            } else if (sub.status === 'reconnecting') {
+                statusClass = 'status-reconnecting';
+                statusIcon = '🟡';
+                statusText = 'Reconnecting';
+            } else if (sub.status === 'degraded') {
+                statusClass = 'status-degraded';
+                statusIcon = '🟠';
+                statusText = 'Degraded';
+            } else if (sub.status === 'on_cooldown') {
+                statusClass = 'status-on-cooldown';
+                statusIcon = '🕐';
+                statusText = 'On Cooldown';
+                showRetry = true;
+            } else if (sub.status === 'failed_permanent') {
+                statusClass = 'status-failed';
+                statusIcon = '🔴';
+                statusText = 'Failed (Permanent)';
+                showRetry = true;
+            } else if (sub.status === 'stopped') {
+                statusClass = 'status-failed';
+                statusIcon = '⏹️';
+                statusText = 'Stopped';
+            } else {
+                statusClass = 'status-failed';
+                statusIcon = '🔴';
+                statusText = 'Failed';
+                showRetry = true;
+            }
+
+            const lastEvent = sub.last_event_time
+                ? formatTimeAgo(new Date(sub.last_event_time))
+                : 'Never';
+
+            // Format time in state
+            let timeInState = '';
+            if (sub.time_in_state_hours !== null && sub.time_in_state_hours !== undefined) {
+                const hours = sub.time_in_state_hours;
+                if (hours < 1) {
+                    timeInState = `${Math.floor(hours * 60)}m`;
+                } else if (hours < 24) {
+                    timeInState = `${hours.toFixed(1)}h`;
+                } else {
+                    timeInState = `${Math.floor(hours / 24)}d ${Math.floor(hours % 24)}h`;
+                }
+            }
+
+            // Format next retry time
+            let nextRetry = '';
+            if (sub.next_retry_time) {
+                const retryTime = new Date(sub.next_retry_time);
+                const now = new Date();
+                const diffSec = Math.max(0, (retryTime - now) / 1000);
+                if (diffSec < 60) {
+                    nextRetry = `${Math.floor(diffSec)}s`;
+                } else {
+                    nextRetry = `${Math.floor(diffSec / 60)}m ${Math.floor(diffSec % 60)}s`;
+                }
+            }
+
+            return `
+                <div class="subscription-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                        <div>
+                            <div style="font-weight: 600; color: #1e293b;">${sub.target_name}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">${sub.target_bmc}</div>
+                        </div>
+                        <span class="status-badge ${statusClass}">${statusIcon} ${statusText}</span>
+                    </div>
+                    ${sub.failure_reason ? `
+                    <div style="font-size: 0.75rem; color: #991b1b; background: #fef2f2; padding: 4px 8px; border-radius: 4px; margin-top: 4px;">
+                        ${sub.failure_reason}
+                    </div>
+                    ` : ''}
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 8px; display: flex; flex-direction: column; gap: 2px;">
+                        <div>Last event: <strong>${lastEvent}</strong></div>
+                        ${timeInState ? `<div>In ${statusText} for: <strong>${timeInState}</strong></div>` : ''}
+                        ${nextRetry ? `<div>Next retry in: <strong>${nextRetry}</strong></div>` : ''}
+                        ${sub.consecutive_failures > 0 ? `<div>Consecutive failures: <strong>${sub.consecutive_failures}</strong></div>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; gap: 8px;">
+                            ${sub.critical_count > 0 ? `<span style="color: #dc2626;">🔴 ${sub.critical_count}</span>` : ''}
+                            ${sub.warning_count > 0 ? `<span style="color: #f59e0b;">🟡 ${sub.warning_count}</span>` : ''}
+                            ${showOK && sub.ok_count > 0 ? `<span style="color: #16a34a;">🟢 ${sub.ok_count}</span>` : ''}
+                            ${sub.alerts_24h === 0 ? '<span style="color: #94a3b8;">No alerts</span>' : ''}
+                        </div>
+                        ${showRetry ? `
+                        <button class="btn btn-sm" style="padding: 2px 8px; font-size: 0.7rem; background: #3b82f6; color: white;" onclick="retrySubscription(${sub.target_id})">
+                            🔄 Retry Now
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('subscription-list').innerHTML = html;
+
+        // Update alert summary (top 10 targets by alert count)
+        const topTargets = subscriptions.filter(s => s.alerts_24h > 0).slice(0, 10);
+        if (topTargets.length === 0) {
+            document.getElementById('alert-summary-list').innerHTML = '<p style="color: #64748b; text-align: center;">No alerts in the last 24 hours</p>';
+        } else {
+            const summaryHtml = topTargets.map(sub => `
+                <div class="alert-summary-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 1.1rem; color: #1e293b;">${sub.target_name}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">${sub.target_bmc}</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #64748b;">${sub.alerts_24h}</div>
+                    </div>
+                    <div style="display: flex; gap: 12px; font-size: 0.875rem;">
+                        ${sub.critical_count > 0 ? `
+                            <div>
+                                <span class="alert-count-badge" style="background: #fee2e2; color: #991b1b;">Critical</span>
+                                <strong style="margin-left: 4px;">${sub.critical_count}</strong>
+                            </div>
+                        ` : ''}
+                        ${sub.warning_count > 0 ? `
+                            <div>
+                                <span class="alert-count-badge" style="background: #fef3c7; color: #92400e;">Warning</span>
+                                <strong style="margin-left: 4px;">${sub.warning_count}</strong>
+                            </div>
+                        ` : ''}
+                        ${showOK && sub.ok_count > 0 ? `
+                            <div>
+                                <span class="alert-count-badge" style="background: #dcfce7; color: #166534;">OK</span>
+                                <strong style="margin-left: 4px;">${sub.ok_count}</strong>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('alert-summary-list').innerHTML = summaryHtml;
+        }
+
+    } catch (error) {
+        console.error('Failed to load subscription status:', error);
+        document.getElementById('subscription-list').innerHTML = '<p style="color: #dc2626; text-align: center;">Failed to load subscription status</p>';
+    }
+}
+
+// Helper function to format time ago
+function formatTimeAgo(date) {
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+// Alert filtering
+function filterAlerts() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    const severityFilter = document.getElementById('filter-severity').value;
+    const targetFilter = document.getElementById('filter-target').value;
+
+    const rows = document.querySelectorAll('.alert-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const targetName = row.dataset.targetName;
+        const targetBmc = row.dataset.targetBmc;
+        const message = row.dataset.message;
+        const severity = row.dataset.severity;
+        const targetId = row.dataset.targetId;
+
+        const matchesSearch = !searchTerm ||
+            targetName.includes(searchTerm) ||
+            targetBmc.includes(searchTerm) ||
+            message.includes(searchTerm);
+
+        const matchesSeverity = !severityFilter || severity === severityFilter;
+        const matchesTarget = !targetFilter || targetId === targetFilter;
+
+        if (matchesSearch && matchesSeverity && matchesTarget) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    document.getElementById('filter-count').textContent = `Showing ${visibleCount} of ${rows.length} alerts`;
+}
+
+function toggleDetails(button) {
+    const details = button.previousElementSibling;
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        button.textContent = 'Hide Details';
+    } else {
+        details.style.display = 'none';
+        button.textContent = 'Show Details';
+    }
+}
+
+function clearAlerts() {
+    if (confirm('Clear all alerts older than 30 days?')) {
+        fetch('/alerts/clear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'csrf_token={{ csrf_token }}'
+        }).then(() => location.reload());
+    }
+}
+
+async function retrySubscription(targetId) {
+    if (!confirm('Manually retry this subscription? This will reset failure tracking and immediately attempt to reconnect.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/alerts/api/subscription/${targetId}/retry`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Subscription retry initiated. Refreshing status...');
+            await loadSubscriptionStatus();
+        } else {
+            alert('Failed to retry subscription: ' + (data.detail || data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error retrying subscription: ' + error.message);
+    }
+}
+
+// Load subscription status on page load and auto-refresh every 30 seconds
+loadSubscriptionStatus();
+setInterval(loadSubscriptionStatus, 30000);
+
+// Initialize filter count
+filterAlerts();
+</script>
+
+{% endblock %}

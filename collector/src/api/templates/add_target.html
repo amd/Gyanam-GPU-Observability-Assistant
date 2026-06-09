@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}{% if target %}Edit Target{% else %}Add Target{% endif %} - GPU Metrics Collector{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>{% if target %}Edit Target: {{ target.name }}{% else %}Add New Target{% endif %}</h2>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{% if target %}/targets/{{ target.id }}/edit{% else %}/targets/add{% endif %}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="name">Display Name *</label>
+                <input type="text" id="name" name="name" required
+                       value="{{ target.name if target else '' }}"
+                       placeholder="e.g., GPU Server 1">
+            </div>
+
+            <div class="form-group">
+                <label for="host" id="host_label">BMC Address (FQDN or IP) *</label>
+                <input type="text" id="host" name="host" required
+                       value="{{ target.host if target else '' }}"
+                       placeholder="e.g., bmc.example.com or 192.168.1.100">
+                <small id="host_hint" style="color: #64748b;"></small>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="telemetry_endpoint">RAS/Diagnostics Log Endpoint Path</label>
+            <input type="text" id="telemetry_endpoint" name="telemetry_endpoint"
+                   value="{{ target.telemetry_endpoint if target else '/redfish/v1/Systems/UBB/LogServices/DiagLogs/Actions/LogService.CollectDiagnosticData' }}"
+                   placeholder="/redfish/v1/Systems/UBB/LogServices/DiagLogs/Actions/LogService.CollectDiagnosticData">
+            <small style="color: #64748b;">The Redfish API action endpoint for RAS/diagnostic data collection</small>
+        </div>
+
+        <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+
+        <h3 style="margin-bottom: 8px;">Metric Report URIs</h3>
+        <small style="color: #64748b; display: block; margin-bottom: 16px;">Showing global defaults — edit only the URIs that differ for this target</small>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="metric_report_processor">Processor Metrics</label>
+                <input type="text" id="metric_report_processor" name="metric_report_processor"
+                       value="{{ metric_reports_map.get('processor', '') }}">
+            </div>
+
+            <div class="form-group">
+                <label for="metric_report_memory">Memory Metrics</label>
+                <input type="text" id="metric_report_memory" name="metric_report_memory"
+                       value="{{ metric_reports_map.get('memory', '') }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="metric_report_interconnect">Interconnect Metrics</label>
+                <input type="text" id="metric_report_interconnect" name="metric_report_interconnect"
+                       value="{{ metric_reports_map.get('interconnect', '') }}">
+            </div>
+
+            <div class="form-group">
+                <label for="metric_report_platform">Platform Sensors</label>
+                <input type="text" id="metric_report_platform" name="metric_report_platform"
+                       value="{{ metric_reports_map.get('platform', '') }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="metric_report_health">Health Rollup</label>
+                <input type="text" id="metric_report_health" name="metric_report_health"
+                       value="{{ metric_reports_map.get('health', '') }}">
+            </div>
+
+            <div class="form-group">
+                <label for="metric_report_comprehensive">Comprehensive (All)</label>
+                <input type="text" id="metric_report_comprehensive" name="metric_report_comprehensive"
+                       value="{{ metric_reports_map.get('comprehensive', '') }}">
+            </div>
+        </div>
+
+        <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+
+        <h3 style="margin-bottom: 16px;">Connection Mode</h3>
+
+        <div class="form-group">
+            <label for="connection_mode">Connection Mode</label>
+            <select id="connection_mode" name="connection_mode" onchange="toggleConnectionFields()">
+                <option value="direct" {% if not target or (target.connection_mode|default('direct')) == 'direct' %}selected{% endif %}>Direct — Collector connects to BMC Redfish API directly</option>
+                <option value="ssh_proxy" {% if target and (target.connection_mode|default('direct')) == 'ssh_proxy' %}selected{% endif %}>SSH Proxy — Collector SSHs to a proxy BMC, runs curl from there</option>
+                <option value="sse" {% if target and (target.connection_mode|default('direct')) == 'sse' %}selected{% endif %}>SSE Subscription — BMC pushes metric events to collector in real-time</option>
+            </select>
+        </div>
+
+        <div id="direct_fields" style="background: var(--bg-secondary, #f8fafc); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <h4 style="margin-bottom: 12px;">Direct Connection Settings</h4>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="port">Port</label>
+                    <input type="number" id="port" name="port"
+                           value="{{ target.port if target else 443 }}"
+                           min="1" max="65535">
+                </div>
+
+                <div class="form-group">
+                    <label for="use_ssl">Connection Type</label>
+                    <select id="use_ssl" name="use_ssl">
+                        <option value="true" {% if not target or target.use_ssl %}selected{% endif %}>HTTPS (SSL/TLS)</option>
+                        <option value="false" {% if target and not target.use_ssl %}selected{% endif %}>HTTP</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-group" style="margin-top: 28px;">
+                        <input type="checkbox" id="verify_ssl" name="verify_ssl"
+                               {% if target and target.verify_ssl %}checked{% endif %}>
+                        <label for="verify_ssl">Verify SSL Certificate</label>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="margin: 16px 0; border: none; border-top: 1px solid var(--border-color);">
+
+            <h4 style="margin-bottom: 12px;">Redfish Authentication</h4>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username">Username *</label>
+                    <input type="text" id="username" name="username"
+                           value="{{ target.username if target else '' }}"
+                           placeholder="e.g., admin">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password *</label>
+                    <input type="password" id="password" name="password"
+                           placeholder="{% if target %}Leave blank to keep current{% else %}Enter password{% endif %}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="token">Authentication Token (Optional)</label>
+                <input type="password" id="token" name="token"
+                       value=""
+                       placeholder="Optional: Use token-based authentication instead of password">
+                <small style="color: #64748b;">If provided, token will be used instead of password for authentication</small>
+            </div>
+        </div>
+
+        <div id="ssh_proxy_fields" style="display: none; background: var(--bg-secondary, #f8fafc); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <h4 style="margin-bottom: 12px;">SSH Proxy Settings</h4>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ssh_proxy_host">SSH Proxy Host *</label>
+                    <input type="text" id="ssh_proxy_host" name="ssh_proxy_host"
+                           value="{{ target.ssh_proxy_host if target and target.ssh_proxy_host else '' }}"
+                           placeholder="e.g., bastion-bmc.example.com or 10.0.0.50">
+                </div>
+                <div class="form-group">
+                    <label for="ssh_proxy_port">SSH Port</label>
+                    <input type="number" id="ssh_proxy_port" name="ssh_proxy_port"
+                           value="{{ target.ssh_proxy_port if target and target.ssh_proxy_port else 22 }}"
+                           min="1" max="65535">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="ssh_proxy_username">SSH Username *</label>
+                <input type="text" id="ssh_proxy_username" name="ssh_proxy_username"
+                       value="{{ target.ssh_proxy_username if target and target.ssh_proxy_username else 'root' }}"
+                       placeholder="e.g., root">
+            </div>
+
+            <div class="form-group">
+                <label for="ssh_key">SSH Private Key (PEM format)</label>
+                <textarea id="ssh_key" name="ssh_key" rows="6"
+                          placeholder="{% if target and target.encrypted_ssh_key %}Key stored — leave blank to keep current{% else %}Paste your PEM private key here (-----BEGIN ... KEY-----){% endif %}"
+                          style="font-family: monospace; font-size: 0.875rem;"></textarea>
+                <small style="color: #64748b;">Paste the full PEM key including BEGIN/END lines. Stored encrypted at rest.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="ssh_password">SSH Password (alternative to key)</label>
+                <input type="password" id="ssh_password" name="ssh_password"
+                       placeholder="{% if target and target.encrypted_ssh_password %}Leave blank to keep current{% else %}SSH password if not using key{% endif %}">
+                <small style="color: #64748b;">Provide either a private key or password. Key-based auth is recommended.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="ssh_command_template">CLI Tool (optional)</label>
+                <input type="text" id="ssh_command_template" name="ssh_command_template"
+                       value="{{ target.ssh_command_template if target and target.ssh_command_template else '' }}"
+                       placeholder="Leave blank to use curl (default)">
+                <small style="color: #64748b;">Custom tool name if curl is not available (e.g. <code>redfishclient</code>).
+                    Uses <code>&lt;tool&gt; get &lt;path&gt;</code> for metrics and <code>&lt;tool&gt; post &lt;path&gt;</code> for log collection.
+                    The tool must output JSON to stdout.</small>
+            </div>
+        </div>
+
+        <div id="sse_fields" style="display: none; background: var(--bg-secondary, #f8fafc); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <h4 style="margin-bottom: 12px;">SSE Subscription Settings</h4>
+
+            <div class="form-group">
+                <label for="sse_endpoint">SSE Endpoint Path</label>
+                <input type="text" id="sse_endpoint" name="sse_endpoint"
+                       value="{{ target.sse_endpoint if target and target.sse_endpoint else '/redfish/v1/EventService/SSE' }}"
+                       placeholder="/redfish/v1/EventService/SSE">
+                <small style="color: #64748b;">The Redfish SSE endpoint for streaming MetricReport events. BMC pushes data to the collector in real-time.</small>
+            </div>
+        </div>
+
+        <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input type="checkbox" id="enabled" name="enabled"
+                       {% if not target or target.enabled %}checked{% endif %}>
+                <label for="enabled">Enable polling for this target</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input type="checkbox" id="enable_alert_subscription" name="enable_alert_subscription"
+                       {% if not target or target.enable_alert_subscription %}checked{% endif %}>
+                <label for="enable_alert_subscription">Subscribe to Redfish Alerts (SSE)</label>
+            </div>
+            <small style="color: #64748b; margin-left: 24px;">Receive real-time alert events (Critical, Warning) from this BMC via Server-Sent Events</small>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button type="submit" class="btn btn-primary">
+                {% if target %}Save Changes{% else %}Add Target{% endif %}
+            </button>
+            <a href="/targets" class="btn" style="background-color: #64748b; color: white;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+var isEditMode = {{ 'true' if target else 'false' }};
+
+function toggleConnectionFields() {
+    var mode = document.getElementById('connection_mode').value;
+    var directFields = document.getElementById('direct_fields');
+    var sshFields = document.getElementById('ssh_proxy_fields');
+    var sseFields = document.getElementById('sse_fields');
+    var sshHost = document.getElementById('ssh_proxy_host');
+    var sshUser = document.getElementById('ssh_proxy_username');
+    var hostInput = document.getElementById('host');
+    var hostLabel = document.getElementById('host_label');
+    var hostHint = document.getElementById('host_hint');
+    var usernameInput = document.getElementById('username');
+    var passwordInput = document.getElementById('password');
+
+    // Hide all panels first
+    directFields.style.display = 'none';
+    sshFields.style.display = 'none';
+    sseFields.style.display = 'none';
+    sshHost.required = false;
+    sshUser.required = false;
+
+    if (mode === 'ssh_proxy') {
+        sshFields.style.display = 'block';
+        sshHost.required = true;
+        sshUser.required = true;
+        usernameInput.required = false;
+        passwordInput.required = false;
+        hostLabel.textContent = 'BMC Redfish Address (internal) *';
+        hostInput.placeholder = 'Default: 192.168.31.1';
+        hostHint.textContent = 'Internal Redfish address as seen from the proxy BMC. Usually 192.168.31.1.';
+        if (!hostInput.value) {
+            hostInput.value = '192.168.31.1';
+        }
+    } else if (mode === 'sse') {
+        directFields.style.display = 'block';
+        sseFields.style.display = 'block';
+        usernameInput.required = true;
+        passwordInput.required = !isEditMode;
+        hostLabel.textContent = 'BMC Address (FQDN or IP) *';
+        hostInput.placeholder = 'e.g., bmc.example.com or 192.168.1.100';
+        hostHint.textContent = 'BMC address the collector will connect to for SSE streaming.';
+        if (hostInput.value === '192.168.31.1') {
+            hostInput.value = '';
+        }
+    } else {
+        directFields.style.display = 'block';
+        usernameInput.required = true;
+        passwordInput.required = !isEditMode;
+        hostLabel.textContent = 'BMC Address (FQDN or IP) *';
+        hostInput.placeholder = 'e.g., bmc.example.com or 192.168.1.100';
+        hostHint.textContent = '';
+        if (hostInput.value === '192.168.31.1') {
+            hostInput.value = '';
+        }
+    }
+}
+document.addEventListener('DOMContentLoaded', toggleConnectionFields);
+</script>
+{% endblock %}

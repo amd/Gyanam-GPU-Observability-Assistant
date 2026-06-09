@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Collected Logs - GPU Metrics Collector{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>Collected Diagnostic Logs</h2>
+        <button class="btn btn-primary" onclick="collectAllLogs()">Collect All Logs</button>
+    </div>
+
+    {% if logs %}
+    <!-- Search Bar -->
+    <div style="display: flex; gap: 12px; padding: 12px 16px; align-items: center; border-bottom: 1px solid var(--border-color, #e2e8f0);">
+        <input type="text" id="search-input" placeholder="🔍 Search by target name or BMC..."
+               style="flex: 1; min-width: 200px; padding: 6px 12px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; font-size: 0.875rem;"
+               oninput="filterLogs()">
+        <span id="filter-count" style="font-size: 0.8rem; color: #64748b;"></span>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Target</th>
+                <th>Filename</th>
+                <th>Size</th>
+                <th>Status</th>
+                <th>Collected At</th>
+                <th>Duration</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="logs-tbody">
+            {% for log in logs %}
+            <tr class="log-row"
+                data-name="{{ log.target_name|lower }}"
+                data-bmc="{{ log.target_host|lower }}">
+                <td>
+                    <strong>{{ log.target_name }}</strong>
+                    <br><small style="color: #64748b;">{{ log.target_host }}</small>
+                </td>
+                <td style="font-family: monospace; font-size: 0.85rem;">{{ log.filename }}</td>
+                <td>
+                    {% if log.file_size_bytes %}
+                        {{ "%.1f"|format(log.file_size_bytes / 1024 / 1024) }} MB
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if log.status == 'completed' %}
+                        <span class="status status-success">Completed</span>
+                    {% elif log.status == 'collecting' %}
+                        <span class="status status-pending">Collecting</span>
+                    {% elif log.status == 'failed' %}
+                        <span class="status status-error">Failed</span>
+                    {% else %}
+                        <span class="status status-pending">{{ log.status }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if log.collected_at %}
+                        {{ log.collected_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if log.duration_ms %}
+                        {{ "%.0f"|format(log.duration_ms) }}ms
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="actions">
+                    {% if log.status == 'completed' %}
+                        <a href="/logs/api/{{ log.id }}/download" class="btn btn-success btn-sm">Download</a>
+                    {% endif %}
+                    <form action="/logs/{{ log.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('Delete this log file?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% if log.error_message %}
+            <tr>
+                <td colspan="7" style="background-color: #fef2f2; color: #991b1b; font-size: 0.875rem; padding: 8px 12px;">
+                    <strong>Error:</strong> {{ log.error_message }}
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No diagnostic logs collected yet.</p>
+        <p>Use the "Collect Logs" button on the Targets page or "Collect All Logs" above to get started.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function filterLogs() {
+        var search = document.getElementById('search-input').value.toLowerCase();
+        var allRows = document.querySelectorAll('.log-row');
+        var filteredCount = 0;
+
+        allRows.forEach(function(row) {
+            var name = row.getAttribute('data-name');
+            var bmc = row.getAttribute('data-bmc');
+
+            var matchSearch = !search || name.indexOf(search) !== -1 || bmc.indexOf(search) !== -1;
+
+            if (matchSearch) {
+                row.style.display = '';
+                // Also show error row if it exists
+                var nextRow = row.nextElementSibling;
+                if (nextRow && nextRow.querySelector('td[colspan]')) {
+                    nextRow.style.display = '';
+                }
+                filteredCount++;
+            } else {
+                row.style.display = 'none';
+                // Hide error row too
+                var nextRow = row.nextElementSibling;
+                if (nextRow && nextRow.querySelector('td[colspan]')) {
+                    nextRow.style.display = 'none';
+                }
+            }
+        });
+
+        var countEl = document.getElementById('filter-count');
+        var total = allRows.length;
+        if (search) {
+            countEl.textContent = filteredCount + ' of ' + total + ' match';
+        } else {
+            countEl.textContent = '';
+        }
+    }
+
+    async function collectAllLogs() {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = 'Collecting...';
+
+        try {
+            const response = await fetch('/logs/api/collect-all', {
+                method: 'POST'
+            });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert(`Collection complete!\n\nTotal: ${data.total}\nSucceeded: ${data.succeeded}\nFailed: ${data.failed}`);
+                location.reload();
+            } else {
+                alert('Bulk collection failed:\n\n' + (data.detail || data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Error collecting logs: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Collect All Logs';
+        }
+    }
+</script>
+{% endblock %}

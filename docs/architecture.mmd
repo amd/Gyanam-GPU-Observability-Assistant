@@ -1,0 +1,107 @@
+---
+title: GYANAM — GPU Observability Assistant — Architecture
+---
+%% Source of truth: this .mmd file.
+%% Rendered PDF (docs/architecture.pdf) is regenerated separately —
+%% see scripts/README.md "Regenerating diagrams".
+graph TD
+    subgraph targets["AMD Instinct BMC Targets"]
+        T1[Direct HTTPS<br/>per-target persistent client]
+        T2[SSH Proxy<br/>curl / redfishclient]
+        T3[SSE Subscription<br/>real-time push]
+    end
+
+    subgraph docker["Docker Compose — 4 containers"]
+
+        subgraph api["Container: api (FastAPI) — Port 8080"]
+            UI["Web UI: Targets / CSV Import / Logs / Health / Alerts"]
+            APIREST["REST routes:<br/>targets, logs, alerts, schemas, health"]
+            LC[Log Collector<br/>on-demand bundle download]
+        end
+
+        subgraph collector["Container: collector (Python asyncio) — Internal Port 8081"]
+            POLLER["RedfishPoller<br/>fire-and-forget scheduling<br/>max_concurrent=100"]
+            CLIENTS["Persistent client cache<br/>_clients[target_id]<br/>(httpx.AsyncClient + Redfish session)"]
+            SSHT[SSH Transport<br/>asyncssh + SCP]
+            SSEMGR[SSE Manager<br/>persistent streams]
+            ALERTMGR["Alert Manager<br/>SSE + webhook fallback<br/>rate-limited"]
+            WHRX["Webhook Receiver<br/>POST /redfish-webhook/&lt;id&gt;"]
+            Q["asyncio.Queue<br/>maxsize=1000"]
+            STATUSW["Status Writer Loop<br/>(5s batched UPDATE)"]
+            EXTRACT["Result Processor<br/>asyncio.to_thread →<br/>dedicated ThreadPoolExecutor<br/>workers = max(16, processors*2)"]
+            EXP["InfluxDB Exporter<br/>_flush_event signal<br/>batch_size=5000<br/>max_concurrent_writes=10<br/>HTTP gzip<br/>reconnect on 3 failures"]
+            HSRV[Internal Health Server<br/>:8081/health, /health/detailed]
+        end
+
+        SQLITE[(SQLite — WAL mode<br/>shared via shared_data volume<br/>Target / CollectedLog / Alert)]
+
+        subgraph influx["Container: influxdb (InfluxDB 2.7) — Port 8086"]
+            IBRAW["Raw bucket<br/>gpu_metrics — 7d"]
+            IB15M["15-min downsample<br/>gpu_metrics_15m — 30d"]
+            IBHR["Hourly downsample<br/>gpu_metrics_hourly — 90d"]
+        end
+
+        subgraph grafana["Container: grafana (Grafana 10.2) — Port 3000"]
+            GFLEET["Fleet dashboards (3)"]
+            GPERSYS["Per-system dashboards (6)"]
+            GHIST["Historical & trends (2)"]
+        end
+    end
+
+    %% Data plane (telemetry collection)
+    T1 --> CLIENTS
+    T2 --> SSHT
+    T3 --> SSEMGR
+
+    CLIENTS --> POLLER
+    SSHT --> POLLER
+
+    POLLER --> Q
+    SSEMGR --> Q
+
+    Q --> EXTRACT
+    EXTRACT --> EXP
+    EXP --> IBRAW
+
+    IBRAW -.->|aggregateWindow 15m| IB15M
+    IBRAW -.->|aggregateWindow 1h| IBHR
+
+    IBRAW --> GPERSYS
+    IBRAW --> GFLEET
+    IB15M --> GHIST
+    IBHR --> GHIST
+
+    %% Control plane / status
+    POLLER -->|"collection completed"| STATUSW
+    STATUSW -->|"batched UPDATE Target"| SQLITE
+    POLLER -.->|"reads enabled targets"| SQLITE
+    SSEMGR -.->|"reads SSE targets"| SQLITE
+    ALERTMGR -.->|"reads alert subscriptions"| SQLITE
+    LC --> SQLITE
+
+    %% Alerts
+    T3 --> ALERTMGR
+    T1 -.->|webhook POST| WHRX
+    WHRX --> ALERTMGR
+    ALERTMGR -->|"AlertEvent batch"| SQLITE
+
+    %% Service-to-service
+    APIREST -.->|"trigger collection<br/>http://collector:8081/poll/{id}"| POLLER
+    APIREST -.->|"fetch live stats<br/>http://collector:8081/health/detailed"| HSRV
+    APIREST --> SQLITE
+    LC -.->|"on-demand bundle (Redfish/SSH)"| CLIENTS
+    LC -.->|"on-demand bundle (Redfish/SSH)"| SSHT
+
+    classDef target fill:#fef3c7,stroke:#f59e0b
+    classDef apiContainer fill:#e0e7ff,stroke:#6366f1
+    classDef colContainer fill:#eff6ff,stroke:#3b82f6
+    classDef sqliteNode fill:#fef9c3,stroke:#ca8a04
+    classDef influxdb fill:#f0fdf4,stroke:#22c55e
+    classDef grafana fill:#fff7ed,stroke:#f97316
+
+    class T1,T2,T3 target
+    class UI,APIREST,LC apiContainer
+    class POLLER,CLIENTS,SSHT,SSEMGR,ALERTMGR,WHRX,Q,STATUSW,EXTRACT,EXP,HSRV colContainer
+    class SQLITE sqliteNode
+    class IBRAW,IB15M,IBHR influxdb
+    class GFLEET,GPERSYS,GHIST grafana

@@ -1,0 +1,1068 @@
+{
+  "@odata.id": "/redfish/v1/TelemetryService/MetricReports/OAM_ProcessorPortMetrics_0",
+  "@odata.type": "#MetricReport.v1_5_0.MetricReport",
+  "Id": "OAM_ProcessorPortMetrics_0",
+  "MetricReportDefinition": {
+    "@odata.id": "/redfish/v1/TelemetryService/MetricReportDefinitions/OAM_ProcessorPortMetrics_0"
+  },
+  "MetricValues": [
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/0/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/1/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/1/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/1/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/2/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/2/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/2/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/3/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/3/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/3/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/4/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/4/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/4/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/5/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/5/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/5/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/6/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/6/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/6/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/7/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/7/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/Ports/7/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/0/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/1/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/1/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/1/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/2/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/2/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/2/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/3/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/3/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/3/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/4/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/4/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/4/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/5/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/5/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/5/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/6/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/6/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/6/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/7/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/7/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/Ports/7/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/0/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/1/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/1/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/1/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/2/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/2/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/2/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/3/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/3/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/3/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/4/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/4/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/4/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/5/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/5/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/5/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/6/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/6/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/6/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/7/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/7/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/Ports/7/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/0/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/1/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/1/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/1/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/2/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/2/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/2/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/3/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/3/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/3/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/4/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/4/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/4/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/5/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/5/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/5/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/6/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/6/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/6/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/7/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/7/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/Ports/7/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/0/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/1/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/1/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/1/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/2/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/2/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/2/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/3/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/3/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/3/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/4/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/4/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/4/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/5/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/5/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/5/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/6/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/6/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/6/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/7/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/7/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/Ports/7/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/0/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/1/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/1/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/1/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/2/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/2/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/2/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/3/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/3/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/3/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/4/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/4/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/4/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/5/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/5/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/5/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/6/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/6/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/6/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/7/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/7/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/Ports/7/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/0/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/1/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/1/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/1/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/2/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/2/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/2/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/3/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/3/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/3/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/4/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/4/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/4/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/5/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/5/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/5/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/6/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/6/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/6/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/7/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/7/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/Ports/7/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/0/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/1/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/1/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/1/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/2/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/2/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/2/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/3/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/3/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/3/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/4/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/4/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/4/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/5/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/5/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/5/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/6/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/6/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/6/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/7/Metrics#/AggregatedBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/7/Metrics#/RXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/Ports/7/Metrics#/TXBytes",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:19:04+00:00"
+    }
+  ],
+  "MetricValues@odata.count": 176,
+  "Name": "OAM_ProcessorPortMetrics_0"
+}

@@ -1,0 +1,4462 @@
+{
+  "@odata.id": "/redfish/v1/TelemetryService/MetricReports/All",
+  "@odata.type": "#MetricReport.v1_5_0.MetricReport",
+  "Id": "All",
+  "MetricReportDefinition": {
+    "@odata.id": "/redfish/v1/TelemetryService/MetricReportDefinitions/All"
+  },
+  "MetricValues": [
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_04_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_04_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_04_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_04_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_04_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_04_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_04_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_04_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_04_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "51.000000",
+      "Timestamp": "2000-10-15T01:01:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_04_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:07:10+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_04_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "44.000000",
+      "Timestamp": "2000-10-15T01:08:01+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_04_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-15T01:11:59+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_04_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "53.000000",
+      "Timestamp": "2000-10-15T01:08:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_04_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:07:11+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_04_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:06:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_04_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "51.000000",
+      "Timestamp": "2000-10-15T01:01:01+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_04_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "0.425000",
+      "Timestamp": "1970-01-01T00:03:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_04_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "0.422000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_04_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "0.425000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_04_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "0.426000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_04_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "0.425000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_04_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "0.425000",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_04_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "0.422000",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_04_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "0.426000",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_04_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_04_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_04_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_04_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_04_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_04_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_04_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_04_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_04_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:11:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_04_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "44.000000",
+      "Timestamp": "2000-10-15T01:07:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_04_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:07:38+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_04_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:07:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_04_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-15T01:07:45+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_04_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:09:53+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_04_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "44.000000",
+      "Timestamp": "2000-10-15T01:12:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_04_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:10:53+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_04_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "0.422000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_04_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "0.422000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_04_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "0.422000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_04_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "0.422000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_04_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "0.425000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_04_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "0.425000",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_04_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "0.425000",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_04_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "0.426000",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_085_HBM_VR_CURRENT/Reading",
+      "MetricValue": "34.000000",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_085_HBM_VR_CURRENT/Reading",
+      "MetricValue": "33.250000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_085_HBM_VR_CURRENT/Reading",
+      "MetricValue": "32.000000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_085_HBM_VR_CURRENT/Reading",
+      "MetricValue": "32.750000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_085_HBM_VR_CURRENT/Reading",
+      "MetricValue": "30.750000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_085_HBM_VR_CURRENT/Reading",
+      "MetricValue": "31.750000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_085_HBM_VR_CURRENT/Reading",
+      "MetricValue": "32.500000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_085_HBM_VR_CURRENT/Reading",
+      "MetricValue": "32.750000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_085_HBM_VR_TEMP/Reading",
+      "MetricValue": "54.000000",
+      "Timestamp": "2000-10-15T01:11:52+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_085_HBM_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_085_HBM_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:08:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_085_HBM_VR_TEMP/Reading",
+      "MetricValue": "58.000000",
+      "Timestamp": "2000-10-15T01:07:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_085_HBM_VR_TEMP/Reading",
+      "MetricValue": "59.000000",
+      "Timestamp": "2000-10-15T01:06:54+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_085_HBM_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:12:11+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_085_HBM_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_085_HBM_VR_TEMP/Reading",
+      "MetricValue": "53.000000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_085_HBM_VR_VOLTAGE/Reading",
+      "MetricValue": "0.953125",
+      "Timestamp": "2000-10-14T21:42:48+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_085_HBM_VR_VOLTAGE/Reading",
+      "MetricValue": "0.953125",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_085_HBM_VR_VOLTAGE/Reading",
+      "MetricValue": "0.955078",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_085_HBM_VR_VOLTAGE/Reading",
+      "MetricValue": "0.953125",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_085_HBM_VR_VOLTAGE/Reading",
+      "MetricValue": "0.953125",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_085_HBM_VR_VOLTAGE/Reading",
+      "MetricValue": "0.953125",
+      "Timestamp": "2000-10-14T21:38:03+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_085_HBM_VR_VOLTAGE/Reading",
+      "MetricValue": "0.953125",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_085_HBM_VR_VOLTAGE/Reading",
+      "MetricValue": "0.953125",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_085_USR_VR_CURRENT/Reading",
+      "MetricValue": "8.375000",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_085_USR_VR_CURRENT/Reading",
+      "MetricValue": "8.125000",
+      "Timestamp": "2000-10-15T01:12:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_085_USR_VR_CURRENT/Reading",
+      "MetricValue": "9.125000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_085_USR_VR_CURRENT/Reading",
+      "MetricValue": "10.125000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_085_USR_VR_CURRENT/Reading",
+      "MetricValue": "9.500000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_085_USR_VR_CURRENT/Reading",
+      "MetricValue": "8.500000",
+      "Timestamp": "2000-10-15T01:12:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_085_USR_VR_CURRENT/Reading",
+      "MetricValue": "8.000000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_085_USR_VR_CURRENT/Reading",
+      "MetricValue": "8.750000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_085_USR_VR_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:12:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_085_USR_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_085_USR_VR_TEMP/Reading",
+      "MetricValue": "49.000000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_085_USR_VR_TEMP/Reading",
+      "MetricValue": "58.000000",
+      "Timestamp": "2000-10-15T01:12:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_085_USR_VR_TEMP/Reading",
+      "MetricValue": "58.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_085_USR_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_085_USR_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:12:29+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_085_USR_VR_TEMP/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_085_USR_VR_VOLTAGE/Reading",
+      "MetricValue": "0.921875",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_085_USR_VR_VOLTAGE/Reading",
+      "MetricValue": "0.921875",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_085_USR_VR_VOLTAGE/Reading",
+      "MetricValue": "0.921875",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_085_USR_VR_VOLTAGE/Reading",
+      "MetricValue": "0.921875",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_085_USR_VR_VOLTAGE/Reading",
+      "MetricValue": "0.919922",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_085_USR_VR_VOLTAGE/Reading",
+      "MetricValue": "0.921875",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_085_USR_VR_VOLTAGE/Reading",
+      "MetricValue": "0.919922",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_085_USR_VR_VOLTAGE/Reading",
+      "MetricValue": "0.921875",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_E32_VR_CURRENT/Reading",
+      "MetricValue": "35.687500",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_E32_VR_CURRENT/Reading",
+      "MetricValue": "34.187500",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_E32_VR_CURRENT/Reading",
+      "MetricValue": "34.250000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_E32_VR_CURRENT/Reading",
+      "MetricValue": "33.500000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_E32_VR_CURRENT/Reading",
+      "MetricValue": "34.812500",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_E32_VR_CURRENT/Reading",
+      "MetricValue": "34.125000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_E32_VR_CURRENT/Reading",
+      "MetricValue": "33.937500",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_E32_VR_CURRENT/Reading",
+      "MetricValue": "34.312500",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_E32_VR_TEMP/Reading",
+      "MetricValue": "62.000000",
+      "Timestamp": "2000-10-15T01:12:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_E32_VR_TEMP/Reading",
+      "MetricValue": "58.000000",
+      "Timestamp": "2000-10-15T01:12:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_E32_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_E32_VR_TEMP/Reading",
+      "MetricValue": "66.000000",
+      "Timestamp": "2000-10-15T01:11:53+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_E32_VR_TEMP/Reading",
+      "MetricValue": "67.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_E32_VR_TEMP/Reading",
+      "MetricValue": "57.000000",
+      "Timestamp": "2000-10-15T01:11:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_E32_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:11:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_E32_VR_TEMP/Reading",
+      "MetricValue": "60.000000",
+      "Timestamp": "2000-10-15T01:12:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_E32_VR_VOLTAGE/Reading",
+      "MetricValue": "1.177734",
+      "Timestamp": "2000-10-14T21:08:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_E32_VR_VOLTAGE/Reading",
+      "MetricValue": "1.177734",
+      "Timestamp": "2000-10-14T22:10:42+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_E32_VR_VOLTAGE/Reading",
+      "MetricValue": "1.177734",
+      "Timestamp": "2000-10-14T22:44:11+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_E32_VR_VOLTAGE/Reading",
+      "MetricValue": "1.179688",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_E32_VR_VOLTAGE/Reading",
+      "MetricValue": "1.177734",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_E32_VR_VOLTAGE/Reading",
+      "MetricValue": "1.177734",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_E32_VR_VOLTAGE/Reading",
+      "MetricValue": "1.175781",
+      "Timestamp": "2000-10-15T00:34:46+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_E32_VR_VOLTAGE/Reading",
+      "MetricValue": "1.177734",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "1.750000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.750000",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "1.250000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T00:48:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.500000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_HBM_B_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-14T23:46:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:11:57+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "49.000000",
+      "Timestamp": "2000-10-15T01:11:12+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "59.000000",
+      "Timestamp": "2000-10-15T01:11:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "58.000000",
+      "Timestamp": "2000-10-15T01:12:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:09:41+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_HBM_B_VR_TEMP/Reading",
+      "MetricValue": "53.000000",
+      "Timestamp": "2000-10-15T01:09:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "2000-10-15T00:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "1.101562",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "1.101562",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "1.101562",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_HBM_B_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.250000",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "1.000000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "2.750000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T01:11:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.250000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.750000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "2.000000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_HBM_D_VR_CURRENT/Reading",
+      "MetricValue": "0.250000",
+      "Timestamp": "2000-10-15T01:12:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "53.000000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:09:45+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:12:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:12:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:10:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:07:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:11:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_HBM_D_VR_TEMP/Reading",
+      "MetricValue": "50.000000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:03:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:05:59+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "1.101562",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_HBM_D_VR_VOLTAGE/Reading",
+      "MetricValue": "1.099609",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_GPUIO_A_VR_CURRENT/Reading",
+      "MetricValue": "16.750000",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_GPUIO_A_VR_CURRENT/Reading",
+      "MetricValue": "16.125000",
+      "Timestamp": "2000-10-15T01:12:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_GPUIO_A_VR_CURRENT/Reading",
+      "MetricValue": "16.500000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_GPUIO_A_VR_CURRENT/Reading",
+      "MetricValue": "16.625000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_GPUIO_A_VR_CURRENT/Reading",
+      "MetricValue": "17.750000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_GPUIO_A_VR_CURRENT/Reading",
+      "MetricValue": "16.875000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_GPUIO_A_VR_CURRENT/Reading",
+      "MetricValue": "17.375000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_GPUIO_A_VR_CURRENT/Reading",
+      "MetricValue": "17.375000",
+      "Timestamp": "2000-10-15T01:12:30+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_GPUIO_A_VR_TEMP/Reading",
+      "MetricValue": "54.000000",
+      "Timestamp": "2000-10-15T01:07:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_GPUIO_A_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:10:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_GPUIO_A_VR_TEMP/Reading",
+      "MetricValue": "49.000000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_GPUIO_A_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:07:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_GPUIO_A_VR_TEMP/Reading",
+      "MetricValue": "58.000000",
+      "Timestamp": "2000-10-15T01:09:52+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_GPUIO_A_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:06:54+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_GPUIO_A_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:08:50+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_GPUIO_A_VR_TEMP/Reading",
+      "MetricValue": "53.000000",
+      "Timestamp": "2000-10-15T01:12:13+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_GPUIO_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.990234",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_GPUIO_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.992188",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_GPUIO_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.990234",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_GPUIO_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.992188",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_GPUIO_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.988281",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_GPUIO_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.990234",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_GPUIO_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.988281",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_GPUIO_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.992188",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_GPUIO_C_VR_CURRENT/Reading",
+      "MetricValue": "17.625000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_GPUIO_C_VR_CURRENT/Reading",
+      "MetricValue": "16.500000",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_GPUIO_C_VR_CURRENT/Reading",
+      "MetricValue": "16.375000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_GPUIO_C_VR_CURRENT/Reading",
+      "MetricValue": "17.000000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_GPUIO_C_VR_CURRENT/Reading",
+      "MetricValue": "16.625000",
+      "Timestamp": "2000-10-15T01:12:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_GPUIO_C_VR_CURRENT/Reading",
+      "MetricValue": "16.250000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_GPUIO_C_VR_CURRENT/Reading",
+      "MetricValue": "16.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_GPUIO_C_VR_CURRENT/Reading",
+      "MetricValue": "17.625000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_GPUIO_C_VR_TEMP/Reading",
+      "MetricValue": "54.000000",
+      "Timestamp": "2000-10-15T01:06:53+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_GPUIO_C_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:07:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_GPUIO_C_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:07:10+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_GPUIO_C_VR_TEMP/Reading",
+      "MetricValue": "60.000000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_GPUIO_C_VR_TEMP/Reading",
+      "MetricValue": "59.000000",
+      "Timestamp": "2000-10-15T01:08:02+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_GPUIO_C_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:07:06+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_GPUIO_C_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:09:53+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_GPUIO_C_VR_TEMP/Reading",
+      "MetricValue": "53.000000",
+      "Timestamp": "2000-10-15T01:10:58+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_GPUIO_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.986328",
+      "Timestamp": "1970-01-01T00:03:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_GPUIO_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.990234",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_GPUIO_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.992188",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_GPUIO_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.992188",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_GPUIO_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.988281",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_GPUIO_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.988281",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_GPUIO_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.988281",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_GPUIO_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.988281",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_IBC_2_CURRENT/Reading",
+      "MetricValue": "20.000000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_IBC_2_CURRENT/Reading",
+      "MetricValue": "17.000000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_IBC_2_CURRENT/Reading",
+      "MetricValue": "18.500000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_IBC_2_CURRENT/Reading",
+      "MetricValue": "18.250000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_IBC_2_CURRENT/Reading",
+      "MetricValue": "19.750000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_IBC_2_CURRENT/Reading",
+      "MetricValue": "17.250000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_IBC_2_CURRENT/Reading",
+      "MetricValue": "15.250000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_IBC_2_CURRENT/Reading",
+      "MetricValue": "18.250000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_IBC_2_TEMP/Reading",
+      "MetricValue": "51.000000",
+      "Timestamp": "2000-10-15T01:12:25+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_IBC_2_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_IBC_2_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:11:58+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_IBC_2_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_IBC_2_TEMP/Reading",
+      "MetricValue": "58.000000",
+      "Timestamp": "2000-10-15T01:12:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_IBC_2_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:11:54+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_IBC_2_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_IBC_2_TEMP/Reading",
+      "MetricValue": "54.000000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_IBC_2_VOLTAGE/Reading",
+      "MetricValue": "13.500000",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_IBC_2_VOLTAGE/Reading",
+      "MetricValue": "13.500000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_IBC_2_VOLTAGE/Reading",
+      "MetricValue": "13.625000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_IBC_2_VOLTAGE/Reading",
+      "MetricValue": "13.500000",
+      "Timestamp": "2000-10-15T01:12:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_IBC_2_VOLTAGE/Reading",
+      "MetricValue": "13.500000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_IBC_2_VOLTAGE/Reading",
+      "MetricValue": "13.500000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_IBC_2_VOLTAGE/Reading",
+      "MetricValue": "13.500000",
+      "Timestamp": "2000-10-15T01:12:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_IBC_2_VOLTAGE/Reading",
+      "MetricValue": "13.500000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_IBC_CURRENT/Reading",
+      "MetricValue": "24.000000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_IBC_CURRENT/Reading",
+      "MetricValue": "18.250000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_IBC_CURRENT/Reading",
+      "MetricValue": "19.750000",
+      "Timestamp": "2000-10-15T01:12:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_IBC_CURRENT/Reading",
+      "MetricValue": "17.000000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_IBC_CURRENT/Reading",
+      "MetricValue": "18.500000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_IBC_CURRENT/Reading",
+      "MetricValue": "16.250000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_IBC_CURRENT/Reading",
+      "MetricValue": "16.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_IBC_CURRENT/Reading",
+      "MetricValue": "19.250000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_IBC_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_IBC_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:12:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_IBC_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_IBC_TEMP/Reading",
+      "MetricValue": "58.000000",
+      "Timestamp": "2000-10-15T01:12:10+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_IBC_TEMP/Reading",
+      "MetricValue": "58.000000",
+      "Timestamp": "2000-10-15T01:11:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_IBC_TEMP/Reading",
+      "MetricValue": "44.000000",
+      "Timestamp": "2000-10-15T01:10:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_IBC_TEMP/Reading",
+      "MetricValue": "43.000000",
+      "Timestamp": "2000-10-15T01:12:06+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_IBC_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:12:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_IBC_VOLTAGE/Reading",
+      "MetricValue": "13.437500",
+      "Timestamp": "2000-10-15T01:12:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_IBC_VOLTAGE/Reading",
+      "MetricValue": "13.562500",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_IBC_VOLTAGE/Reading",
+      "MetricValue": "13.562500",
+      "Timestamp": "2000-10-15T01:12:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_IBC_VOLTAGE/Reading",
+      "MetricValue": "13.562500",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_IBC_VOLTAGE/Reading",
+      "MetricValue": "13.500000",
+      "Timestamp": "2000-10-15T01:12:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_IBC_VOLTAGE/Reading",
+      "MetricValue": "13.437500",
+      "Timestamp": "2000-10-15T01:12:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_IBC_VOLTAGE/Reading",
+      "MetricValue": "13.500000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_IBC_VOLTAGE/Reading",
+      "MetricValue": "13.437500",
+      "Timestamp": "2000-10-15T01:12:24+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDD18_VR_CURRENT/Reading",
+      "MetricValue": "8.500000",
+      "Timestamp": "2000-10-15T01:12:03+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDD18_VR_CURRENT/Reading",
+      "MetricValue": "8.500000",
+      "Timestamp": "2000-10-15T01:12:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDD18_VR_CURRENT/Reading",
+      "MetricValue": "8.500000",
+      "Timestamp": "2000-10-15T01:12:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDD18_VR_CURRENT/Reading",
+      "MetricValue": "8.500000",
+      "Timestamp": "2000-10-14T14:18:52+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDD18_VR_CURRENT/Reading",
+      "MetricValue": "8.500000",
+      "Timestamp": "2000-10-15T01:11:59+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDD18_VR_CURRENT/Reading",
+      "MetricValue": "8.500000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDD18_VR_CURRENT/Reading",
+      "MetricValue": "8.500000",
+      "Timestamp": "2000-10-15T00:49:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDD18_VR_CURRENT/Reading",
+      "MetricValue": "8.000000",
+      "Timestamp": "2000-10-15T00:26:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDD18_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T00:57:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDD18_VR_TEMP/Reading",
+      "MetricValue": "49.000000",
+      "Timestamp": "2000-10-15T00:59:42+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDD18_VR_TEMP/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-14T14:25:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDD18_VR_TEMP/Reading",
+      "MetricValue": "58.000000",
+      "Timestamp": "2000-10-14T14:25:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDD18_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-14T14:49:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDD18_VR_TEMP/Reading",
+      "MetricValue": "51.000000",
+      "Timestamp": "2000-10-14T14:25:11+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDD18_VR_TEMP/Reading",
+      "MetricValue": "50.000000",
+      "Timestamp": "2000-10-14T15:16:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDD18_VR_TEMP/Reading",
+      "MetricValue": "51.000000",
+      "Timestamp": "2000-10-14T17:52:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDD18_VR_VOLTAGE/Reading",
+      "MetricValue": "1.821000",
+      "Timestamp": "2000-10-15T00:58:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDD18_VR_VOLTAGE/Reading",
+      "MetricValue": "1.818000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDD18_VR_VOLTAGE/Reading",
+      "MetricValue": "1.808000",
+      "Timestamp": "2000-10-15T01:12:10+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDD18_VR_VOLTAGE/Reading",
+      "MetricValue": "1.808000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDD18_VR_VOLTAGE/Reading",
+      "MetricValue": "1.802000",
+      "Timestamp": "2000-10-15T01:09:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDD18_VR_VOLTAGE/Reading",
+      "MetricValue": "1.818000",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDD18_VR_VOLTAGE/Reading",
+      "MetricValue": "1.812000",
+      "Timestamp": "2000-10-15T01:09:13+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDD18_VR_VOLTAGE/Reading",
+      "MetricValue": "1.831000",
+      "Timestamp": "2000-10-15T01:07:30+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_SOC_A_VR_CURRENT/Reading",
+      "MetricValue": "24.000000",
+      "Timestamp": "2000-10-15T01:12:25+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_SOC_A_VR_CURRENT/Reading",
+      "MetricValue": "22.000000",
+      "Timestamp": "2000-10-15T01:11:58+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_SOC_A_VR_CURRENT/Reading",
+      "MetricValue": "22.000000",
+      "Timestamp": "2000-10-15T01:11:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_SOC_A_VR_CURRENT/Reading",
+      "MetricValue": "24.000000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_SOC_A_VR_CURRENT/Reading",
+      "MetricValue": "24.000000",
+      "Timestamp": "2000-10-15T01:12:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_SOC_A_VR_CURRENT/Reading",
+      "MetricValue": "22.000000",
+      "Timestamp": "2000-10-15T01:11:59+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_SOC_A_VR_CURRENT/Reading",
+      "MetricValue": "22.000000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_SOC_A_VR_CURRENT/Reading",
+      "MetricValue": "22.000000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_SOC_A_VR_TEMP/Reading",
+      "MetricValue": "51.000000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_SOC_A_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_SOC_A_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_SOC_A_VR_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_SOC_A_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_SOC_A_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:11:54+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_SOC_A_VR_TEMP/Reading",
+      "MetricValue": "49.000000",
+      "Timestamp": "2000-10-15T01:12:06+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_SOC_A_VR_TEMP/Reading",
+      "MetricValue": "49.000000",
+      "Timestamp": "2000-10-15T01:12:13+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_SOC_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.765625",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_SOC_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.785156",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_SOC_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.785156",
+      "Timestamp": "2000-10-15T00:31:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_SOC_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.773438",
+      "Timestamp": "2000-10-14T23:54:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_SOC_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.785156",
+      "Timestamp": "2000-10-15T00:39:39+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_SOC_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.773438",
+      "Timestamp": "2000-10-15T01:01:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_SOC_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.783203",
+      "Timestamp": "2000-10-15T00:54:29+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_SOC_A_VR_VOLTAGE/Reading",
+      "MetricValue": "0.765625",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_SOC_C_VR_CURRENT/Reading",
+      "MetricValue": "19.000000",
+      "Timestamp": "2000-10-15T01:10:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_SOC_C_VR_CURRENT/Reading",
+      "MetricValue": "21.000000",
+      "Timestamp": "2000-10-15T01:08:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_SOC_C_VR_CURRENT/Reading",
+      "MetricValue": "21.000000",
+      "Timestamp": "2000-10-15T01:11:58+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_SOC_C_VR_CURRENT/Reading",
+      "MetricValue": "21.000000",
+      "Timestamp": "2000-10-15T01:11:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_SOC_C_VR_CURRENT/Reading",
+      "MetricValue": "22.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_SOC_C_VR_CURRENT/Reading",
+      "MetricValue": "21.000000",
+      "Timestamp": "2000-10-15T01:11:48+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_SOC_C_VR_CURRENT/Reading",
+      "MetricValue": "19.000000",
+      "Timestamp": "2000-10-15T01:11:49+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_SOC_C_VR_CURRENT/Reading",
+      "MetricValue": "19.000000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_SOC_C_VR_TEMP/Reading",
+      "MetricValue": "53.000000",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_SOC_C_VR_TEMP/Reading",
+      "MetricValue": "44.000000",
+      "Timestamp": "2000-10-15T01:11:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_SOC_C_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_SOC_C_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:07:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_SOC_C_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:12:11+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_SOC_C_VR_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_SOC_C_VR_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:12:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_SOC_C_VR_TEMP/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-15T01:12:29+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_SOC_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.765625",
+      "Timestamp": "1970-01-01T00:03:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_SOC_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.783203",
+      "Timestamp": "2000-10-14T22:28:51+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_SOC_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.785156",
+      "Timestamp": "2000-10-15T00:55:24+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_SOC_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.775391",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_SOC_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.785156",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_SOC_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.773438",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_SOC_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.785156",
+      "Timestamp": "2000-10-15T00:23:41+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_SOC_C_VR_VOLTAGE/Reading",
+      "MetricValue": "0.765625",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD0_VR_CURRENT/Reading",
+      "MetricValue": "22.000000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD0_VR_CURRENT/Reading",
+      "MetricValue": "19.500000",
+      "Timestamp": "2000-10-15T01:12:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD0_VR_CURRENT/Reading",
+      "MetricValue": "22.000000",
+      "Timestamp": "2000-10-15T01:12:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD0_VR_CURRENT/Reading",
+      "MetricValue": "24.000000",
+      "Timestamp": "2000-10-15T01:12:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD0_VR_CURRENT/Reading",
+      "MetricValue": "25.000000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD0_VR_CURRENT/Reading",
+      "MetricValue": "24.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD0_VR_CURRENT/Reading",
+      "MetricValue": "18.500000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD0_VR_CURRENT/Reading",
+      "MetricValue": "23.000000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD0_VR_TEMP/Reading",
+      "MetricValue": "54.000000",
+      "Timestamp": "2000-10-15T01:09:45+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD0_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:12:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD0_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:10:49+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD0_VR_TEMP/Reading",
+      "MetricValue": "57.000000",
+      "Timestamp": "2000-10-15T01:11:53+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD0_VR_TEMP/Reading",
+      "MetricValue": "57.000000",
+      "Timestamp": "2000-10-15T01:11:13+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD0_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD0_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:09:29+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD0_VR_TEMP/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD0_VR_VOLTAGE/Reading",
+      "MetricValue": "0.896484",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD0_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "2000-10-15T00:41:44+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD0_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T00:52:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD0_VR_VOLTAGE/Reading",
+      "MetricValue": "0.890625",
+      "Timestamp": "2000-10-15T01:08:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD0_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD0_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T00:55:03+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD0_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "2000-10-15T00:23:06+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD0_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T00:57:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD1_VR_CURRENT/Reading",
+      "MetricValue": "26.500000",
+      "Timestamp": "2000-10-15T01:12:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD1_VR_CURRENT/Reading",
+      "MetricValue": "21.000000",
+      "Timestamp": "2000-10-15T01:12:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD1_VR_CURRENT/Reading",
+      "MetricValue": "20.500000",
+      "Timestamp": "2000-10-15T01:12:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD1_VR_CURRENT/Reading",
+      "MetricValue": "31.000000",
+      "Timestamp": "2000-10-15T01:12:10+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD1_VR_CURRENT/Reading",
+      "MetricValue": "26.500000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD1_VR_CURRENT/Reading",
+      "MetricValue": "21.500000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD1_VR_CURRENT/Reading",
+      "MetricValue": "23.000000",
+      "Timestamp": "2000-10-15T01:12:29+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD1_VR_CURRENT/Reading",
+      "MetricValue": "24.500000",
+      "Timestamp": "2000-10-15T01:11:50+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD1_VR_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:11:45+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD1_VR_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:11:12+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD1_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD1_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD1_VR_TEMP/Reading",
+      "MetricValue": "57.000000",
+      "Timestamp": "2000-10-15T01:11:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD1_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:12:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD1_VR_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD1_VR_TEMP/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD1_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T00:25:49+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD1_VR_VOLTAGE/Reading",
+      "MetricValue": "0.896484",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD1_VR_VOLTAGE/Reading",
+      "MetricValue": "0.896484",
+      "Timestamp": "2000-10-14T17:17:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD1_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD1_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD1_VR_VOLTAGE/Reading",
+      "MetricValue": "0.896484",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD1_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "2000-10-15T01:11:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD1_VR_VOLTAGE/Reading",
+      "MetricValue": "0.896484",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD2_VR_CURRENT/Reading",
+      "MetricValue": "24.000000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD2_VR_CURRENT/Reading",
+      "MetricValue": "21.500000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD2_VR_CURRENT/Reading",
+      "MetricValue": "19.000000",
+      "Timestamp": "2000-10-15T01:12:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD2_VR_CURRENT/Reading",
+      "MetricValue": "25.500000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD2_VR_CURRENT/Reading",
+      "MetricValue": "22.500000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD2_VR_CURRENT/Reading",
+      "MetricValue": "26.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD2_VR_CURRENT/Reading",
+      "MetricValue": "24.000000",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD2_VR_CURRENT/Reading",
+      "MetricValue": "21.000000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD2_VR_TEMP/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-15T01:12:14+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD2_VR_TEMP/Reading",
+      "MetricValue": "45.000000",
+      "Timestamp": "2000-10-15T01:12:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD2_VR_TEMP/Reading",
+      "MetricValue": "49.000000",
+      "Timestamp": "2000-10-15T01:05:55+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD2_VR_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD2_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:12:11+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD2_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:07:11+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD2_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:09:53+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD2_VR_TEMP/Reading",
+      "MetricValue": "51.000000",
+      "Timestamp": "2000-10-15T01:11:44+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD2_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T00:41:55+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD2_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T01:10:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD2_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T00:50:46+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD2_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD2_VR_VOLTAGE/Reading",
+      "MetricValue": "0.896484",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD2_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T00:54:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD2_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T01:10:57+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD2_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "2000-10-15T00:50:13+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD3_VR_CURRENT/Reading",
+      "MetricValue": "28.000000",
+      "Timestamp": "2000-10-15T01:12:14+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD3_VR_CURRENT/Reading",
+      "MetricValue": "20.000000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD3_VR_CURRENT/Reading",
+      "MetricValue": "21.000000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD3_VR_CURRENT/Reading",
+      "MetricValue": "29.500000",
+      "Timestamp": "2000-10-15T01:12:10+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD3_VR_CURRENT/Reading",
+      "MetricValue": "23.000000",
+      "Timestamp": "2000-10-15T01:12:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD3_VR_CURRENT/Reading",
+      "MetricValue": "21.000000",
+      "Timestamp": "2000-10-15T01:12:29+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD3_VR_CURRENT/Reading",
+      "MetricValue": "20.500000",
+      "Timestamp": "2000-10-15T01:12:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD3_VR_CURRENT/Reading",
+      "MetricValue": "29.000000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD3_VR_TEMP/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-15T01:07:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD3_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD3_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:07:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD3_VR_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:12:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD3_VR_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:08:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD3_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:08:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD3_VR_TEMP/Reading",
+      "MetricValue": "48.000000",
+      "Timestamp": "2000-10-15T01:10:40+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD3_VR_TEMP/Reading",
+      "MetricValue": "51.000000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD3_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T01:08:53+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD3_VR_VOLTAGE/Reading",
+      "MetricValue": "0.892578",
+      "Timestamp": "2000-10-15T00:58:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD3_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "2000-10-15T01:07:44+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD3_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD3_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "2000-10-14T23:20:52+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD3_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "2000-10-15T00:55:38+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD3_VR_VOLTAGE/Reading",
+      "MetricValue": "0.896484",
+      "Timestamp": "2000-10-15T00:55:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD3_VR_VOLTAGE/Reading",
+      "MetricValue": "0.894531",
+      "Timestamp": "1970-01-01T00:03:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_04_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_04_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_04_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_04_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_04_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_04_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_04_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_04_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_04_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_04_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_04_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_04_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_04_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_04_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_04_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_04_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_085_HBM_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_085_HBM_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_085_HBM_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_085_HBM_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_085_HBM_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_085_HBM_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_085_HBM_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_085_HBM_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_085_USR_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_085_USR_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_085_USR_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_085_USR_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_085_USR_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_085_USR_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_085_USR_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_085_USR_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_E32_VR_STATUS/Reading",
+      "MetricValue": "30722.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_E32_VR_STATUS/Reading",
+      "MetricValue": "30720.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_E32_VR_STATUS/Reading",
+      "MetricValue": "30722.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_E32_VR_STATUS/Reading",
+      "MetricValue": "30720.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_E32_VR_STATUS/Reading",
+      "MetricValue": "30722.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_E32_VR_STATUS/Reading",
+      "MetricValue": "30720.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_E32_VR_STATUS/Reading",
+      "MetricValue": "30722.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_E32_VR_STATUS/Reading",
+      "MetricValue": "30722.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_HBM_B_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_11_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_11_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_11_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_11_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_11_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_11_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_11_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_11_HBM_D_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_GPUIO_A_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_GPUIO_A_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_GPUIO_A_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_GPUIO_A_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_GPUIO_A_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_GPUIO_A_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_GPUIO_A_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_GPUIO_A_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_GPUIO_C_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_GPUIO_C_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_GPUIO_C_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_GPUIO_C_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_GPUIO_C_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_GPUIO_C_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_GPUIO_C_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_GPUIO_C_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_IBC_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:24+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_IBC_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:25+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_IBC_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:25+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_IBC_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_IBC_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_IBC_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_IBC_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_IBC_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:29+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_IBC_2_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:24+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_IBC_2_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:25+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_IBC_2_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:25+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_IBC_2_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_IBC_2_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_IBC_2_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_IBC_2_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_IBC_2_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:29+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDD18_VR_STATUS/Reading",
+      "MetricValue": "10242.000000",
+      "Timestamp": "1970-01-01T00:03:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDD18_VR_STATUS/Reading",
+      "MetricValue": "10242.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDD18_VR_STATUS/Reading",
+      "MetricValue": "10242.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDD18_VR_STATUS/Reading",
+      "MetricValue": "10242.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDD18_VR_STATUS/Reading",
+      "MetricValue": "10242.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDD18_VR_STATUS/Reading",
+      "MetricValue": "10242.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDD18_VR_STATUS/Reading",
+      "MetricValue": "10242.000000",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDD18_VR_STATUS/Reading",
+      "MetricValue": "10242.000000",
+      "Timestamp": "1970-01-01T00:03:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_SOC_A_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_SOC_A_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_SOC_A_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_SOC_A_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_SOC_A_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_SOC_A_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_SOC_A_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_SOC_A_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_SOC_C_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_SOC_C_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_SOC_C_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_SOC_C_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_SOC_C_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_SOC_C_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_SOC_C_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_SOC_C_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD0_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD0_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD0_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD0_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD0_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD0_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD0_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD0_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD1_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD1_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD1_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD1_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD1_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD1_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD1_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD1_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD2_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD2_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD2_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD2_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:18+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD2_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD2_VR_STATUS/Reading",
+      "MetricValue": "18432.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD2_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD2_VR_STATUS/Reading",
+      "MetricValue": "18434.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_VDDCR_VDD3_VR_STATUS/Reading",
+      "MetricValue": "30722.000000",
+      "Timestamp": "2000-10-14T16:38:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/OAM_1_VDDCR_VDD3_VR_STATUS/Reading",
+      "MetricValue": "30720.000000",
+      "Timestamp": "1970-01-01T00:03:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_VDDCR_VDD3_VR_STATUS/Reading",
+      "MetricValue": "30722.000000",
+      "Timestamp": "2000-10-14T19:24:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/OAM_3_VDDCR_VDD3_VR_STATUS/Reading",
+      "MetricValue": "30720.000000",
+      "Timestamp": "1970-01-01T00:03:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_VDDCR_VDD3_VR_STATUS/Reading",
+      "MetricValue": "30722.000000",
+      "Timestamp": "2000-10-14T15:19:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/OAM_5_VDDCR_VDD3_VR_STATUS/Reading",
+      "MetricValue": "30720.000000",
+      "Timestamp": "1970-01-01T00:03:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_VDDCR_VDD3_VR_STATUS/Reading",
+      "MetricValue": "30722.000000",
+      "Timestamp": "2000-10-14T20:05:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/OAM_7_VDDCR_VDD3_VR_STATUS/Reading",
+      "MetricValue": "30722.000000",
+      "Timestamp": "2000-10-14T17:54:09+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/IBC_CURRENT/Reading",
+      "MetricValue": "18.750000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/IBC_HSC_CURRENT/Reading",
+      "MetricValue": "2.806043",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/IBC_HSC_STATUS/Reading",
+      "MetricValue": "2051.000000",
+      "Timestamp": "2000-10-15T00:47:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/IBC_HSC_TEMP/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/IBC_HSC_VOLTAGE/Reading",
+      "MetricValue": "54.172099",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/IBC_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/IBC_TEMP/Reading",
+      "MetricValue": "60.000000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/IBC_VOLTAGE/Reading",
+      "MetricValue": "13.437500",
+      "Timestamp": "2000-10-15T01:12:34+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_1_2_3_3V3_VR_CURRENT/Reading",
+      "MetricValue": "2.000000",
+      "Timestamp": "2000-10-15T01:11:01+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_1_2_3_3V3_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_1_2_3_3V3_VR_TEMP/Reading",
+      "MetricValue": "47.000000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_1_2_3_3V3_VR_VOLTAGE/Reading",
+      "MetricValue": "3.183000",
+      "Timestamp": "2000-10-15T01:12:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_1_HSC_CURRENT/Reading",
+      "MetricValue": "10.384964",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_1_HSC_STATUS/Reading",
+      "MetricValue": "10251.000000",
+      "Timestamp": "2000-10-15T00:48:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_1_HSC_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:11:25+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/OAM_0_1_HSC_VOLTAGE/Reading",
+      "MetricValue": "54.041721",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_3_HSC_CURRENT/Reading",
+      "MetricValue": "10.768363",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_3_HSC_STATUS/Reading",
+      "MetricValue": "10251.000000",
+      "Timestamp": "2000-10-15T00:49:24+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_3_HSC_TEMP/Reading",
+      "MetricValue": "49.000000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/OAM_2_3_HSC_VOLTAGE/Reading",
+      "MetricValue": "54.041721",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_5_6_7_3V3_VR_CURRENT/Reading",
+      "MetricValue": "2.000000",
+      "Timestamp": "2000-10-15T01:12:25+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_5_6_7_3V3_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_5_6_7_3V3_VR_TEMP/Reading",
+      "MetricValue": "44.000000",
+      "Timestamp": "2000-10-15T01:11:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_5_6_7_3V3_VR_VOLTAGE/Reading",
+      "MetricValue": "3.177000",
+      "Timestamp": "2000-10-15T01:11:29+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_5_HSC_CURRENT/Reading",
+      "MetricValue": "11.023962",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_5_HSC_STATUS/Reading",
+      "MetricValue": "10251.000000",
+      "Timestamp": "2000-10-15T00:46:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_5_HSC_TEMP/Reading",
+      "MetricValue": "46.000000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/OAM_4_5_HSC_VOLTAGE/Reading",
+      "MetricValue": "54.106910",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_7_HSC_CURRENT/Reading",
+      "MetricValue": "11.055912",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_7_HSC_STATUS/Reading",
+      "MetricValue": "10251.000000",
+      "Timestamp": "2000-10-15T00:47:50+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_7_HSC_TEMP/Reading",
+      "MetricValue": "44.000000",
+      "Timestamp": "2000-10-15T01:09:50+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/OAM_6_7_HSC_VOLTAGE/Reading",
+      "MetricValue": "54.063451",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_1_0V9_VR_CURRENT/Reading",
+      "MetricValue": "24.500000",
+      "Timestamp": "2000-10-15T01:12:17+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_1_0V9_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_1_0V9_VR_TEMP/Reading",
+      "MetricValue": "88.000000",
+      "Timestamp": "2000-10-15T01:12:10+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_1_0V9_VR_VOLTAGE/Reading",
+      "MetricValue": "0.900000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_1_2_3_1V2_VR_CURRENT/Reading",
+      "MetricValue": "12.000000",
+      "Timestamp": "2000-10-15T01:11:10+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_1_2_3_1V2_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_1_2_3_1V2_VR_TEMP/Reading",
+      "MetricValue": "78.000000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_1_2_3_1V2_VR_VOLTAGE/Reading",
+      "MetricValue": "1.200000",
+      "Timestamp": "2000-10-15T00:54:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2/Sensors/RETIMER_2_3_0V9_VR_CURRENT/Reading",
+      "MetricValue": "25.000000",
+      "Timestamp": "2000-10-15T01:12:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2/Sensors/RETIMER_2_3_0V9_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2/Sensors/RETIMER_2_3_0V9_VR_TEMP/Reading",
+      "MetricValue": "87.000000",
+      "Timestamp": "2000-10-15T01:12:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2/Sensors/RETIMER_2_3_0V9_VR_VOLTAGE/Reading",
+      "MetricValue": "0.900000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_5_0V9_VR_CURRENT/Reading",
+      "MetricValue": "25.000000",
+      "Timestamp": "2000-10-15T01:12:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_5_0V9_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_5_0V9_VR_TEMP/Reading",
+      "MetricValue": "82.000000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_5_0V9_VR_VOLTAGE/Reading",
+      "MetricValue": "0.902000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_5_6_7_1V2_VR_CURRENT/Reading",
+      "MetricValue": "12.000000",
+      "Timestamp": "2000-10-15T01:12:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_5_6_7_1V2_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_5_6_7_1V2_VR_TEMP/Reading",
+      "MetricValue": "74.000000",
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_5_6_7_1V2_VR_VOLTAGE/Reading",
+      "MetricValue": "1.202000",
+      "Timestamp": "2000-10-15T00:59:58+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6/Sensors/RETIMER_6_7_0V9_VR_CURRENT/Reading",
+      "MetricValue": "25.000000",
+      "Timestamp": "2000-10-15T01:11:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6/Sensors/RETIMER_6_7_0V9_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6/Sensors/RETIMER_6_7_0V9_VR_TEMP/Reading",
+      "MetricValue": "79.000000",
+      "Timestamp": "2000-10-15T01:12:35+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6/Sensors/RETIMER_6_7_0V9_VR_VOLTAGE/Reading",
+      "MetricValue": "0.901000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB_FPGA/Sensors/UBB_FPGA_0V72_VR_CURRENT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T01:12:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB_FPGA/Sensors/UBB_FPGA_0V72_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB_FPGA/Sensors/UBB_FPGA_0V72_VR_TEMP/Reading",
+      "MetricValue": "41.000000",
+      "Timestamp": "2000-10-15T01:07:00+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB_FPGA/Sensors/UBB_FPGA_0V72_VR_VOLTAGE/Reading",
+      "MetricValue": "0.727000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB_FPGA/Sensors/UBB_FPGA_3V3_VR_CURRENT/Reading",
+      "MetricValue": "0.500000",
+      "Timestamp": "2000-10-15T01:12:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB_FPGA/Sensors/UBB_FPGA_3V3_VR_STATUS/Reading",
+      "MetricValue": "2050.000000",
+      "Timestamp": "1970-01-01T00:03:15+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB_FPGA/Sensors/UBB_FPGA_3V3_VR_TEMP/Reading",
+      "MetricValue": "43.000000",
+      "Timestamp": "2000-10-15T01:11:50+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB_FPGA/Sensors/UBB_FPGA_3V3_VR_VOLTAGE/Reading",
+      "MetricValue": "3.187000",
+      "Timestamp": "2000-10-15T01:12:02+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/UBB_POWER/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:06+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/CRITICAL_CONSOLIDATED_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/FATAL_CONSOLIDATED_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/GPU_0_DIE_TEMP/Reading",
+      "MetricValue": "62.000000",
+      "Timestamp": "2000-10-15T01:09:19+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/GPU_0_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/GPU_0_POWER/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/GPU_1_DIE_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:11:33+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/GPU_1_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/GPU_1_POWER/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/GPU_2_DIE_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:09:13+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/GPU_2_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/GPU_2_POWER/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/GPU_3_DIE_TEMP/Reading",
+      "MetricValue": "67.000000",
+      "Timestamp": "2000-10-15T01:11:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/GPU_3_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/GPU_3_POWER/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/GPU_4_DIE_TEMP/Reading",
+      "MetricValue": "66.000000",
+      "Timestamp": "2000-10-15T01:07:03+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/GPU_4_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/GPU_4_POWER/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/GPU_5_DIE_TEMP/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:12:21+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/GPU_5_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/GPU_5_POWER/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/GPU_6_DIE_TEMP/Reading",
+      "MetricValue": "55.000000",
+      "Timestamp": "2000-10-15T01:10:20+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/GPU_6_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/GPU_6_POWER/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/GPU_7_DIE_TEMP/Reading",
+      "MetricValue": "64.000000",
+      "Timestamp": "2000-10-15T01:12:14+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/GPU_7_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/GPU_7_POWER/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/GPU_TOTAL_POWER/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/GPU_WARMEST_DIE_TEMP/Reading",
+      "MetricValue": "67.000000",
+      "Timestamp": "2000-10-15T01:11:48+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/GPU_WARMEST_HSC_TEMP/Reading",
+      "MetricValue": "49.000000",
+      "Timestamp": "2000-10-15T01:12:36+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/GPU_WARMEST_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/TCONTROL_CONSOLIDATED_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB_FPGA/Sensors/UBB_FPGA_TEMP/Reading",
+      "MetricValue": "31.000000",
+      "Timestamp": "2000-10-15T01:09:05+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/UBB_TEMP_BACK/Reading",
+      "MetricValue": "30.000000",
+      "Timestamp": "2000-10-15T01:10:32+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/UBB_TEMP_FRONT/Reading",
+      "MetricValue": "52.000000",
+      "Timestamp": "2000-10-15T01:08:46+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/UBB_TEMP_IBC/Reading",
+      "MetricValue": "56.000000",
+      "Timestamp": "2000-10-15T01:09:50+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/UBB_TEMP_OAM1/Reading",
+      "MetricValue": "33.000000",
+      "Timestamp": "2000-10-15T01:07:23+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/UBB_TEMP_OAM7/Reading",
+      "MetricValue": "50.000000",
+      "Timestamp": "2000-10-15T01:12:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/UBB_TEMP_UFPGA/Reading",
+      "MetricValue": "32.000000",
+      "Timestamp": "2000-10-15T01:07:27+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_LINK_MIN_FOM/Reading",
+      "MetricValue": "134.000000",
+      "Timestamp": "2000-10-15T00:52:51+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_LINK_RATE/Reading",
+      "MetricValue": "5.000000",
+      "Timestamp": "2000-10-15T00:52:51+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_LINK_RECOVERY_COUNT/Reading",
+      "MetricValue": "2.000000",
+      "Timestamp": "2000-10-15T00:52:51+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_LINK_STATE/Reading",
+      "MetricValue": "6.000000",
+      "Timestamp": "2000-10-15T00:52:51+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_LINK_WIDTH/Reading",
+      "MetricValue": "16.000000",
+      "Timestamp": "2000-10-15T00:52:51+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_0_TEMP/Reading",
+      "MetricValue": "79.599998",
+      "Timestamp": "2000-10-15T01:12:31+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_1/Sensors/RETIMER_1_LINK_MIN_FOM/Reading",
+      "MetricValue": "145.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_1/Sensors/RETIMER_1_LINK_RATE/Reading",
+      "MetricValue": "5.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_1/Sensors/RETIMER_1_LINK_RECOVERY_COUNT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_1/Sensors/RETIMER_1_LINK_STATE/Reading",
+      "MetricValue": "6.000000",
+      "Timestamp": "2000-10-15T00:52:51+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_1/Sensors/RETIMER_1_LINK_WIDTH/Reading",
+      "MetricValue": "16.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_1/Sensors/RETIMER_1_TEMP/Reading",
+      "MetricValue": "81.839996",
+      "Timestamp": "2000-10-15T01:12:16+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2/Sensors/RETIMER_2_LINK_MIN_FOM/Reading",
+      "MetricValue": "130.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2/Sensors/RETIMER_2_LINK_RATE/Reading",
+      "MetricValue": "5.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2/Sensors/RETIMER_2_LINK_RECOVERY_COUNT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2/Sensors/RETIMER_2_LINK_STATE/Reading",
+      "MetricValue": "6.000000",
+      "Timestamp": "2000-10-15T00:52:51+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2/Sensors/RETIMER_2_LINK_WIDTH/Reading",
+      "MetricValue": "16.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_2/Sensors/RETIMER_2_TEMP/Reading",
+      "MetricValue": "86.320000",
+      "Timestamp": "2000-10-15T01:11:26+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_3/Sensors/RETIMER_3_LINK_MIN_FOM/Reading",
+      "MetricValue": "140.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_3/Sensors/RETIMER_3_LINK_RATE/Reading",
+      "MetricValue": "5.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_3/Sensors/RETIMER_3_LINK_RECOVERY_COUNT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_3/Sensors/RETIMER_3_LINK_STATE/Reading",
+      "MetricValue": "6.000000",
+      "Timestamp": "2000-10-15T00:52:51+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_3/Sensors/RETIMER_3_LINK_WIDTH/Reading",
+      "MetricValue": "16.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_3/Sensors/RETIMER_3_TEMP/Reading",
+      "MetricValue": "82.480003",
+      "Timestamp": "2000-10-15T01:12:12+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_LINK_MIN_FOM/Reading",
+      "MetricValue": "139.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_LINK_RATE/Reading",
+      "MetricValue": "5.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_LINK_RECOVERY_COUNT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_LINK_STATE/Reading",
+      "MetricValue": "6.000000",
+      "Timestamp": "2000-10-15T00:52:51+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_LINK_WIDTH/Reading",
+      "MetricValue": "16.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_4/Sensors/RETIMER_4_TEMP/Reading",
+      "MetricValue": "80.879997",
+      "Timestamp": "2000-10-15T01:12:07+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_5/Sensors/RETIMER_5_LINK_MIN_FOM/Reading",
+      "MetricValue": "136.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_5/Sensors/RETIMER_5_LINK_RATE/Reading",
+      "MetricValue": "5.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_5/Sensors/RETIMER_5_LINK_RECOVERY_COUNT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_5/Sensors/RETIMER_5_LINK_STATE/Reading",
+      "MetricValue": "6.000000",
+      "Timestamp": "2000-10-15T00:52:52+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_5/Sensors/RETIMER_5_LINK_WIDTH/Reading",
+      "MetricValue": "16.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_5/Sensors/RETIMER_5_TEMP/Reading",
+      "MetricValue": "81.519997",
+      "Timestamp": "2000-10-15T01:12:22+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6/Sensors/RETIMER_6_LINK_MIN_FOM/Reading",
+      "MetricValue": "151.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6/Sensors/RETIMER_6_LINK_RATE/Reading",
+      "MetricValue": "5.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6/Sensors/RETIMER_6_LINK_RECOVERY_COUNT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6/Sensors/RETIMER_6_LINK_STATE/Reading",
+      "MetricValue": "6.000000",
+      "Timestamp": "2000-10-15T00:52:52+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6/Sensors/RETIMER_6_LINK_WIDTH/Reading",
+      "MetricValue": "16.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_6/Sensors/RETIMER_6_TEMP/Reading",
+      "MetricValue": "78.320000",
+      "Timestamp": "2000-10-15T01:12:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_7/Sensors/RETIMER_7_LINK_MIN_FOM/Reading",
+      "MetricValue": "139.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_7/Sensors/RETIMER_7_LINK_RATE/Reading",
+      "MetricValue": "5.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_7/Sensors/RETIMER_7_LINK_RECOVERY_COUNT/Reading",
+      "MetricValue": "0.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_7/Sensors/RETIMER_7_LINK_STATE/Reading",
+      "MetricValue": "6.000000",
+      "Timestamp": "2000-10-15T00:52:52+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_7/Sensors/RETIMER_7_LINK_WIDTH/Reading",
+      "MetricValue": "16.000000",
+      "Timestamp": "2000-10-15T00:52:47+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_7/Sensors/RETIMER_7_TEMP/Reading",
+      "MetricValue": "80.239998",
+      "Timestamp": "2000-10-15T01:12:08+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_MAX_TEMP/Reading",
+      "MetricValue": "86.320000",
+      "Timestamp": "2000-10-15T01:11:28+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/RETIMER_0/Sensors/RETIMER_MAX_VR_TEMP/Reading",
+      "MetricValue": "88.000000",
+      "Timestamp": "2000-10-15T01:12:12+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU0/ProcessorMetrics#BandwidthPercent",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU1/ProcessorMetrics#BandwidthPercent",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU2/ProcessorMetrics#BandwidthPercent",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU3/ProcessorMetrics#BandwidthPercent",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU4/ProcessorMetrics#BandwidthPercent",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU5/ProcessorMetrics#BandwidthPercent",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU6/ProcessorMetrics#BandwidthPercent",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Processors/GPU7/ProcessorMetrics#BandwidthPercent",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/SYSTEM_HEALTH",
+      "MetricValue": "OK",
+      "Oem": {
+        "Description": "All UBB and OAMs components are operational"
+      },
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/VNIC_HEALTH",
+      "MetricValue": "OK",
+      "Oem": {
+        "Description": "VNIC is operational"
+      },
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/UBB/Sensors/SMC_HEALTH",
+      "MetricValue": "OK",
+      "Oem": {
+        "Description": "SMC VNIC is connected "
+      },
+      "Timestamp": "2000-10-15T01:12:37+00:00"
+    }
+  ],
+  "MetricValues@odata.count": 740,
+  "Name": "All",
+  "Timestamp": "2000-10-15T01:12:37+00:00"
+}

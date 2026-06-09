@@ -1,0 +1,539 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# Metrics Schema Configuration
+# Defines how to extract time series metrics from JSON telemetry blobs
+#
+# IMPORTANT: jsonpath_ng.ext does NOT support /regex/flags syntax.
+# Use quoted strings with inline flags: =~ "(?i)pattern"
+
+schemas:
+  # ========================================================================
+  # REDFISH METRIC REPORTS - AMD Instinct GPU Telemetry
+  # ========================================================================
+
+  # All Redfish MetricReports/All metrics
+  - name: redfish_metric_reports
+    description: All metrics from Redfish TelemetryService MetricReports
+    path_pattern: "$.MetricValues[*]"
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "sensor_reading"
+        type: gauge
+        unit: mixed
+    tags_from:
+      - json_key: "MetricId"
+        tag_name: "metric_id"
+      - json_key: "MetricProperty"
+        tag_name: "metric_property"
+
+  # ========================================================================
+  # TEMPERATURE METRICS
+  # ========================================================================
+
+  - name: gpu_die_temperature
+    description: GPU die temperature readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*GPU_[0-9]+_DIE_TEMP.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "gpu_die_temp_celsius"
+        type: gauge
+        unit: celsius
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: gpu_memory_temperature
+    description: GPU memory temperature readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*GPU_[0-9]+_MEMORY_TEMP.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "gpu_memory_temp_celsius"
+        type: gauge
+        unit: celsius
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: hbm_vr_temperature
+    description: HBM voltage regulator temperature
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*HBM.*VR_TEMP.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "hbm_vr_temp_celsius"
+        type: gauge
+        unit: celsius
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: consolidated_temperature
+    description: Consolidated temperature thresholds
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*CONSOLIDATED_TEMP.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "consolidated_temp_celsius"
+        type: gauge
+        unit: celsius
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: vr_temperature
+    description: All voltage regulator temperatures
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*VR_TEMP.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "vr_temp_celsius"
+        type: gauge
+        unit: celsius
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # POWER METRICS
+  # ========================================================================
+
+  - name: gpu_power
+    description: GPU power consumption
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*GPU_[0-9]+_POWER.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "gpu_power_watts"
+        type: gauge
+        unit: watts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # VOLTAGE METRICS
+  # ========================================================================
+
+  - name: hbm_voltage
+    description: HBM voltage readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*HBM.*VOLTAGE.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "hbm_voltage_volts"
+        type: gauge
+        unit: volts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: vdd_voltage
+    description: VDD voltage regulator readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*VDD.*VOLTAGE.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "vdd_voltage_volts"
+        type: gauge
+        unit: volts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: gpuio_voltage
+    description: GPU IO voltage readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*GPUIO.*VOLTAGE.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "gpuio_voltage_volts"
+        type: gauge
+        unit: volts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: ibc_voltage
+    description: IBC voltage readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*IBC.*VOLTAGE.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "ibc_voltage_volts"
+        type: gauge
+        unit: volts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # CURRENT METRICS
+  # ========================================================================
+
+  - name: hbm_current
+    description: HBM current readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*HBM.*CURRENT.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "hbm_current_amps"
+        type: gauge
+        unit: amps
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: vdd_current
+    description: VDD current readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*VDD.*CURRENT.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "vdd_current_amps"
+        type: gauge
+        unit: amps
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: gpuio_current
+    description: GPU IO current readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*GPUIO.*CURRENT.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "gpuio_current_amps"
+        type: gauge
+        unit: amps
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: ibc_current
+    description: IBC current readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*IBC.*CURRENT.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "ibc_current_amps"
+        type: gauge
+        unit: amps
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: hsc_current
+    description: Hot swap controller current readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*HSC_CURRENT.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "hsc_current_amps"
+        type: gauge
+        unit: amps
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # HEALTH & STATUS METRICS
+  # ========================================================================
+
+  - name: vr_status
+    description: Voltage regulator status indicators
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*VR_STATUS.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "vr_status"
+        type: gauge
+        unit: status
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: system_health
+    description: System health indicators
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*(HEALTH|STATUS).*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "system_health"
+        type: gauge
+        unit: status
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # LINK & CONNECTIVITY METRICS
+  # ========================================================================
+
+  - name: retimer_link_metrics
+    description: Retimer link status and performance
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*RETIMER.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "retimer_metric"
+        type: gauge
+        unit: mixed
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # E32 VOLTAGE REGULATOR METRICS
+  # ========================================================================
+
+  - name: e32_vr_current
+    description: E32 voltage regulator current readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*E32_VR_CURRENT.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "e32_vr_current_amps"
+        type: gauge
+        unit: amps
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: e32_vr_voltage
+    description: E32 voltage regulator voltage readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*E32_VR_VOLTAGE.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "e32_vr_voltage_volts"
+        type: gauge
+        unit: volts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # USR VOLTAGE REGULATOR METRICS
+  # ========================================================================
+
+  - name: usr_vr_current
+    description: USR voltage regulator current readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*USR_VR_CURRENT.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "usr_vr_current_amps"
+        type: gauge
+        unit: amps
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: usr_vr_voltage
+    description: USR voltage regulator voltage readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*USR_VR_VOLTAGE.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "usr_vr_voltage_volts"
+        type: gauge
+        unit: volts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # BOARD VOLTAGE REGULATOR METRICS (3V3, FPGA VRs)
+  # ========================================================================
+
+  - name: board_vr_current
+    description: Board-level voltage regulator current (3V3, FPGA)
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*(3V3|FPGA).*VR_CURRENT.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "board_vr_current_amps"
+        type: gauge
+        unit: amps
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: board_vr_voltage
+    description: Board-level voltage regulator voltage (3V3, FPGA)
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*(3V3|FPGA).*VR_VOLTAGE.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "board_vr_voltage_volts"
+        type: gauge
+        unit: volts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # HSC (HOT SWAP CONTROLLER) TEMPERATURE & VOLTAGE
+  # ========================================================================
+
+  - name: hsc_temperature
+    description: Hot swap controller temperature readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*HSC_TEMP.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "hsc_temp_celsius"
+        type: gauge
+        unit: celsius
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: hsc_voltage
+    description: Hot swap controller voltage readings
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*HSC_VOLTAGE.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "hsc_voltage_volts"
+        type: gauge
+        unit: volts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # IBC (INTERMEDIATE BUS CONVERTER) TEMPERATURE
+  # ========================================================================
+
+  - name: ibc_temperature
+    description: IBC temperature readings (non-VR)
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*IBC.*TEMP.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "ibc_temp_celsius"
+        type: gauge
+        unit: celsius
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # BOARD-LEVEL TEMPERATURE METRICS
+  # ========================================================================
+
+  - name: board_temperature
+    description: Board-level temperature sensors (UBB, FPGA)
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*(UBB_TEMP|FPGA_TEMP).*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "board_temp_celsius"
+        type: gauge
+        unit: celsius
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # GPU AGGREGATE & BOARD POWER METRICS
+  # ========================================================================
+
+  - name: gpu_total_power
+    description: Total GPU power consumption (aggregate across all GPUs)
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*GPU_TOTAL_POWER.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "gpu_total_power_watts"
+        type: gauge
+        unit: watts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: gpu_warmest_temperature
+    description: GPU warmest temperature readings (aggregate hottest sensor)
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*GPU_WARMEST.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "gpu_warmest_temp_celsius"
+        type: gauge
+        unit: celsius
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  - name: board_power
+    description: UBB board-level power consumption
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ "(?i).*UBB_POWER.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "board_power_watts"
+        type: gauge
+        unit: watts
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+  # ========================================================================
+  # GPU UTILIZATION METRICS
+  # ========================================================================
+
+  - name: gpu_bandwidth_utilization
+    description: GPU memory bandwidth utilization percentage
+    path_pattern: '$.MetricValues[?(@.MetricProperty =~ ".*BandwidthPercent.*")]'
+    fields:
+      - json_key: "MetricValue"
+        metric_name: "gpu_bandwidth_percent"
+        type: gauge
+        unit: percent
+    tags_from:
+      - json_key: "MetricProperty"
+        tag_name: "sensor_path"
+
+# ========================================================================
+# AUTO-DISCOVERY CONFIGURATION
+# ========================================================================
+
+auto_discovery:
+  enabled: true
+
+  # Include fields matching these patterns (glob-style)
+  include_patterns:
+    - "*Temp*"
+    - "*Temperature*"
+    - "*TEMP*"
+    - "*Watts*"
+    - "*Power*"
+    - "*POWER*"
+    - "*Percent*"
+    - "*Util*"
+    - "*Bytes*"
+    - "*MHz*"
+    - "*Clock*"
+    - "*Count*"
+    - "*Rate*"
+    - "*Speed*"
+    - "*Voltage*"
+    - "*VOLTAGE*"
+    - "*Current*"
+    - "*CURRENT*"
+    - "*Status*"
+    - "*STATUS*"
+    - "*Health*"
+    - "*HEALTH*"
+    - "*Reading"
+    - "*Value"
+
+  # Exclude fields matching these patterns
+  exclude_patterns:
+    - "*Timestamp*"
+    - "*timestamp*"
+    - "*Version*"
+    - "*Serial*"
+    - "*UUID*"
+    - "*Name*"
+    - "*ID*"
+    - "*Description*"
+    - "*@odata*"
+    - "*MetricId"
+    - "*MetricProperty"
+
+  # Default metric type for auto-discovered metrics
+  default_type: gauge
+
+  # Maximum recursion depth for JSON traversal
+  max_depth: 50

@@ -1,0 +1,918 @@
+# GYANAM — GPU Observability Assistant — Production Deployment
+
+Complete deployment guide for the GYANAM GPU Observability Assistant on
+Ubuntu 20.04 / 22.04 / 24.04 LTS, sized for monitoring **~300 GPU
+nodes** with `/data0` as the host data volume.
+
+---
+
+## System Requirements
+
+- **OS**: Ubuntu 20.04/22.04/24.04 LTS
+- **CPU**: 16-24 cores
+- **RAM**: 64 GB
+- **Storage**: 300+ GB mounted at `/data0`
+- **Network**: 1 Gbps recommended
+
+---
+
+## Part 1: System Preparation
+
+### Step 1.1: Verify /data0 Mount
+```bash
+# Check /data0 is mounted and has space
+df -h /data0
+# Expected output: ~300GB available
+
+# Set ownership
+sudo chown -R $USER:$USER /data0
+chmod 755 /data0
+```
+
+### Step 1.2: Update System
+```bash
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y curl git wget jq
+```
+
+### Step 1.3: Install Docker (Ubuntu Repository Method)
+
+**Option A - Using Official Docker Repository (Recommended):**
+```bash
+# Remove old Docker versions
+sudo apt remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+
+# Install prerequisites
+sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+
+# Add Docker GPG key
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+# Verify installation
+docker --version
+docker compose version
+```
+
+**Option B - If you have Snap Docker (check with `snap list | grep docker`):**
+```bash
+# Snap Docker cannot change data-root easily
+# Remove snap docker and use Option A above
+sudo snap remove docker
+# Then follow Option A
+```
+
+### Step 1.4: Configure Docker Group (Optional)
+```bash
+# Add current user to docker group
+sudo usermod -aG docker $USER
+
+# Apply group membership (logout/login OR use newgrp)
+newgrp docker
+
+# Verify - should work without sudo
+docker ps
+```
+
+**Note:** If you cannot add your user to the docker group, you can use `sudo` with all `./gyanam.sh` and `docker` commands throughout this guide.
+
+---
+
+## Part 2: Configure Docker to Use /data0 (the mount point for docker instances and data storage)
+
+### Step 2.1: Stop Docker Service
+```bash
+sudo systemctl stop docker
+sudo systemctl stop docker.socket
+```
+
+### Step 2.2: Create Docker Data Directory
+```bash
+# Create directory structure
+sudo mkdir -p /data0/docker
+
+# If you have existing relevant Docker data, migrate it
+if [ -d /var/lib/docker ]; then
+    echo "Migrating existing Docker data to /data0..."
+    sudo rsync -aP /var/lib/docker/ /data0/docker/
+    # Backup old location
+    sudo mv /var/lib/docker /var/lib/docker.backup
+fi
+```
+
+### Step 2.3: Configure Docker Daemon
+
+**Create or update daemon.json:**
+```bash
+# Create daemon.json with proper settings
+sudo mkdir -p /etc/docker
+
+sudo tee /etc/docker/daemon.json > /dev/null <<'EOF'
+{
+  "data-root": "/data0/docker",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+
+# Verify JSON is valid
+cat /etc/docker/daemon.json | jq .
+# Should display the JSON without errors
+```
+
+### Step 2.4: Start Docker with New Configuration
+```bash
+# Reload systemd
+sudo systemctl daemon-reload
+
+# Start Docker
+sudo systemctl start docker
+
+# Verify Docker is using /data0
+docker info | grep "Docker Root Dir"
+# Should show: Docker Root Dir: /data0/docker
+
+# Enable Docker to start on boot
+sudo systemctl enable docker
+```
+
+### Step 2.5: Verify Docker is Working
+```bash
+# Test Docker
+docker run --rm hello-world
+# Should print "Hello from Docker!"
+
+# Check data location
+sudo ls -la /data0/docker/
+# Should see containers/, volumes/, etc.
+```
+
+---
+
+## Part 3: Prepare Application Directories
+
+### Step 3.1: Create Volume Mount Points
+```bash
+# Create directories for Docker volumes
+sudo mkdir -p /data0/gyanam-volumes/{shared_data,influxdb_data,influxdb_config,grafana_data}
+
+# Set ownership
+sudo chown -R $USER:$USER /data0/gyanam-volumes
+```
+
+### Step 3.2: Clone Application Repository
+```bash
+# Clone to /data0
+cd /data0
+git clone https://github.com/your-org/gyanam.git
+cd gyanam
+
+# Make management script executable
+chmod +x gyanam.sh
+
+# Verify files
+ls -la
+# Should see: gyanam.sh, docker-compose.yml, collector/, grafana/, etc.
+```
+
+---
+
+## Part 4: Configuration for 300 Nodes
+
+### Step 4.1: Initialize Environment (Using gyanam.sh)
+```bash
+cd /data0/gyanam
+
+# Initialize with auto-generated secure tokens
+./gyanam.sh init
+
+# Output will display:
+#   InfluxDB Admin Password: <auto-generated>
+#   Grafana Admin Password:  <auto-generated>
+#
+# IMPORTANT: SAVE THESE CREDENTIALS SECURELY!
+```
+
+**What `./gyanam.sh init` does:**
+- ✅ Generates cryptographically secure tokens automatically
+- ✅ Creates `.env` file with all required variables
+- ✅ Sets secure file permissions (chmod 600)
+- ✅ Checks for port conflicts
+- ✅ Warns if deployment already exists
+
+### Step 4.2: Adjust Retention for 300 Nodes (Optional)
+```bash
+# Edit .env to increase retention periods for 300 nodes
+nano .env
+
+# Recommended changes:
+# INFLUXDB_RETENTION=7d → 30d
+# INFLUXDB_15M_RETENTION=30d → 90d
+# INFLUXDB_HOURLY_RETENTION=90d → 365d
+```
+
+### Step 4.3: Update config.yaml for 300 Nodes
+```bash
+# Backup original
+cp collector/config/config.yaml collector/config/config.yaml.backup
+
+# Edit configuration
+nano collector/config/config.yaml
+```
+
+**The current defaults in `collector/config/config.yaml` are already
+sized for 250-500 nodes** — for a 300-node fleet no changes are required.
+For reference these are the relevant values:
+
+```yaml
+polling:
+  interval_seconds: 300
+  timeout_seconds: 45
+  max_concurrent: 100          # default; sized for 250-500 targets
+  task_poll_interval: 5
+  task_timeout: 600
+  download_timeout: 600
+
+influxdb:
+  batch_size: 5000             # default; lowered from 10000 — larger
+                               # batches hit InfluxDB's "Can not write
+                               # request body" mid-stream errors under load
+  flush_interval_seconds: 10
+  write_timeout_ms: 90000
+  max_concurrent_writes: 10    # default; parallel HTTP writers
+
+parser:
+  max_concurrent_processors: 16  # match your CPU cores (or higher)
+
+alerts:
+  enabled: true
+  batch_size: 100
+  batch_interval: 5
+  max_queue_size: 50000        # default; ok for 300 targets
+  max_alerts_per_minute: 100
+
+collected_logs:
+  max_concurrent_collections: 5  # on-demand only; doesn't drive cycle load
+  retention_days: 30
+```
+
+**Notes**:
+- `max_concurrent=100` works because the poller uses **fire-and-forget**
+  scheduling — a slow cycle can no longer stack a backlog into the next
+  tick.
+- The exporter does **HTTP gzip** on responses (5-10× wire-bandwidth
+  reduction) and **reconnects automatically** after 3 consecutive
+  full-flush failures.
+- Per-target `RedfishClient` is **cached** across collection cycles (eliminates
+  per-cycle TCP/TLS handshake at 300-target scale).
+- See `docs/SCALABILITY.md` for the architecture diagram and per-knob
+  rationale.
+
+### Step 4.4: Update docker-compose.yml
+```bash
+# Backup original
+cp docker-compose.yml docker-compose.yml.backup
+
+# Edit docker-compose.yml
+nano docker-compose.yml
+```
+
+**Current default `docker-compose.yml` resource limits** (sized for
+250-500 targets — adjust only for very large or very small deployments):
+
+| Service | mem_limit | cpus |
+|---------|-----------|------|
+| `collector` | 8g | 4 |
+| `api` | 2g | 0.5 |
+| `influxdb` | 16g | 4 |
+| `grafana` | 4g | 0.5 |
+
+**For >500 targets**, consider bumping `collector` and `influxdb` `cpus`
+to 6-8 each. JSON/JSONPath parsing is GIL-bound and CPU-heavy; under-
+provisioned cores starve the asyncio event loop and produce silent
+flush-loop stalls (see `docs/CODEQL_REPORT.md` / `docs/SCALABILITY.md`
+for historical context on this failure mode).
+
+**To use bind mounts under `/data0` instead of named volumes**, replace
+the `volumes:` section with explicit host paths:
+
+```yaml
+services:
+  collector:
+    # ... existing config ...
+    volumes:
+      - /data0/gyanam-volumes/shared_data:/app/data
+      - ./collector/config:/app/config:ro
+
+  api:
+    # ... existing config ...
+    volumes:
+      - /data0/gyanam-volumes/shared_data:/app/data
+      - ./collector/config:/app/config:ro
+
+  influxdb:
+    # ... existing config ...
+    volumes:
+      - /data0/gyanam-volumes/influxdb_data:/var/lib/influxdb2
+      - /data0/gyanam-volumes/influxdb_config:/etc/influxdb2
+      - ./influxdb/scripts:/docker-entrypoint-initdb.d:ro
+
+  grafana:
+    # ... existing config ...
+    volumes:
+      - /data0/gyanam-volumes/grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+
+# Then REMOVE the named volumes section at the bottom of docker-compose.yml.
+```
+
+**Architecture Note:**
+The system now runs as two separate processes:
+- **collector**: Background telemetry collection, metric export, SSE subscriptions, alerts
+- **api**: Web UI, user interactions, on-demand log collections
+
+Both share the same SQLite database (in WAL mode) via the `shared_data` volume.
+
+### Step 4.5: Configure Firewall
+```bash
+# Allow required ports
+sudo ufw allow 8080/tcp comment 'GYANAM API (Web UI)'
+sudo ufw allow 8086/tcp comment 'InfluxDB'
+sudo ufw allow 3000/tcp comment 'Grafana'
+
+# Enable firewall if not already enabled
+sudo ufw --force enable
+
+# Check status
+sudo ufw status
+
+# Note: The collector service runs internally on port 8081 but is not exposed externally
+```
+
+---
+
+## Part 5: Deployment (Using gyanam.sh)
+
+### Step 5.1: Build Docker Images
+```bash
+cd /data0/gyanam
+
+# Build using gyanam.sh
+./gyanam.sh build
+
+# Takes 5-10 minutes
+# Handles environment validation and project naming
+```
+
+### Step 5.2: Start Services
+```bash
+# Start all services
+./gyanam.sh start
+
+# Output shows:
+#   - Port availability check
+#   - Services starting
+#   - Access URLs with ports
+
+# Follow logs during startup
+./gyanam.sh logs -f
+
+# Wait for these messages:
+# - influxdb: "Listening on HTTP 0.0.0.0:8086"
+# - collector: "Collector service startup complete"
+# - api: "API service startup complete"
+# - grafana: "HTTP Server Listen"
+
+# Press Ctrl+C to exit logs (services keep running)
+```
+
+**What `./gyanam.sh start` does:**
+- ✅ Validates `.env` file exists and has required variables
+- ✅ Checks port availability before starting
+- ✅ Starts services with proper project naming
+- ✅ Displays access URLs
+
+### Step 5.3: Verify Services
+```bash
+# Check status and health (all in one command)
+./gyanam.sh status
+
+# Output shows:
+#   - Container status (running/healthy)
+#   - Health check results for each service
+```
+
+**What `./gyanam.sh status` does:**
+- ✅ Shows docker compose ps output
+- ✅ Runs HTTP health checks on all services
+- ✅ Reports success/failure for each service
+
+### Step 5.4: Access Web Interfaces
+```bash
+# Get server IP
+hostname -I | awk '{print $1}'
+
+# Access:
+# API/Web UI:    http://SERVER_IP:8080
+# Grafana:       http://SERVER_IP:3000
+# InfluxDB UI:   http://SERVER_IP:8086
+
+# Default login for API/Web UI:
+# Username: admin
+# Password: changeme (CHANGE THIS!)
+```
+
+---
+
+## Part 6: Import Targets (300 Nodes)
+
+### Step 6.1: Prepare CSV File
+
+Create `targets_300.csv`:
+```csv
+name,host,port,username,password,connection_mode,use_ssl,verify_ssl,enabled,enable_alert_subscription
+gpu-node-001,10.0.1.1,443,admin,nodepass1,http,true,false,true,false
+gpu-node-002,10.0.1.2,443,admin,nodepass2,http,true,false,true,false
+gpu-node-003,10.0.1.3,443,admin,nodepass3,http,true,false,true,false
+...
+```
+
+**Important:**
+- Set `enable_alert_subscription=false` initially (enable later for SSE-capable BMCs)
+- Use `verify_ssl=false` for self-signed certs
+- Format: one target per line
+
+### Step 6.2: Import via UI
+1. Navigate to `http://SERVER_IP:8080`
+2. Login (admin/changeme)
+3. Go to **Targets** tab
+4. Click **"Import Systems"** button
+5. Select your `targets_300.csv` file
+6. Click **Upload**
+7. Verify import: should show 300 targets
+
+### Step 6.3: Verify First Collection Cycle
+```bash
+# Watch collector logs for first collection cycle
+./gyanam.sh logs -f collector
+
+# You should see:
+# - "Scheduling N due polls (of T total, M in-flight)" — fire-and-forget tick
+# - "Exported N metrics from <target_name>"   — per-target completion
+# - First cycle: 5-10 min while clients warm up (TLS + session per target)
+# - Steady state: each cycle completes in roughly 1-3 min for 300 nodes
+#   (per-target client cache eliminates the per-cycle handshake cost)
+
+# Press Ctrl+C to exit
+```
+
+---
+
+## Part 7: Post-Deployment Setup
+
+### Step 7.1: Change Default Passwords
+
+**API Admin Password:**
+```bash
+# Generate new password hash
+docker exec -it gyanam-api-1 python3 -c "
+import bcrypt
+password = b'YourNewStrongPassword123'
+hashed = bcrypt.hashpw(password, bcrypt.gensalt())
+print(hashed.decode())
+"
+# Copy the output hash
+
+# Edit config
+nano /data0/gyanam/collector/config/config.yaml
+# Update ui.auth.password_hash with the new hash
+
+# Restart API service
+./gyanam.sh restart api
+```
+
+### Step 7.2: Setup InfluxDB Downsampling
+```bash
+# Setup complete downsampling pipeline (15-min + hourly aggregations)
+./gyanam.sh setup-all-downsampling
+
+# This creates:
+#   - gpu_metrics_15m bucket (15-min aggregates, 90d retention)
+#   - gpu_metrics_hourly bucket (hourly aggregates, 365d retention)
+#   - Automated tasks to run aggregations
+
+# Saves ~70% disk space for long-term data
+```
+
+### Step 7.3: Configure Grafana
+1. Login to Grafana: `http://SERVER_IP:3000`
+2. Username: `admin`, Password: shown during `./gyanam.sh init`
+3. Go to **Configuration → Data Sources**
+4. Verify **InfluxDB** connection is working (green check)
+5. Go to **Dashboards** → Verify dashboards are loaded
+
+### Step 7.4: Setup Monitoring Scripts
+```bash
+# Make scripts executable
+chmod +x /data0/gyanam/scripts/*.sh
+
+# Test scripts
+/data0/gyanam/scripts/monitor_volumes.sh
+
+# Add to crontab
+crontab -e
+
+# Add these lines:
+*/15 * * * * /data0/gyanam/scripts/alert_disk_space.sh
+0 0 * * * /data0/gyanam/scripts/log_volume_growth.sh
+```
+
+### Step 7.5: Create Backup Script
+```bash
+cat > /data0/gyanam/scripts/backup.sh <<'EOF'
+#!/bin/bash
+# Backup GYANAM data
+BACKUP_DIR="/data0/backups/gyanam-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+
+# Backup shared database (accessible from either collector or api container)
+docker exec gyanam-api-1 sqlite3 /app/data/targets.db ".backup /app/data/backup.db"
+docker cp gyanam-api-1:/app/data/backup.db "$BACKUP_DIR/"
+
+# Backup configs
+cp -r /data0/gyanam/collector/config "$BACKUP_DIR/"
+cp /data0/gyanam/.env "$BACKUP_DIR/env.backup"
+
+# Keep last 30 days
+find /data0/backups -type d -name "gyanam-*" -mtime +30 -exec rm -rf {} + 2>/dev/null
+
+echo "Backup completed: $BACKUP_DIR"
+EOF
+
+chmod +x /data0/gyanam/scripts/backup.sh
+
+# Test backup
+/data0/gyanam/scripts/backup.sh
+
+# Add daily backup to crontab (2 AM)
+# 0 2 * * * /data0/gyanam/scripts/backup.sh
+```
+
+---
+
+## Part 8: Daily Operations (Using gyanam.sh)
+
+### Daily Checks
+```bash
+# Quick health check (recommended daily)
+./gyanam.sh status
+
+# Monitor volumes and disk usage
+./gyanam.sh monitor
+
+# View logs
+./gyanam.sh logs -f              # All services
+./gyanam.sh logs -f collector    # Just collector (background)
+./gyanam.sh logs -f api          # Just API (web UI)
+./gyanam.sh logs collector --tail=100  # Last 100 lines
+
+# Check recent errors
+./gyanam.sh logs collector --tail=100 | grep -i error
+./gyanam.sh logs api --tail=100 | grep -i error
+```
+
+### Weekly Maintenance
+```bash
+# Review collection success rate
+# Login to http://SERVER_IP:8080/targets
+# Check "Last Status" column - should be mostly "success"
+
+# Review alert subscription status (if enabled)
+# Login to http://SERVER_IP:8080/alerts
+# Check subscription states
+
+# Check database size
+docker exec gyanam-influxdb-1 du -sh /var/lib/influxdb2/
+```
+
+### Common Operations
+```bash
+# Restart services
+./gyanam.sh restart
+
+# Stop services
+./gyanam.sh stop
+
+# Start services
+./gyanam.sh start
+
+# Rebuild after code changes
+./gyanam.sh build
+./gyanam.sh restart
+
+# Check resource usage
+docker stats
+
+# Check disk I/O
+iostat -x 1 5
+```
+
+---
+
+## Part 9: Performance Tuning
+
+### If System is Overloaded
+
+First, check `/health/detailed` to localise the bottleneck — see the
+"Monitoring Scaling Health" table in `docs/SCALABILITY.md` for which
+field tells you what.
+
+**If poller is fine but InfluxDB / CPU is overloaded:**
+```bash
+# Edit config.yaml
+nano /data0/gyanam/collector/config/config.yaml
+
+# Increase collection interval (more time between cycles for ingest to catch up)
+# polling.interval_seconds: 300 → 600
+
+# Restart
+./gyanam.sh restart
+```
+
+**Do NOT routinely lower `polling.max_concurrent`** — the fire-and-forget
+poller no longer stacks backlogs, so a high `max_concurrent` is safe.
+The real bottlenecks for very large fleets are the result-processor and
+InfluxDB ingestion, not the poller fan-out. Reducing `max_concurrent`
+just *slows down* completed cycles without removing the ingest
+pressure.
+
+For analytics-style exports that put query load on InfluxDB, prefer
+`INFLUX_AGGREGATE_WINDOW=5m` (or coarser) — see
+`docs/DATA_EXPORT_REFERENCE.md`.
+
+**Reduce Data Retention:**
+```bash
+# Edit .env
+nano .env
+
+# Change:
+# INFLUXDB_RETENTION=30d → 14d
+
+# Restart
+./gyanam.sh restart
+```
+
+### If Running Out of Disk Space
+```bash
+# Check what's using space
+du -sh /data0/gyanam-volumes/*
+
+# Manually clean old data (older than 30 days)
+docker exec gyanam-influxdb-1 influx delete \
+  --bucket gpu_metrics \
+  --start 1970-01-01T00:00:00Z \
+  --stop $(date -d '30 days ago' -u +%Y-%m-%dT%H:%M:%SZ)
+
+# Reduce log retention
+docker exec gyanam-collector-1 find /app/data/collected_logs -type f -mtime +7 -delete
+```
+
+---
+
+## Part 10: Upgrade Procedure
+
+```bash
+cd /data0/gyanam
+
+# Backup first!
+/data0/gyanam/scripts/backup.sh
+
+# Pull latest changes
+git pull origin main
+
+# Rebuild and restart
+./gyanam.sh build
+./gyanam.sh restart
+
+# Verify
+./gyanam.sh status
+```
+
+---
+
+## Common Issues and Solutions
+
+### Issue: Docker daemon won't start after config change
+```bash
+# Check daemon.json syntax
+sudo cat /etc/docker/daemon.json | jq .
+
+# Check logs
+sudo journalctl -u docker -n 50
+
+# Reset to defaults if needed
+sudo rm /etc/docker/daemon.json
+sudo systemctl restart docker
+```
+
+### Issue: Permission denied errors
+```bash
+# Fix ownership
+sudo chown -R $USER:$USER /data0/gyanam
+sudo chown -R $USER:$USER /data0/gyanam-volumes
+```
+
+### Issue: Port already in use
+```bash
+# Find what's using port 8080
+sudo netstat -tlnp | grep 8080
+
+# Kill process or change port in .env
+```
+
+### Issue: Container exits immediately
+```bash
+# Check logs
+./gyanam.sh logs collector
+./gyanam.sh logs api
+
+# Common causes:
+# - Invalid .env file (verify with: cat .env)
+# - Database permission issues
+# - Port conflicts (check with: sudo netstat -tlnp)
+# - Missing ENCRYPTION_KEY or other required environment variables
+```
+
+### Issue: Services won't start
+```bash
+# Check status and logs
+./gyanam.sh status
+./gyanam.sh logs
+
+# Verify environment file
+cat .env | grep -v PASSWORD | grep -v TOKEN
+```
+
+---
+
+## Expected Performance (300 Nodes)
+
+Estimates against the **current** architecture (fire-and-forget poller,
+per-target persistent `RedfishClient`, batched SQLite writes, parallel
+gzipped InfluxDB writes). These are conservative projections — measured
+results may differ depending on BMC latency, network path, and storage
+backend.
+
+| Metric | Expected | Notes |
+|--------|----------|-------|
+| Collection cycle time | 1-3 minutes (warm) | First cycle is slower due to TLS handshakes |
+| Metrics per cycle | ~50K-200K | ~740 points × 300 targets ≈ 222K |
+| InfluxDB write rate | ~1K-2K points/sec sustained | Gzipped batches; parallel writers |
+| Disk growth (raw + tiered) | ~500MB-1.5GB per day | After hourly downsampling tier matures |
+| Memory usage (steady state) | InfluxDB 8-12 GB, Collector 2-4 GB, API <500 MB, Grafana 1-2 GB | Within configured `mem_limit` values |
+| Client cache hit rate | ≥99% steady state | Visible at `/health/detailed → poller.client_cache_hit_rate_pct` |
+
+## Recent operational improvements
+
+The deployment described above benefits from a recent round of
+scale/observability/security work. Skim these if you've upgraded from an
+older release:
+
+- **Fire-and-forget poller** — `_schedule_due_polls` dispatches and
+  returns; no more cycle-bounded backlogs that stack into thundering
+  herds.
+- **Per-target `RedfishClient` cache** — TLS + Redfish-session reuse
+  across collection cycles; cuts ~300 handshakes per cycle at 300-node scale.
+- **Batched SQLite status writer** — 5-second coalesce eliminates the
+  "database is locked" errors observed at ~100 concurrent commits.
+- **Dedicated extraction `ThreadPoolExecutor`** — sized at
+  `max(16, parser.max_concurrent_processors × 2)`. Python's default
+  pool can shrink to ~5 threads under cgroup CPU limits, which
+  silently queues all extraction work.
+- **InfluxDB reconnect-on-failure** — after 3 consecutive full-flush
+  failures the cached write API is nulled so the flush loop's
+  reconnect path runs. Previously a "connected but every write fails"
+  state could persist indefinitely.
+- **HTTP gzip on InfluxDB queries** — 5-10× wire reduction; default on.
+- **Honest health check** — `is_connected=false` after 600s with no
+  successful write (was `true` for 7 hours during a stall once).
+- **Export pipeline overhaul** — `gyanam.sh influx-export` now does
+  pre-flight count, chunking, retry, atomic write, gzip output,
+  server-side aggregation. See `docs/DATA_EXPORT_REFERENCE.md`.
+- **CodeQL security pass** — stack-trace leakage sanitised across all
+  user-facing endpoints; webhook URL validated at startup; cookies
+  bound to canonical username. See `docs/CODEQL_REPORT.md` for the
+  audit trail.
+
+---
+
+## Security Checklist
+
+- [ ] Changed Collector admin password
+- [ ] Changed Grafana admin password
+- [ ] Changed InfluxDB admin password
+- [ ] Firewall rules configured (ufw)
+- [ ] Backups scheduled (crontab)
+- [ ] Monitoring alerts configured
+- [ ] SSL certificates installed (optional)
+- [ ] Limited SSH access to authorized IPs
+
+---
+
+---
+
+## Using sudo Throughout (If Not in Docker Group)
+
+If you cannot add your user to the docker group, simply prefix all `gyanam.sh` commands with `sudo`:
+
+```bash
+# All operations work with sudo
+sudo ./gyanam.sh init
+sudo ./gyanam.sh build
+sudo ./gyanam.sh start
+sudo ./gyanam.sh status
+sudo ./gyanam.sh logs -f
+sudo ./gyanam.sh monitor
+sudo ./gyanam.sh restart
+sudo ./gyanam.sh stop
+```
+
+**For automated cron jobs**, configure passwordless sudo:
+```bash
+sudo visudo
+
+# Add (replace USERNAME with your username):
+USERNAME ALL=(ALL) NOPASSWD: /usr/bin/docker, /data0/gyanam/gyanam.sh
+```
+
+---
+
+## Quick Reference
+
+### gyanam.sh Commands
+```bash
+./gyanam.sh init                      # Initialize .env with auto-generated tokens
+./gyanam.sh build                     # Build Docker images
+./gyanam.sh start                     # Start all services
+./gyanam.sh stop                      # Stop all services
+./gyanam.sh restart                   # Restart all services
+./gyanam.sh status                    # Health check all services
+./gyanam.sh monitor                   # Check disk usage and volumes
+./gyanam.sh logs -f                   # Follow all logs
+./gyanam.sh logs collector            # View collector logs only
+
+# Downsampling (one-time after first start)
+./gyanam.sh setup-15m-downsampling
+./gyanam.sh setup-hourly-downsampling
+./gyanam.sh setup-all-downsampling    # Recommended: both at once
+
+# InfluxDB inspection / export — see docs/DATA_EXPORT_REFERENCE.md
+./gyanam.sh influx-status
+./gyanam.sh influx-list [bucket]
+./gyanam.sh influx-export [bucket] [out.csv.gz] [start] [stop]
+
+./gyanam.sh clean                     # Delete all data (WARNING)
+./gyanam.sh help                      # Show all commands incl. env vars
+```
+
+**Note on container naming**: `gyanam.sh` derives the docker-compose
+project name from the installation directory. If you clone to
+`/data0/gyanam`, containers are named `gyanam-api-1`, `gyanam-collector-1`,
+etc. If you clone to a differently-named directory, substitute that name
+in any `docker exec` examples in this doc.
+
+### Manual Docker Commands (Fallback)
+```bash
+# Only use these if gyanam.sh doesn't work or for debugging
+docker compose ps                     # List containers
+docker compose logs -f collector      # View collector logs
+docker compose logs -f api            # View API logs
+docker compose restart collector      # Restart collector service
+docker compose restart api            # Restart API service
+docker exec -it gyanam-collector-1 bash  # Shell into collector container
+docker exec -it gyanam-api-1 bash     # Shell into API container
+```
+
+---
+
+## Support
+
+For issues:
+- **Help**: `./gyanam.sh help`
+- **Status**: `./gyanam.sh status`
+- **Logs**: `./gyanam.sh logs -f`
+- **Monitor**: `./gyanam.sh monitor`
+- **GitHub Issues**: https://github.com/your-org/gyanam/issues

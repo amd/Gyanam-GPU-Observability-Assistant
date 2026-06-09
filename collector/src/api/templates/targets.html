@@ -1,0 +1,678 @@
+{% extends "base.html" %}
+
+{% block title %}Targets - GPU Metrics Collector{% endblock %}
+
+{% block content %}
+<style>
+    /* Icon-based action buttons */
+    .action-icons {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        background: #f1f5f9;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1rem;
+        position: relative;
+    }
+
+    .icon-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .icon-btn.test {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .icon-btn.test:hover {
+        background: #bbf7d0;
+    }
+
+    .icon-btn.poll {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .icon-btn.poll:hover {
+        background: #bfdbfe;
+    }
+
+    .icon-btn.collect {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .icon-btn.collect:hover {
+        background: #c7d2fe;
+    }
+
+    .icon-btn.edit {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .icon-btn.edit:hover {
+        background: #fde68a;
+    }
+
+    .icon-btn.delete {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .icon-btn.delete:hover {
+        background: #fecaca;
+    }
+
+    /* Modern tooltip */
+    .tooltip {
+        position: relative;
+    }
+
+    .tooltip::before {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-8px);
+        background: #1e293b;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s, transform 0.2s;
+        z-index: 1000;
+    }
+
+    .tooltip::after {
+        content: '';
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-2px);
+        border: 5px solid transparent;
+        border-top-color: #1e293b;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s, transform 0.2s;
+        z-index: 1000;
+    }
+
+    .tooltip:hover::before,
+    .tooltip:hover::after {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-4px);
+    }
+
+    .tooltip:hover::after {
+        transform: translateX(-50%) translateY(1px);
+    }
+
+    /* Status indicator badges next to target name */
+    .target-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-size: 0.7rem;
+        flex-shrink: 0;
+    }
+
+    .status-indicator.success {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-indicator.error {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-indicator.pending {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .status-indicator.disabled {
+        background: #fef3c7;
+        color: #92400e;
+    }
+</style>
+
+<div class="card">
+    <div class="card-header">
+        <h2>🎯 Target Systems</h2>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <a href="/targets/api/export" class="btn btn-sm" style="background-color: #0891b2; color: white;">📤 Export Systems</a>
+            <button class="btn btn-sm" style="background-color: #0891b2; color: white;" onclick="document.getElementById('import-file').click()">📥 Import Systems</button>
+            <input type="file" id="import-file" accept=".csv" style="display: none;" onchange="importCSV(this)">
+            <a href="/targets/add" class="btn btn-primary">➕ Add Target</a>
+        </div>
+    </div>
+
+    <div id="import-result" style="display: none; margin: 12px 16px; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem;"></div>
+
+    {% if targets %}
+    <!-- Summary Bar -->
+    <div style="display: flex; gap: 24px; padding: 12px 16px; background: var(--bg-secondary, #f8fafc); border-bottom: 1px solid var(--border-color, #e2e8f0); font-size: 0.875rem; flex-wrap: wrap;">
+        <span><strong>{{ targets|length }}</strong> Targets</span>
+        <span style="color: #16a34a;">{{ targets|selectattr('last_poll_status', 'equalto', 'success')|list|length }} Healthy</span>
+        <span style="color: #dc2626;">{{ targets|selectattr('last_poll_status', 'equalto', 'error')|list|length }} Failing</span>
+        <span style="color: #64748b;">{{ targets|rejectattr('last_poll_status')|list|length }} Never Polled</span>
+        <span style="color: #64748b;">|</span>
+        <span>{{ targets|selectattr('connection_mode', 'equalto', 'direct')|list|length }} HTTP</span>
+        <span>{{ targets|selectattr('connection_mode', 'equalto', 'ssh_proxy')|list|length }} SSH</span>
+        <span>{{ targets|selectattr('connection_mode', 'equalto', 'sse')|list|length }} SSE</span>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div style="display: flex; gap: 12px; padding: 12px 16px; align-items: center; flex-wrap: wrap;">
+        <input type="text" id="search-input" placeholder="🔍 Search by target name or BMC..."
+               style="flex: 1; min-width: 200px; padding: 6px 12px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; font-size: 0.875rem;"
+               oninput="filterTargets()">
+        <select id="filter-status" onchange="filterTargets()" style="padding: 6px 10px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; font-size: 0.875rem;">
+            <option value="">All Status</option>
+            <option value="success">Healthy</option>
+            <option value="error">Failing</option>
+            <option value="pending">Never Polled</option>
+        </select>
+        <select id="filter-mode" onchange="filterTargets()" style="padding: 6px 10px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; font-size: 0.875rem;">
+            <option value="">All Modes</option>
+            <option value="direct">HTTP</option>
+            <option value="ssh_proxy">SSH Proxy</option>
+            <option value="sse">SSE</option>
+        </select>
+        <select id="filter-enabled" onchange="filterTargets()" style="padding: 6px 10px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; font-size: 0.875rem;">
+            <option value="">All</option>
+            <option value="enabled">Enabled</option>
+            <option value="disabled">Disabled</option>
+        </select>
+        <span id="filter-count" style="font-size: 0.8rem; color: #64748b;"></span>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Target Name</th>
+                <th>BMC / Connection</th>
+                <th>Last Poll</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="targets-tbody">
+            {% for target in targets %}
+            <tr class="target-row"
+                data-name="{{ target.name|lower }}"
+                data-host="{{ target.host|lower }}"
+                data-status="{{ target.last_poll_status or 'pending' }}"
+                data-mode="{{ target.connection_mode|default('direct') }}"
+                data-enabled="{{ 'enabled' if target.enabled else 'disabled' }}">
+                <td>
+                    <div class="target-name-cell">
+                        <!-- Status Indicator -->
+                        {% if target.last_poll_status == 'success' %}
+                            <span class="status-indicator success tooltip" data-tooltip="Healthy" aria-label="Status: Healthy">✓</span>
+                        {% elif target.last_poll_status == 'error' %}
+                            <span class="status-indicator error tooltip" data-tooltip="Failing{% if target.consecutive_failures > 0 %} ({{ target.consecutive_failures }} failures){% endif %}" aria-label="Status: Failing">✗</span>
+                        {% else %}
+                            <span class="status-indicator pending tooltip" data-tooltip="Never Polled" aria-label="Status: Never Polled">○</span>
+                        {% endif %}
+
+                        <!-- Enabled/Disabled Indicator -->
+                        {% if not target.enabled %}
+                            <span class="status-indicator disabled tooltip" data-tooltip="Disabled" aria-label="Disabled">⏸</span>
+                        {% endif %}
+
+                        <!-- Target Name -->
+                        <strong>{{ target.name }}</strong>
+                    </div>
+                </td>
+                <td>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <span>{{ target.host }}:{{ target.port }}</span>
+                        <div style="display: flex; gap: 4px;">
+                            {% if (target.connection_mode|default('direct')) == 'ssh_proxy' %}
+                                <small style="background: #7c3aed; color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem;">SSH Proxy</small>
+                            {% elif (target.connection_mode|default('direct')) == 'sse' %}
+                                <small style="background: #0891b2; color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem;">SSE Stream</small>
+                            {% else %}
+                                <small style="background: #64748b; color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem;">HTTP Direct</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    {% if target.last_poll_time %}
+                        {{ target.last_poll_time.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="action-icons">
+                        <!-- Test Connection -->
+                        <button class="icon-btn test tooltip"
+                                data-tooltip="Test Connection"
+                                onclick="testConnection({{ target.id }})"
+                                aria-label="Test connection to target">
+                            🔌
+                        </button>
+
+                        <!-- Trigger Poll -->
+                        <button class="icon-btn poll tooltip"
+                                data-tooltip="Trigger Manual Poll"
+                                onclick="triggerPoll({{ target.id }})"
+                                aria-label="Trigger manual poll">
+                            🔄
+                        </button>
+
+                        <!-- Collect Logs -->
+                        <button class="icon-btn collect tooltip"
+                                data-tooltip="Collect Diagnostic Logs"
+                                onclick="collectLogs({{ target.id }})"
+                                aria-label="Collect diagnostic logs">
+                            📥
+                        </button>
+
+                        <!-- Edit -->
+                        <a href="/targets/{{ target.id }}/edit"
+                           class="icon-btn edit tooltip"
+                           data-tooltip="Edit Target"
+                           aria-label="Edit target configuration">
+                            ✏️
+                        </a>
+
+                        <!-- Delete -->
+                        <form action="/targets/{{ target.id }}/delete"
+                              method="POST"
+                              style="display: inline; margin: 0;"
+                              onsubmit="return confirm('Are you sure you want to delete {{ target.name }}?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit"
+                                    class="icon-btn delete tooltip"
+                                    data-tooltip="Delete Target"
+                                    aria-label="Delete target">
+                                🗑️
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% if target.last_error_message %}
+            <tr class="target-error-row"
+                data-name="{{ target.name|lower }}"
+                data-host="{{ target.host|lower }}"
+                data-status="error"
+                data-mode="{{ target.connection_mode|default('direct') }}"
+                data-enabled="{{ 'enabled' if target.enabled else 'disabled' }}">
+                <td colspan="4" style="background-color: #fef2f2; color: #991b1b; font-size: 0.875rem; padding: 8px 12px;">
+                    <strong>Last Error:</strong> {{ target.last_error_message }}
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination Controls -->
+    <div id="pagination" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-color, #e2e8f0); font-size: 0.875rem;">
+        <div>
+            <label for="page-size" style="color: #64748b;">Show:</label>
+            <select id="page-size" onchange="currentPage = 1; applyPagination();" style="padding: 4px 8px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 4px; font-size: 0.875rem;">
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="0">All</option>
+            </select>
+        </div>
+        <div id="page-info" style="color: #64748b;"></div>
+        <div style="display: flex; gap: 4px;">
+            <button class="btn btn-sm" onclick="goToPage(currentPage - 1)" id="btn-prev" style="background: #64748b; color: white; padding: 4px 10px;">&laquo; Prev</button>
+            <button class="btn btn-sm" onclick="goToPage(currentPage + 1)" id="btn-next" style="background: #64748b; color: white; padding: 4px 10px;">Next &raquo;</button>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <p>No targets configured yet.</p>
+        <p><a href="/targets/add" class="btn btn-primary" style="margin-top: 16px;">Add Your First Target</a></p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    var currentPage = 1;
+    var filteredRows = [];
+
+    function filterTargets() {
+        currentPage = 1;
+        applyFilter();
+        applyPagination();
+    }
+
+    function applyFilter() {
+        var search = document.getElementById('search-input').value.toLowerCase();
+        var statusFilter = document.getElementById('filter-status').value;
+        var modeFilter = document.getElementById('filter-mode').value;
+        var enabledFilter = document.getElementById('filter-enabled').value;
+
+        var allRows = document.querySelectorAll('.target-row');
+        filteredRows = [];
+
+        allRows.forEach(function(row) {
+            var name = row.getAttribute('data-name');
+            var host = row.getAttribute('data-host');
+            var status = row.getAttribute('data-status');
+            var mode = row.getAttribute('data-mode');
+            var enabled = row.getAttribute('data-enabled');
+
+            var matchSearch = !search || name.indexOf(search) !== -1 || host.indexOf(search) !== -1;
+            var matchStatus = !statusFilter || status === statusFilter;
+            var matchMode = !modeFilter || mode === modeFilter;
+            var matchEnabled = !enabledFilter || enabled === enabledFilter;
+
+            if (matchSearch && matchStatus && matchMode && matchEnabled) {
+                filteredRows.push(row);
+            }
+        });
+
+        var countEl = document.getElementById('filter-count');
+        var total = allRows.length;
+        if (search || statusFilter || modeFilter || enabledFilter) {
+            countEl.textContent = filteredRows.length + ' of ' + total + ' match';
+        } else {
+            countEl.textContent = '';
+        }
+    }
+
+    function applyPagination() {
+        var pageSize = parseInt(document.getElementById('page-size').value) || 0;
+        var allRows = document.querySelectorAll('.target-row');
+
+        // Hide all rows first
+        allRows.forEach(function(row) {
+            row.style.display = 'none';
+            var nextRow = row.nextElementSibling;
+            if (nextRow && nextRow.classList.contains('target-error-row')) {
+                nextRow.style.display = 'none';
+            }
+        });
+
+        // Determine page slice
+        var totalFiltered = filteredRows.length;
+        var totalPages = pageSize > 0 ? Math.ceil(totalFiltered / pageSize) : 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        var start = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
+        var end = pageSize > 0 ? start + pageSize : totalFiltered;
+        var pageRows = filteredRows.slice(start, end);
+
+        // Show page rows
+        pageRows.forEach(function(row) {
+            row.style.display = '';
+            var nextRow = row.nextElementSibling;
+            if (nextRow && nextRow.classList.contains('target-error-row')) {
+                nextRow.style.display = '';
+            }
+        });
+
+        // Update pagination info
+        var pageInfo = document.getElementById('page-info');
+        var btnPrev = document.getElementById('btn-prev');
+        var btnNext = document.getElementById('btn-next');
+
+        if (pageSize > 0 && totalFiltered > pageSize) {
+            pageInfo.textContent = 'Page ' + currentPage + ' of ' + totalPages + ' (' + totalFiltered + ' targets)';
+            btnPrev.style.display = '';
+            btnNext.style.display = '';
+            btnPrev.disabled = (currentPage <= 1);
+            btnNext.disabled = (currentPage >= totalPages);
+        } else {
+            pageInfo.textContent = '';
+            btnPrev.style.display = 'none';
+            btnNext.style.display = 'none';
+        }
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        applyPagination();
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        applyFilter();
+        applyPagination();
+    });
+
+    async function testConnection(targetId) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳';
+
+        try {
+            const response = await fetch(`/targets/api/${targetId}/test`, {
+                method: 'POST'
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned non-JSON response. Check API logs for details.');
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('✅ Connection successful!\n\n' + data.message);
+
+                // Show success indicator
+                btn.textContent = '✅';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            } else {
+                alert('❌ Connection failed:\n\n' + data.message);
+            }
+        } catch (error) {
+            console.error('Connection test error:', error);
+            alert('❌ Error testing connection:\n\n' + error.message + '\n\nCheck browser console for details.');
+        } finally {
+            btn.disabled = false;
+            if (btn.textContent === '⏳') {
+                btn.textContent = originalText;
+            }
+        }
+    }
+
+    async function collectLogs(targetId) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳';
+
+        try {
+            const response = await fetch(`/logs/api/${targetId}/collect`, {
+                method: 'POST'
+            });
+
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned non-JSON response. Check API logs for details.');
+            }
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                const sizeMB = (data.file_size_bytes / 1024 / 1024).toFixed(1);
+                const message = `✅ Logs collected successfully!\n\n` +
+                    `📁 File: ${data.filename}\n` +
+                    `📊 Size: ${sizeMB} MB\n` +
+                    `⏱️ Duration: ${data.duration_ms.toFixed(0)}ms\n\n` +
+                    `View logs in the Logs tab or download from the Logs page.`;
+
+                alert(message);
+
+                // Show success indicator on button temporarily
+                btn.textContent = '✅';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            } else {
+                const errorMsg = data.detail || data.error || data.message || 'Unknown error';
+                alert('❌ Collection failed:\n\n' + errorMsg);
+            }
+        } catch (error) {
+            console.error('Log collection error:', error);
+            alert('❌ Error collecting logs:\n\n' + error.message + '\n\nCheck browser console for details.');
+        } finally {
+            btn.disabled = false;
+            if (btn.textContent === '⏳') {
+                btn.textContent = originalText;
+            }
+        }
+    }
+
+    async function triggerPoll(targetId) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳';
+
+        try {
+            const response = await fetch(`/targets/api/${targetId}/poll`, {
+                method: 'POST'
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned non-JSON response. Check API logs for details.');
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                const sizeKB = (data.content_size / 1024).toFixed(1);
+                const message = `✅ Poll successful!\n\n` +
+                    `📊 Received: ${sizeKB} KB\n` +
+                    `⏱️ Duration: ${data.duration_ms.toFixed(0)}ms\n` +
+                    `📈 Metrics exported: ${data.metrics_exported || 0}\n` +
+                    `🔧 Method: ${data.collection_method}`;
+
+                alert(message);
+
+                // Show success and reload
+                btn.textContent = '✅';
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                alert('❌ Poll failed:\n\n' + (data.error_message || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Poll error:', error);
+            alert('❌ Error triggering poll:\n\n' + error.message + '\n\nCheck browser console for details.');
+        } finally {
+            btn.disabled = false;
+            if (btn.textContent === '⏳') {
+                btn.textContent = originalText;
+            }
+        }
+    }
+
+    async function importCSV(input) {
+        var file = input.files[0];
+        if (!file) return;
+
+        var resultDiv = document.getElementById('import-result');
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#f0f9ff';
+        resultDiv.style.color = '#0c4a6e';
+        resultDiv.innerHTML = 'Importing targets...';
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            var response = await fetch('/targets/api/import', {
+                method: 'POST',
+                body: formData
+            });
+            var data = await response.json();
+
+            if (!response.ok) {
+                resultDiv.style.background = '#fef2f2';
+                resultDiv.style.color = '#991b1b';
+                resultDiv.innerHTML = '<strong>Import failed:</strong> ' + (data.detail || 'Unknown error');
+                return;
+            }
+
+            var parts = [];
+            if (data.created > 0) parts.push('<strong>' + data.created + ' created</strong>');
+            if (data.skipped > 0) parts.push(data.skipped + ' skipped (duplicate host)');
+            if (data.errors > 0) parts.push('<span style="color:#dc2626">' + data.errors + ' failed</span>');
+
+            var html = '<strong>Import complete:</strong> ' + parts.join(', ');
+
+            if (data.details.errors.length > 0) {
+                html += '<br><small style="color:#991b1b">Errors: ';
+                html += data.details.errors.map(function(e) {
+                    return 'Row ' + e.row + ' (' + (e.name || e.host) + '): ' + e.error;
+                }).join('; ');
+                html += '</small>';
+            }
+
+            if (data.details.skipped.length > 0) {
+                html += '<br><small>Skipped: ';
+                html += data.details.skipped.map(function(s) {
+                    return s.name + ' (' + s.host + ')';
+                }).join(', ');
+                html += '</small>';
+            }
+
+            resultDiv.style.background = data.errors > 0 ? '#fffbeb' : '#f0fdf4';
+            resultDiv.style.color = data.errors > 0 ? '#92400e' : '#166534';
+            resultDiv.innerHTML = html;
+
+            if (data.created > 0) {
+                setTimeout(function() { location.reload(); }, 2000);
+            }
+        } catch (error) {
+            resultDiv.style.background = '#fef2f2';
+            resultDiv.style.color = '#991b1b';
+            resultDiv.innerHTML = '<strong>Import error:</strong> ' + error.message;
+        } finally {
+            input.value = '';
+        }
+    }
+</script>
+{% endblock %}

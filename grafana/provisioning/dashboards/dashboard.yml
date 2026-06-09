@@ -1,0 +1,38 @@
+apiVersion: 1
+
+providers:
+  # Per-System GPU Monitoring - Detailed metrics for individual systems
+  - name: 'Per-System GPU Monitoring'
+    orgId: 1
+    folder: '📊 Per-System GPU Monitoring'
+    folderUid: 'per-system-gpu'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/per-system
+
+  # Fleet-Wide Monitoring - Aggregate views across all systems
+  - name: 'Fleet-Wide Monitoring'
+    orgId: 1
+    folder: '🌐 Fleet-Wide Monitoring'
+    folderUid: 'fleet-wide'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/fleet
+
+  # Historical & Trends - Long-term data analysis
+  - name: 'Historical & Trends'
+    orgId: 1
+    folder: '📈 Historical & Trends'
+    folderUid: 'historical-trends'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/historical

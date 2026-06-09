@@ -1,0 +1,35 @@
+# CodeQL configuration for the gyanam repository.
+#
+# Used both by the local re-run script (scripts/run-codeql.sh) and by a
+# github/codeql-action workflow if one is added later. Keep this file as
+# the single source of truth for query selection and path scoping.
+
+name: "Gyanam CodeQL config"
+
+# Run the standard CodeQL suites we care about.
+queries:
+  - uses: security-extended
+  - uses: code-quality
+
+# Path-based scoping.
+#
+# We only exclude:
+#   - test_bmc_alerts.py — interactive BMC test harness; every request is
+#     verify=False by design (that's the whole point), so the certificate-
+#     validation finding would fire 7 times against intentional code.
+#   - cached / built / output artifacts.
+paths-ignore:
+  - "scripts/test_bmc_alerts.py"
+  - "**/__pycache__/**"
+  - "**/.venv/**"
+  - "**/build/**"
+  - "**/dist/**"
+  - ".codeql-results/**"
+
+# Documented accepted-risk findings (no per-file query suppression — see
+# docs/CODEQL_REPORT.md for the audit trail):
+#   - py/request-without-cert-validation in collector/src/redfish/
+#     sse_capability_check.py: BMCs ship with self-signed certs by default;
+#     the per-target `verify_ssl` flag is the actual control point. The
+#     rule stays ENABLED so any NEW location that adds verify=False is
+#     still surfaced for review.

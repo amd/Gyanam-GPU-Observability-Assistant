@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Metric Schemas - GPU Metrics Collector{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>Metric Extraction Schemas</h2>
+        <button class="btn btn-primary" onclick="reloadSchemas()">Reload Schemas</button>
+    </div>
+
+    <p style="margin-bottom: 20px; color: #64748b;">
+        These schemas define how metrics are extracted from JSON telemetry blobs using JSONPath patterns.
+    </p>
+
+    {% if schemas %}
+    <table>
+        <thead>
+            <tr>
+                <th>Schema Name</th>
+                <th>Description</th>
+                <th>JSONPath Pattern</th>
+                <th>Fields</th>
+                <th>Tags</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for schema in schemas %}
+            <tr>
+                <td><strong>{{ schema.name }}</strong></td>
+                <td>{{ schema.description }}</td>
+                <td><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">{{ schema.path_pattern }}</code></td>
+                <td>
+                    {% for field in schema.fields %}
+                    <div style="margin-bottom: 4px;">
+                        <code>{{ field.metric_name }}</code>
+                        <small style="color: #64748b;">({{ field.type }}, {{ field.unit or 'no unit' }})</small>
+                    </div>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for tag in schema.tags_from %}
+                    <code>{{ tag.tag_name }}</code>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No metric schemas defined.</p>
+        <p style="color: #64748b;">Configure schemas in <code>config/metrics_schema.yaml</code></p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Auto-Discovery Configuration</h2>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <div>
+            <h4 style="margin-bottom: 12px;">Status</h4>
+            <p>
+                {% if auto_discovery.enabled %}
+                <span class="status status-enabled">Enabled</span>
+                {% else %}
+                <span class="status status-disabled">Disabled</span>
+                {% endif %}
+            </p>
+            <p style="margin-top: 8px; color: #64748b; font-size: 0.875rem;">
+                Default metric type: <strong>{{ auto_discovery.default_type }}</strong>
+            </p>
+        </div>
+
+        <div>
+            <h4 style="margin-bottom: 12px;">Include Patterns</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                {% for pattern in auto_discovery.include_patterns %}
+                <code style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 0.875rem;">
+                    {{ pattern }}
+                </code>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div>
+            <h4 style="margin-bottom: 12px;">Exclude Patterns</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                {% for pattern in auto_discovery.exclude_patterns %}
+                <code style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 0.875rem;">
+                    {{ pattern }}
+                </code>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color); color: #64748b; font-size: 0.875rem;">
+        Auto-discovery finds numeric fields matching include patterns but not matching exclude patterns.
+        Edit <code>config/metrics_schema.yaml</code> to modify these settings.
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    async function reloadSchemas() {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = 'Reloading...';
+
+        try {
+            const response = await fetch('/schemas/api/reload', {
+                method: 'POST'
+            });
+            const data = await response.json();
+
+            alert(`Schemas reloaded successfully!\n\nLoaded ${data.count} schemas.`);
+            location.reload();
+        } catch (error) {
+            alert('Error reloading schemas: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Reload Schemas';
+        }
+    }
+</script>
+{% endblock %}

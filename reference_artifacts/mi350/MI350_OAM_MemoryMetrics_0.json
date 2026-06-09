@@ -1,0 +1,163 @@
+{
+  "@odata.id": "/redfish/v1/TelemetryService/MetricReports/OAM_MemoryMetrics_0",
+  "@odata.type": "#MetricReport.v1_5_0.MetricReport",
+  "Id": "OAM_MemoryMetrics_0",
+  "MetricReportDefinition": {
+    "@odata.id": "/redfish/v1/TelemetryService/MetricReportDefinitions/OAM_MemoryMetrics_0"
+  },
+  "MetricValues": [
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/GPU_0_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_1/Sensors/GPU_1_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_2/Sensors/GPU_2_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_3/Sensors/GPU_3_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_4/Sensors/GPU_4_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_5/Sensors/GPU_5_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_6/Sensors/GPU_6_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_7/Sensors/GPU_7_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Chassis/OAM_0/Sensors/GPU_WARMEST_MEMORY_TEMP/Reading",
+      "MetricValue": null,
+      "Timestamp": "1970-01-01T00:03:04+00:00"
+    },
+    {
+      "MetricId": "GPU_Memory_Errors",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU0/MemoryMetrics#/OperatingSpeedMhz",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "GPU_Memory_Errors",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU1/MemoryMetrics#/OperatingSpeedMhz",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "GPU_Memory_Errors",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU2/MemoryMetrics#/OperatingSpeedMhz",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "GPU_Memory_Errors",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU3/MemoryMetrics#/OperatingSpeedMhz",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "GPU_Memory_Errors",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU4/MemoryMetrics#/OperatingSpeedMhz",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "GPU_Memory_Errors",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU5/MemoryMetrics#/OperatingSpeedMhz",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "GPU_Memory_Errors",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU6/MemoryMetrics#/OperatingSpeedMhz",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "GPU_Memory_Errors",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU7/MemoryMetrics#/OperatingSpeedMhz",
+      "MetricValue": null,
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU0/MemoryMetrics#/CurrentPeriod/CorrectableECCErrorCount",
+      "MetricValue": "0",
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU1/MemoryMetrics#/CurrentPeriod/CorrectableECCErrorCount",
+      "MetricValue": "0",
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU2/MemoryMetrics#/CurrentPeriod/CorrectableECCErrorCount",
+      "MetricValue": "0",
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU3/MemoryMetrics#/CurrentPeriod/CorrectableECCErrorCount",
+      "MetricValue": "0",
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU4/MemoryMetrics#/CurrentPeriod/CorrectableECCErrorCount",
+      "MetricValue": "0",
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU5/MemoryMetrics#/CurrentPeriod/CorrectableECCErrorCount",
+      "MetricValue": "0",
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU6/MemoryMetrics#/CurrentPeriod/CorrectableECCErrorCount",
+      "MetricValue": "0",
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    },
+    {
+      "MetricId": "Platform_Sensor_reading",
+      "MetricProperty": "/redfish/v1/Systems/UBB/Memory/GPU7/MemoryMetrics#/CurrentPeriod/CorrectableECCErrorCount",
+      "MetricValue": "0",
+      "Timestamp": "2000-10-15T01:16:30+00:00"
+    }
+  ],
+  "MetricValues@odata.count": 25,
+  "Name": "OAM_MemoryMetrics_0",
+  "Timestamp": "2000-10-15T01:16:30+00:00"
+}

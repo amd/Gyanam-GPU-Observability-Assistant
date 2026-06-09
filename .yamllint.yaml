@@ -1,0 +1,48 @@
+# YAML linting configuration
+extends: default
+
+rules:
+  # Allow longer lines for readability
+  line-length:
+    max: 120
+    level: warning
+
+  # Allow multiple spaces for alignment
+  colons:
+    max-spaces-after: 1
+
+  # Don't require document start marker (---)
+  document-start: disable
+
+  # Allow inline mappings
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Allow inline sequences
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Indentation
+  indentation:
+    spaces: 2
+    indent-sequences: true
+
+  # Allow empty values
+  empty-values:
+    forbid-in-block-mappings: false
+    forbid-in-flow-mappings: false
+
+  # Comments
+  comments:
+    min-spaces-from-content: 1
+
+  # Truthy values (allow yes/no for docker-compose)
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no', 'on', 'off']
+    check-keys: false
+
+ignore: |
+  grafana/
+  .github/
