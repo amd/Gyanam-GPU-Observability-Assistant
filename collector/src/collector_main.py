@@ -716,6 +716,7 @@ async def run_collector():
             max_retry_duration_hours=config.alerts.max_retry_duration_hours,
             cooldown_duration_hours=config.alerts.cooldown_duration_hours,
             degraded_threshold_hours=config.alerts.degraded_threshold_hours,
+            permanent_failure_retry_hours=config.alerts.permanent_failure_retry_hours,
             batch_size=config.alerts.batch_size,
             batch_interval=config.alerts.batch_interval,
             max_queue_size=config.alerts.max_queue_size,

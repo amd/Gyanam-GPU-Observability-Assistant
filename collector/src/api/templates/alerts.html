@@ -497,6 +497,7 @@ async function loadSubscriptionStatus() {
                         <div>Last event: <strong>${lastEvent}</strong></div>
                         ${timeInState ? `<div>In ${statusText} for: <strong>${timeInState}</strong></div>` : ''}
                         ${nextRetry ? `<div>Next retry in: <strong>${nextRetry}</strong></div>` : ''}
+                        ${sub.auto_retry_disabled ? `<div>Next retry: <strong>auto-retry disabled</strong></div>` : ''}
                         ${sub.consecutive_failures > 0 ? `<div>Consecutive failures: <strong>${sub.consecutive_failures}</strong></div>` : ''}
                     </div>
                     <div style="display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; align-items: center; justify-content: space-between;">

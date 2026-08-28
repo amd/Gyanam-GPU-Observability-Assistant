@@ -13,6 +13,7 @@ venv/
 .venv/
 .venv-linters/
 env/
+uv.lock
 
 # Linter caches
 .mypy_cache/

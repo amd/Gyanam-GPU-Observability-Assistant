@@ -420,6 +420,14 @@ cd /data0/gyanam
 - ✅ Runs HTTP health checks on all services
 - ✅ Reports success/failure for each service
 
+> **Collector `/health` vs alert subscriptions:** Docker marks the collector
+> container healthy when the collector **process** responds on `/health`
+> (exporter + poller running). That is intentional: BMC/Redfish outages or failed
+> alert subscriptions do **not** fail the container healthcheck — target issues
+> belong in `/health/detailed` (`alert_manager` section), `/alerts/manager-stats`,
+> and Prometheus metrics (`gyanam_alert_subscriptions_active`, etc.), not in
+> whether the container should restart.
+
 ### Step 5.4: Access Web Interfaces
 ```bash
 # Get server IP

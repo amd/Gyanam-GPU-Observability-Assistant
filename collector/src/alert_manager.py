@@ -174,6 +174,7 @@ class AlertManager:
         max_retry_duration_hours: float = 24,
         cooldown_duration_hours: float = 6,
         degraded_threshold_hours: float = 1,
+        permanent_failure_retry_hours: float = 6,
         batch_size: int = 100,
         batch_interval: float = 5.0,
         max_queue_size: int = 10000,
@@ -213,6 +214,8 @@ class AlertManager:
             max_retry_duration_hours: Hours to retry before circuit breaker
             cooldown_duration_hours: Hours in cooldown before auto-resume
             degraded_threshold_hours: Hours of failures to mark as degraded
+            permanent_failure_retry_hours: Hours before retrying permanent webhook
+                failures. Set to 0 to disable auto-retry.
             batch_size: Number of alerts to batch before writing to DB
             batch_interval: Seconds between batch writes (even if not full)
             max_queue_size: Maximum alerts in queue (prevents memory overflow)
@@ -233,6 +236,7 @@ class AlertManager:
         self.max_retry_duration_hours = max_retry_duration_hours
         self.cooldown_duration_hours = cooldown_duration_hours
         self.degraded_threshold_hours = degraded_threshold_hours
+        self._permanent_failure_retry_hours = permanent_failure_retry_hours
         self.batch_size = batch_size
         self.batch_interval = batch_interval
         self.max_queue_size = max_queue_size
@@ -270,7 +274,7 @@ class AlertManager:
         self._subscribers: dict[int, AlertSubscriber] = {}
         self._webhook_subscribers: dict[int, WebhookSubscriber] = {}
         self._subscription_types: dict[int, str] = {}  # Track type per target
-        self._permanently_failed: set[int] = set()  # Targets with permanent failures - don't retry
+        self._permanently_failed: dict[int, datetime] = {}  # target_id -> next_retry_time
         # Per-target config fingerprint; a change (rotated password, moved
         # endpoint, toggled verify_ssl) triggers tear-down + re-subscribe so we
         # never keep using stale credentials/URLs.
@@ -441,21 +445,40 @@ class AlertManager:
             # gone/disabled — a config change (changed_ids) is an explicit fix
             # attempt, so also clear it there to allow a retry.
             if target_id not in desired_ids or target_id in changed_ids:
-                self._permanently_failed.discard(target_id)
+                self._permanently_failed.pop(target_id, None)
             self._update_subscription_metrics()
 
         # Start subscriptions for new/re-enabled/changed targets. Skip
         # permanently-failed targets here (rather than inside _start_subscription)
         # so we emit one summary line instead of a per-target WARNING every minute.
         to_add = (desired_ids - current_ids) | changed_ids
-        skipped_failed = to_add & self._permanently_failed
+
+        if self._permanent_failure_retry_hours > 0:
+            now = datetime.now(UTC)
+            due = [tid for tid, retry_at in self._permanently_failed.items() if retry_at <= now]
+            for tid in due:
+                self._permanently_failed.pop(tid, None)
+                logger.info(
+                    "Permanent webhook failure cooldown elapsed for target %d; will retry subscription",
+                    tid,
+                )
+
+        skipped_failed = to_add & self._permanently_failed.keys()
         to_add -= skipped_failed
         if skipped_failed:
-            logger.warning(
-                "Skipping %d permanently-failed alert targets (set will be retried "
-                "only after target removal/re-add).",
-                len(skipped_failed),
-            )
+            if self._permanent_failure_retry_hours > 0:
+                logger.warning(
+                    "Skipping %d permanently-failed alert targets (each will be retried "
+                    "once its %.1fh cooldown elapses).",
+                    len(skipped_failed),
+                    self._permanent_failure_retry_hours,
+                )
+            else:
+                logger.warning(
+                    "Skipping %d permanently-failed alert targets (auto-retry disabled; "
+                    "will be retried only after target removal/re-add).",
+                    len(skipped_failed),
+                )
             logger.debug(
                 "Permanently-failed target IDs: %s",
                 sorted(skipped_failed),
@@ -617,13 +640,29 @@ class AlertManager:
                 # delivers events emitted after it was created.
                 self._schedule_baseline_pull(target.id)
             else:
-                # Check if this is a permanent failure
                 if result.failure_type == SubscriptionFailureType.PERMANENT:
-                    self._permanently_failed.add(target.id)
-                    logger.error(
-                        f"PERMANENT webhook subscription failure for {target.name}: {result.error_message}. "
-                        f"Target marked as permanently failed - will not retry."
-                    )
+                    if self._permanent_failure_retry_hours > 0:
+                        retry_at = datetime.now(UTC) + timedelta(
+                            hours=self._permanent_failure_retry_hours
+                        )
+                        logger.error(
+                            "PERMANENT webhook subscription failure for %s: %s. "
+                            "Will retry at %s (after %.1fh cooldown).",
+                            target.name,
+                            result.error_message,
+                            retry_at.isoformat(),
+                            self._permanent_failure_retry_hours,
+                        )
+                    else:
+                        retry_at = datetime.max.replace(tzinfo=UTC)
+                        logger.error(
+                            "PERMANENT webhook subscription failure for %s: %s. "
+                            "Auto-retry is disabled (alerts.permanent_failure_retry_hours=0); "
+                            "will not retry until the target is removed and re-added.",
+                            target.name,
+                            result.error_message,
+                        )
+                    self._permanently_failed[target.id] = retry_at
                 else:
                     logger.error(
                         f"Temporary webhook subscription failure for {target.name}: {result.error_message}. "
@@ -967,7 +1006,11 @@ class AlertManager:
             "sse_subscriptions": len(self._subscribers),
             "webhook_subscriptions": len(self._webhook_subscribers),
             "permanently_failed": len(self._permanently_failed),
-            "permanently_failed_targets": list(self._permanently_failed),
+            "permanently_failed_targets": sorted(self._permanently_failed),
+            "permanent_failure_retries": [
+                {"target_id": tid, "next_retry_at": retry_at.isoformat()}
+                for tid, retry_at in sorted(self._permanently_failed.items())
+            ],
             "queue_size": self._alert_queue.qsize(),
             "alerts_received": self._alerts_received,
             "alerts_written": self._alerts_written,

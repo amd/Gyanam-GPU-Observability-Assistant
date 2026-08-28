@@ -155,6 +155,8 @@ alerts:
   # Hours of continuous failures to consider subscription "degraded" (warning state)
   # This is an intermediate state between "reconnecting" and "on_cooldown"
   degraded_threshold_hours: 0.5
+  # Retry permanent webhook failures after this many hours. Set to 0 to disable.
+  permanent_failure_retry_hours: 6
   # Number of alerts to batch before writing to database
   batch_size: 100
   # Seconds between batch writes (even if not full)

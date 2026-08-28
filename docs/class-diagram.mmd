@@ -70,7 +70,7 @@ classDiagram
             -_baseline_repull_loop()
             -_on_alert(event)
             -_cper_worker: CperEnrichmentWorker
-            -_permanently_failed: set[int]
+            -_permanently_failed: dict[int, datetime]
         }
 
         class RateLimiter {
