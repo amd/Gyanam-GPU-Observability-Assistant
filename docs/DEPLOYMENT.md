@@ -444,9 +444,9 @@ hostname -I | awk '{print $1}'
 Create `targets_300.csv`:
 ```csv
 name,host,port,username,password,connection_mode,use_ssl,verify_ssl,enabled,enable_alert_subscription
-gpu-node-001,10.0.1.1,443,admin,nodepass1,http,true,false,true,false
-gpu-node-002,10.0.1.2,443,admin,nodepass2,http,true,false,true,false
-gpu-node-003,10.0.1.3,443,admin,nodepass3,http,true,false,true,false
+gpu-node-001,10.0.1.1,443,<username>,<credentials>,http,true,false,true,false
+gpu-node-002,10.0.1.2,443,<username>,<credentials>,http,true,false,true,false
+gpu-node-003,10.0.1.3,443,<username>,<credentials>,http,true,false,true,false
 ...
 ```
 
@@ -490,7 +490,7 @@ gpu-node-003,10.0.1.3,443,admin,nodepass3,http,true,false,true,false
 # Generate new password hash
 docker exec -it gyanam-api-1 python3 -c "
 import bcrypt
-password = b'YourNewStrongPassword123'
+password = b''
 hashed = bcrypt.hashpw(password, bcrypt.gensalt())
 print(hashed.decode())
 "

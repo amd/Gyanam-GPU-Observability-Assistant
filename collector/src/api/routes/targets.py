@@ -651,25 +651,17 @@ async def import_targets_csv(
                 existing_hosts.add(validated_host.lower())
 
         except Exception as e:
-            # Log full exception with stack trace server-side. Surface a
-            # bounded form to the UI: type name + first line of message,
-            # truncated. Bulk-import errors are almost always validation
-            # messages ("invalid IP", "duplicate host") that operators
-            # need to see to fix their CSV — type-name alone would force
-            # them to dig through server logs for every row.
+            # Log full exception with stack trace server-side.
+            # Return a generic message to avoid exposing internal details.
             logger.warning(
                 f"Bulk-create row {row_num} failed: {e}", exc_info=True
             )
-            # Take first line only and cap length; strip control chars
-            # so the message can't break the JSON or log lines.
-            first_line = str(e).split("\n", 1)[0]
-            safe_msg = "".join(c for c in first_line if c.isprintable())[:200]
             errors.append(
                 {
                     "row": row_num,
                     "name": row_name,
                     "host": row_host,
-                    "error": f"{type(e).__name__}: {safe_msg}",
+                    "error": "Failed to create target for this row",
                 }
             )
 

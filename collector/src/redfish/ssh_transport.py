@@ -340,9 +340,9 @@ class SSHTransport:
             raise RuntimeError("SSH transport not connected")
 
         effective_timeout = timeout or self.command_timeout
-        # Redact -u credentials from log output
-        log_cmd = re.sub(r" -u \S+", " -u ***", cmd) if " -u " in cmd else cmd
-        logger.debug(f"SSH exec: {log_cmd[:200]}...")
+
+        logger.debug("SSH exec command dispatched (timeout=%ss)", effective_timeout)
+
         try:
             result = await asyncio.wait_for(
                 self._conn.run(cmd, check=False),
