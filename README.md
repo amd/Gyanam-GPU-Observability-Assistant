@@ -90,7 +90,7 @@ What works today for cluster-wide and fleet-wide debug and observability:
 | **Alerting** | Real-time SSE / webhook alert subscriptions with severity routing and history |
 | **On-demand diagnostic logs** | Per-target log-bundle collection, download, and sharing for debug / RMA |
 | **Debug-evidence export** | CSV export pipeline with pre-flight count, chunking, retry, and server-side aggregation |
-| **Security posture** | SSRF/CSRF protection, bcrypt auth, Fernet-encrypted credentials, path-traversal protection, CodeQL-clean (see [`docs/CODEQL_REPORT.md`](docs/CODEQL_REPORT.md)) |
+| **Security posture** | SSRF/CSRF protection, bcrypt auth, Fernet-encrypted credentials, path-traversal protection, CodeQL-scanned (see [`docs/CODEQL_REPORT.md`](docs/CODEQL_REPORT.md)) |
 
 ## Roadmap
 
@@ -119,7 +119,7 @@ short path; the full guide is in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ```bash
 ./gyanam.sh init     # one-time: generates .env (save the printed credentials)
-./gyanam.sh start    # boots all four containers
+./gyanam.sh start    # boots all five containers
 ```
 
 | Service | URL | Default Credentials |
@@ -189,7 +189,7 @@ support, and documentation are all valued.
 
 **Reporting issues** — bugs, feature requests, and questions go through the
 standard GitHub issue process at
-[github.com/cyrilj-amd/gyanam/issues](https://github.com/cyrilj-amd/gyanam/issues).
+[github.com/amd/Gyanam-GPU-Observability-Assistant/issues](https://github.com/amd/Gyanam-GPU-Observability-Assistant/issues).
 Click *New Issue* to use the bug-report or feature-request template. Please
 search existing issues first, and **do not** file security vulnerabilities
 as public issues — follow [SECURITY.md](SECURITY.md) instead.
@@ -211,7 +211,7 @@ Copyright © 2026 Advanced Micro Devices, Inc.
 | Doc | When to read it |
 |-----|-----------------|
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Full setup / deployment on Ubuntu, sized for a 5K-GPU cluster |
-| [System Architecture (PDF)](docs/architecture.pdf) | Runtime data flow + 4-container layout (source: [`docs/architecture.mmd`](docs/architecture.mmd)) |
+| [System Architecture (PDF)](docs/architecture.pdf) | Runtime data flow + 5-container layout (source: [`docs/architecture.mmd`](docs/architecture.mmd)) |
 | [Class Diagram (PDF)](docs/class-diagram.pdf) | Class relationships across layers (source: [`docs/class-diagram.mmd`](docs/class-diagram.mmd)) |
 | [`docs/SCALABILITY.md`](docs/SCALABILITY.md) | Tuning per fleet size + understanding the runtime architecture |
 | [`docs/DATA_EXPORT_REFERENCE.md`](docs/DATA_EXPORT_REFERENCE.md) | Exporting metrics to CSV (gyanam.sh wrapper + native InfluxDB recipes) |

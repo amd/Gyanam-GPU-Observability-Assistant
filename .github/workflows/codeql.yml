@@ -1,0 +1,45 @@
+name: "CodeQL"
+
+# Advanced setup: uses .github/codeql/codeql-config.yml as the single source
+# of truth for query selection (security-extended + code-quality) and path
+# scoping — matching the local run in scripts/run-codeql.sh.
+#
+# NOTE: GitHub does not allow "default setup" and an advanced workflow at the
+# same time. Disable default setup for this repo under
+# Settings → Code security → Code scanning → CodeQL analysis → Set up ▸
+# switch off, otherwise this workflow's runs will error.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, Monday 03:27 UTC (off-peak, off the hour).
+    - cron: "27 3 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze (python)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write   # upload SARIF to the Security tab
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          config-file: ./.github/codeql/codeql-config.yml
+
+      # Python is interpreted — no build step needed. If a compiled language
+      # is added later, insert an autobuild (or manual build) step here.
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"

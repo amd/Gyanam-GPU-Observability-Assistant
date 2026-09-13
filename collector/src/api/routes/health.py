@@ -101,11 +101,15 @@ async def detailed_health_check():
             if response.status_code == 200:
                 collector_health = response.json()
     except httpx.RequestError as e:
-        collector_error = f"Cannot reach collector service: {str(e)}"
+        # Don't expose raw exception text to the HTTP response; log it instead.
+        logger.warning(f"Collector health query failed: {e}", exc_info=True)
+        collector_error = f"unavailable (cannot reach collector: {type(e).__name__})"
     except httpx.TimeoutException:
         collector_error = "Collector service timeout"
     except Exception as e:
-        collector_error = f"Error querying collector: {str(e)}"
+        # Don't expose raw exception text to the HTTP response; log it instead.
+        logger.warning(f"Collector health query failed: {e}", exc_info=True)
+        collector_error = f"unavailable ({type(e).__name__})"
 
     # Determine overall health
     api_healthy = db_healthy and log_collector_healthy

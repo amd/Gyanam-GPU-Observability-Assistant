@@ -38,6 +38,7 @@ report — redact or use placeholders.
 
 Security-relevant areas include, but are not limited to: credential
 storage and handling, authentication/authorization, SSRF/CSRF protections,
-path traversal, and the export and log-collection pipelines. For the
-current security posture and accepted-risk audit, see
-[`docs/CODEQL_REPORT.md`](docs/CODEQL_REPORT.md).
+path traversal, and the export and log-collection pipelines. CodeQL runs
+on push / PR — see the repo's **Security → Code scanning** tab for current
+scan status, and [`docs/CODEQL_REPORT.md`](docs/CODEQL_REPORT.md) for how
+to run it locally.

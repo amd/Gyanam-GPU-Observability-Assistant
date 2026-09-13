@@ -94,7 +94,7 @@ tar --use-compress-program=unzstd -xf bundle.tar.zst
 
 After that, the script self-contains. Output goes to:
 - `.codeql-results/results.sarif` — filtered SARIF, committed to repo
-- `docs/CODEQL_REPORT.md` — human-readable audit (hand-curated)
+- `docs/CODEQL_REPORT.md` — how to run CodeQL + where the live results live
 
 ### export_influxdb_data.py
 

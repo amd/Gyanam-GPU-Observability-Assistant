@@ -303,8 +303,8 @@ nano docker-compose.yml
 **For >500 targets**, consider bumping `collector` and `influxdb` `cpus`
 to 6-8 each. JSON/JSONPath parsing is GIL-bound and CPU-heavy; under-
 provisioned cores starve the asyncio event loop and produce silent
-flush-loop stalls (see `docs/CODEQL_REPORT.md` / `docs/SCALABILITY.md`
-for historical context on this failure mode).
+flush-loop stalls (see `docs/SCALABILITY.md` for context on this
+failure mode).
 
 **To use bind mounts under `/data0` instead of named volumes**, replace
 the `volumes:` section with explicit host paths:
@@ -419,14 +419,6 @@ cd /data0/gyanam
 - ✅ Shows docker compose ps output
 - ✅ Runs HTTP health checks on all services
 - ✅ Reports success/failure for each service
-
-> **Collector `/health` vs alert subscriptions:** Docker marks the collector
-> container healthy when the collector **process** responds on `/health`
-> (exporter + poller running). That is intentional: BMC/Redfish outages or failed
-> alert subscriptions do **not** fail the container healthcheck — target issues
-> belong in `/health/detailed` (`alert_manager` section), `/alerts/manager-stats`,
-> and Prometheus metrics (`gyanam_alert_subscriptions_active`, etc.), not in
-> whether the container should restart.
 
 ### Step 5.4: Access Web Interfaces
 ```bash
@@ -872,8 +864,8 @@ older release:
   server-side aggregation. See `docs/DATA_EXPORT_REFERENCE.md`.
 - **CodeQL security pass** — stack-trace leakage sanitised across all
   user-facing endpoints; webhook URL validated at startup; cookies
-  bound to canonical username. See `docs/CODEQL_REPORT.md` for the
-  audit trail.
+  bound to canonical username. Tracked by CodeQL (**Security → Code
+  scanning**; `docs/CODEQL_REPORT.md` to run locally).
 
 ---
 

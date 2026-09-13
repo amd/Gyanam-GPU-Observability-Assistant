@@ -20,7 +20,8 @@ async def test_target_get_update_delete(client):
     assert r.status_code == 200
     assert (await client.get(f"/targets/api/{tid}")).json()["name"] == "renamed"
     # delete
-    assert (await client.delete(f"/targets/api/{tid}")).status_code == 200
+    deleted = await client.delete(f"/targets/api/{tid}")
+    assert deleted.status_code == 200
     assert (await client.get(f"/targets/api/{tid}")).status_code == 404
 
 

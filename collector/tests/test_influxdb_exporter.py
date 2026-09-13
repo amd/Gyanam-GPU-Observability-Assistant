@@ -27,7 +27,8 @@ def test_metric_to_point_line_protocol():
 
 async def test_write_buffers_without_network():
     exp = _exp()
-    assert await exp.write([_m(), _m()]) is True
+    wrote = await exp.write([_m(), _m()])
+    assert wrote is True
     assert exp.buffer_size == 2
     assert exp.dropped_points == 0
 

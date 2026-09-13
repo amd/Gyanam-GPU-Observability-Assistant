@@ -626,7 +626,7 @@ async def test_backfill_marks_existing(tmp_path):
         [_mk(2, "y", {"DiagnosticDataType": "CPER", "AdditionalDataURI": "/z"})]
     )
     aid = (await repo.get_pending_cper_alerts())[0].id
-    await repo.set_cper_result(aid, status=None if False else "decoded")  # take it out
+    await repo.set_cper_result(aid, status="decoded")  # take it out
     # Backfill should find none now (already decoded / plain not eligible).
     marked = await repo.mark_eligible_cper_pending()
     assert marked == 0

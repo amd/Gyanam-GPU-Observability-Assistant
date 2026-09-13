@@ -302,6 +302,7 @@ def _common_error_fields(status_d: dict, ipid_d: dict, synd_hex: str) -> dict:
         synd = int(synd_hex, 16)
         code["from_synd_errorinformation"] = (synd & ((1 << 18) - 1)) & 0xFF
     except (ValueError, TypeError):
+        # synd_hex absent or non-hex → skip the synd-derived sub-code
         pass
     out["sub_block_error_code"] = code
     # UMC ErrorCodeExt semantics (smu_v13_0_6): 0/9 = uncorrectable, 6 = correctable.

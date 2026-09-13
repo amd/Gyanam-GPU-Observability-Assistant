@@ -14,6 +14,13 @@ on-demand diagnostic-log collection + alert subscriptions + a CSV
 export pipeline for debug-evidence sharing. The codebase / repo
 short-name remains `gyanam`.
 
+> **AI assistants:** before proposing commits, read
+> [Coding assistants and AI tools](CONTRIBUTING.md#coding-assistants-and-ai-tools).
+> Never add a `Signed-off-by` line — that DCO certification is the human
+> contributor's alone. Record your work with an `Assisted-by:` trailer
+> instead, and flag anything you could not verify or test. The human
+> reviews and takes full responsibility for what you produce.
+
 - **Stack**: Python 3.11 / FastAPI / SQLAlchemy (async) / InfluxDB 2.7 / PostgreSQL 16 / Grafana 13.0.1
 - **Deployment**: **5 Docker containers** — `api`, `collector`, `influxdb`, `postgres`, `grafana`
   - `api` runs the Web UI / REST surface (FastAPI, port 8080)
@@ -28,7 +35,7 @@ short-name remains `gyanam`.
 
 ```bash
 ./gyanam.sh init           # one-time, generates .env
-./gyanam.sh start          # boots all four containers
+./gyanam.sh start          # boots all five containers
 # UI:       http://localhost:8080  (admin/changeme)
 # Grafana:  http://localhost:3000
 # InfluxDB: http://localhost:8086
@@ -177,7 +184,7 @@ scripts/
   alert_disk_space.sh        # Threshold-based disk-space alert
   test_bmc_alerts.py         # Interactive BMC SSE/webhook probe (test only)
 docs/
-  CODEQL_REPORT.md           # Current CodeQL state + accepted-risk audit
+  CODEQL_REPORT.md           # How to run CodeQL; live status = Security tab + SARIF
   DATA_EXPORT_REFERENCE.md   # gyanam.sh export + native InfluxDB recipes
   DEPLOYMENT.md              # Ubuntu deployment guide
   SCALABILITY.md             # Sizing / tuning per fleet size
@@ -351,13 +358,15 @@ addressed. Replacement notes for each:
 - Fernet encryption for stored credentials
 - Path traversal protection in log operations
 - SQLAlchemy ORM (no SQL injection)
-- HTTP-response exception-text sanitisation (CodeQL pass: stack traces
-  no longer leak to API responses — see `docs/CODEQL_REPORT.md`)
+- HTTP-response exception-text sanitisation — API responses return only
+  the exception class name; full detail is logged server-side (covers the
+  bulk-import and health endpoints — see `docs/CODEQL_REPORT.md`)
 - TLS 1.2 minimum enforced on the export-script warmup probe
 - Webhook URL validation at alert-manager startup (refuses loopback URLs
   unless `GYANAM_ALLOW_LOOPBACK_WEBHOOK=1`)
 
-**Accepted risk** (documented in `docs/CODEQL_REPORT.md`):
+**Accepted risk** (CodeQL alerts triaged via Security-tab dismissals; see
+`docs/CODEQL_REPORT.md`):
 
 - BMCs ship with self-signed certs by default; per-target `verify_ssl`
   flag is the actual control point.
@@ -410,8 +419,9 @@ Single-command local re-run:
 ./scripts/run-codeql.sh
 ```
 
-See `docs/CODEQL_REPORT.md` for the current accepted-risk findings (3,
-all documented) and the per-rule fix log.
+Live status is the **Security → Code scanning** tab (CI) and the local
+`.codeql-results/results.sarif`. See `docs/CODEQL_REPORT.md` for how to run
+it and how by-design / false-positive alerts are triaged.
 
 ## Diagrams
 
@@ -431,12 +441,12 @@ When you edit a `.mmd`, regenerate the `.pdf` and commit both.
 
 ## See Also
 
-- `docs/architecture.mmd` (+ `.pdf`) — runtime data flow + 4-container layout
+- `docs/architecture.mmd` (+ `.pdf`) — runtime data flow + 5-container layout
 - `docs/class-diagram.mmd` (+ `.pdf`) — class relationships across layers
 - `docs/SCALABILITY.md` — sizing / tuning per fleet size
 - `docs/DEPLOYMENT.md` — Ubuntu deployment guide
 - `docs/DATA_EXPORT_REFERENCE.md` — CSV export pipeline + native InfluxDB alternatives
-- `docs/CODEQL_REPORT.md` — security-scan state and accepted risk
+- `docs/CODEQL_REPORT.md` — how to run CodeQL; live status = Security tab + SARIF
 - `LINTING.md` — pre-commit / ruff / mypy setup
 - `collector/config/metrics_schema.yaml` — all 33 metric schemas
 - `reference_artifacts/` — sample Redfish data for testing schemas

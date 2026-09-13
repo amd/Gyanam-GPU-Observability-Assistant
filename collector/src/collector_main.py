@@ -460,8 +460,6 @@ def create_health_app() -> FastAPI:
 
         # Calculate content size
         if result.data is not None:
-            import json
-
             content_size = sum(len(json.dumps(d)) for _, d in result.data)
         else:
             content_size = len(result.content) if result.content else 0

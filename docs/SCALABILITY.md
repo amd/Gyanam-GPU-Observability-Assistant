@@ -400,7 +400,7 @@ to watch. The most useful ones:
 | `poller.result_queue_size` | <100 | Sustained >500 → processor can't keep up; bump `max_concurrent_processors` |
 | `poller.result_queue_drops` | 0 | Non-zero → results being lost; investigate why processor is behind |
 | `poller.pending_status_updates` | <100 between flushes | Sustained growth → status writer stalled |
-| `exporter.connected` | true | false for >600s → pipeline silent stall (the [previously-undetected case](./CODEQL_REPORT.md)) |
+| `exporter.connected` | true | false for >600s → pipeline silent stall (previously an undetected silent-stall case) |
 | `exporter.consecutive_batch_failures` | 0 | ≥3 triggers automatic reconnect; if it never resets, InfluxDB is genuinely down |
 | `exporter.buffer_size` | < a few thousand | Near `batch_size × 200` → InfluxDB outage or sustained too-slow ingest |
 | `exporter.failure_rate_pct` | <2% | >5% → upstream issue (latency / saturation) |
@@ -413,4 +413,4 @@ to watch. The most useful ones:
   300-node fleets
 - [`DATA_EXPORT_REFERENCE.md`](./DATA_EXPORT_REFERENCE.md) — CSV export
   pipeline (relevant for analytics workloads)
-- [`CODEQL_REPORT.md`](./CODEQL_REPORT.md) — current security posture
+- [`CODEQL_REPORT.md`](./CODEQL_REPORT.md) — running CodeQL locally (live status: Security tab)

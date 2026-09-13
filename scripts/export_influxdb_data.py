@@ -258,10 +258,6 @@ def _open_text_writer(path: str | Path):
 
 
 def _open_text_reader(path: str | Path):
-    """Open a plain or gzip text file for reading.
-
-    Note: Caller must use as context manager (with statement).
-    """
     p = str(path)
     if _is_gzip_path(p):
         return gzip.open(p, "rt", encoding="utf-8")
@@ -750,8 +746,8 @@ def _looks_transient(exc: Exception) -> bool:
 
 
 def _backoff_seconds(attempt: int) -> float:
-    base: float = min(RETRY_MAX_SECONDS, RETRY_BASE_SECONDS * (2**attempt))
-    return base + random.uniform(0, base * 0.25)
+    base = min(RETRY_MAX_SECONDS, RETRY_BASE_SECONDS * (2**attempt))
+    return float(base + random.uniform(0, base * 0.25))
 
 
 def _stream_window_once(
@@ -1460,6 +1456,7 @@ Environment variables:
     # in event order alongside stderr error messages — was a real
     # problem when running inside Docker, where block-buffering on a
     # non-tty made the log read backwards.
+    # stream doesn't support reconfigure → keep default buffering
     with suppress(Exception):
         sys.stdout.reconfigure(line_buffering=True)  # type: ignore[attr-defined]
 

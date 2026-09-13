@@ -1,8 +1,8 @@
 # CodeQL configuration for the gyanam repository.
 #
-# Used both by the local re-run script (scripts/run-codeql.sh) and by a
-# github/codeql-action workflow if one is added later. Keep this file as
-# the single source of truth for query selection and path scoping.
+# Used both by the local re-run script (scripts/run-codeql.sh) and by the
+# CodeQL workflow (.github/workflows/codeql.yml). Keep this file as the
+# single source of truth for query selection and path scoping.
 
 name: "Gyanam CodeQL config"
 
