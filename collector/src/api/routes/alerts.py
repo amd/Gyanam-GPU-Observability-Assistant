@@ -50,6 +50,28 @@ def _iso_utc(dt: datetime | None) -> str | None:
     return dt.isoformat()
 
 
+def _permanent_failure_retries(manager_stats: dict) -> dict[int, str | None]:
+    """Return retry deadlines keyed by target ID.
+
+    ``datetime.max`` means auto-retry is disabled. Older collectors return only
+    target IDs, so ignore entries without a retry deadline during rolling upgrades.
+    """
+    retries: dict[int, str | None] = {}
+    entries = manager_stats.get("permanent_failure_retries")
+    if entries is None:
+        entries = manager_stats.get("permanently_failed_targets") or []
+    for entry in entries:
+        if not isinstance(entry, dict) or entry.get("target_id") is None:
+            continue
+        next_retry = entry.get("next_retry_at")
+        try:
+            parsed = datetime.fromisoformat(next_retry) if next_retry else None
+        except (TypeError, ValueError):
+            parsed = None
+        retries[entry["target_id"]] = next_retry if parsed and parsed.year < 9999 else None
+    return retries
+
+
 # ---- JSON API ----
 
 
@@ -182,6 +204,8 @@ async def get_subscription_status_api(user: str = Depends(get_current_user)):
     since_24h = datetime.now(UTC) - timedelta(hours=24)
     grouped = await repository.count_alerts_by_target_severity(since=since_24h)
 
+    perm_failed = _permanent_failure_retries(manager_stats)
+
     subscriptions = []
     active_count = 0
     disconnected_count = 0
@@ -233,14 +257,18 @@ async def get_subscription_status_api(user: str = Depends(get_current_user)):
                 }
             )
         else:
-            # Target configured but not subscribed (might be starting up)
+            # Permanent webhook failures are absent from the subscriber list.
             failed_count += 1
+            perm_failed_retry = perm_failed.get(target.id)
+            is_perm_failed = target.id in perm_failed
             subscriptions.append(
                 {
                     "target_id": target.id,
                     "target_name": target.name,
                     "target_bmc": target.host,
-                    "status": "not_subscribed",
+                    "status": "failed_permanent" if is_perm_failed else "not_subscribed",
+                    "next_retry_time": perm_failed_retry,
+                    "auto_retry_disabled": is_perm_failed and perm_failed_retry is None,
                     "last_event_time": None,
                     "consecutive_failures": 0,
                     "alerts_24h": 0,

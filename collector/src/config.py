@@ -186,6 +186,9 @@ class AlertsConfig(BaseModel):
     max_retry_duration_hours: float = 24  # Stop retrying after this many hours
     cooldown_duration_hours: float = 6  # Cooldown period before auto-resume
     degraded_threshold_hours: float = 1  # Hours of failures to mark as degraded
+    permanent_failure_retry_hours: float = Field(
+        default=6, ge=0
+    )  # 0 = never auto-retry permanent webhook failures
     batch_size: int = Field(default=100, gt=0)
     batch_interval: float = Field(default=5.0, gt=0)
     # Bounded queue is a safety valve; 0 would mean an *unbounded* asyncio.Queue.

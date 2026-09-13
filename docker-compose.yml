@@ -28,6 +28,8 @@ services:
       - ALERTS_DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-gyanam}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gyanam_alerts}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       # Alert/Webhook settings (for testing webhook subscriptions)
+      - ALERT_WEBHOOK_BASE_URL=${ALERT_WEBHOOK_BASE_URL:-}
+      - ALERT_ENABLE_WEBHOOK_FALLBACK=${ALERT_ENABLE_WEBHOOK_FALLBACK:-false}
       - ALERT_FORCE_WEBHOOK_MODE=${ALERT_FORCE_WEBHOOK_MODE:-false}
     volumes:
       - shared_data:/app/data
