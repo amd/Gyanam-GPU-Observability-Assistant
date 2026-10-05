@@ -31,13 +31,6 @@ def test_get_auth_uses_basic_without_token():
     assert c._get_auth() is None
 
 
-def test_ssh_auth_tuple():
-    c = _client()
-    assert c._get_ssh_auth() == ("u", "p")
-    c._session_token = "tok"
-    assert c._get_ssh_auth() is None
-
-
 def _task(result_location=None, task_uri="/redfish/v1/TaskService/Tasks/5"):
     return TaskStatus(
         task_id="5",

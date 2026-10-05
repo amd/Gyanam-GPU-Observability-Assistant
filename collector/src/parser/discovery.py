@@ -21,6 +21,7 @@
 
 import fnmatch
 import logging
+import math
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -222,14 +223,18 @@ class MetricDiscovery:
 
     def _is_numeric(self, value: Any) -> bool:
         """Check if a value can be converted to numeric."""
-        if isinstance(value, int | float | bool):
+        if isinstance(value, bool):
             return True
+        if isinstance(value, int | float):
+            try:
+                return math.isfinite(value)  # reject NaN/Inf (and oversized ints)
+            except (OverflowError, TypeError):
+                return False
 
         if isinstance(value, str):
             try:
-                float(value)
-                return True
-            except ValueError:
+                return math.isfinite(float(value))
+            except (ValueError, OverflowError):
                 # Check for common boolean-like strings
                 return value.lower() in (
                     "true",
@@ -254,12 +259,17 @@ class MetricDiscovery:
             return 1.0 if value else 0.0
 
         if isinstance(value, int | float):
-            return float(value)
+            try:
+                f = float(value)  # reject NaN/Inf and oversized ints
+            except (OverflowError, ValueError):
+                return None
+            return f if math.isfinite(f) else None
 
         if isinstance(value, str):
             try:
-                return float(value)
-            except ValueError:
+                f = float(value)
+                return f if math.isfinite(f) else None
+            except (ValueError, OverflowError):
                 lower_val = value.lower()
                 if lower_val in ("true", "yes", "on", "enabled", "ok", "healthy"):
                     return 1.0

@@ -1,27 +1,46 @@
 # GYANAM — GPU Observability Assistant
 
 **Primary goal**: provide an open cluster- or fleet-wide **debug and observability reference
-implementation for AMD GPU products** — giving operators accurate,
-continuous, out-of-band telemetry and shareable diagnostic evidence from
-AMD Instinct fleets, using only industry-standard interfaces and without
-proprietary agents or vendor lock-in.
+implementation for GPU products** — giving operators accurate,
+continuous, out-of-band telemetry, intuitive **digital-twin views** of the
+fleet (such as the **Data Hall view**, which renders every GPU system in its
+physical hall / row / rack / U position with a live thermal and power heatmap
+overlay), and shareable diagnostic evidence from GPU UBB8 / rack-based GPU
+fleets, using only industry-standard interfaces and without proprietary agents
+or vendor lock-in.
 
-GYANAM gathers telemetry from GPU servers through DMTF Redfish-defined
-interfaces — using native Redfish Aggregation or Redfish Proxy based methods on
-ODM/OEM BMCs that support it — parses the telemetry into a
-schema-aware metric model, stores it in a time-series database
-(InfluxDB by default; Prometheus also supported), and surfaces it
-through pre-built Grafana dashboards. On-demand diagnostic-log
-collection, alert subscriptions, and a CSV export pipeline round out
-the toolset so operators and debug engineers can move from "something
-is wrong" to a shareable evidence bundle without writing custom code.
+Those digital-twin views are more than a map. Each one renders the *current*
+snapshot of the fleet — every system's live thermal, power, and health state in
+its real physical position — as a faithful reflection of the hardware. Behind
+that snapshot, GYANAM continuously gathers telemetry from every GPU server
+through DMTF Redfish-defined interfaces — using native Redfish Aggregation or
+Redfish Proxy based methods on ODM/OEM BMCs that support it — parses it into a
+schema-aware metric model, and stores it as time-series history in InfluxDB. The
+live snapshot and the accumulated historical telemetry together give operators
+and debug engineers everything required for effective debug: see how a system
+reached its current state, compare it against its neighbours, and trace an
+anomaly back through time.
 
-<!-- HERO IMAGE — capture per docs/screenshots/README.md -->
-<img src="docs/screenshots/01-hero-fleet-overview.png" alt="GYANAM Fleet Overview dashboard — fleet-wide GPU temperature, power, and health at a glance" width="800">
+Put simply, GYANAM is a **digital twin for observability and debug** — a live
+reflection of the fleet, backed by historical time-series telemetry and
+on-demand diagnostic-log collection for evidence gathering, root-cause analysis,
+and failure analysis, rounded out with alert subscriptions, pre-built Grafana
+dashboards, and a CSV export pipeline. It is deliberately read-only and
+out-of-band: **configuration, provisioning, and lifecycle management of the
+systems themselves are entirely out of scope.**
+
+<!-- HERO IMAGE — Data Hall digital twin with a live thermal/power heatmap overlay.
+     Copy the Data Hall screenshot to docs/screenshots/01-datahall-twin.png
+     (open the Data Hall view, switch "Colour by" to a heatmap mode). -->
+<img src="docs/screenshots/01-datahall-twin.png" alt="GYANAM Data Hall digital twin — the GPU fleet rendered in 3D by hall / row / rack / U with a live thermal/power heatmap overlay" width="800">
+
+<br/><sub><b>The Data Hall digital twin</b> — every GPU system rendered in its real hall / row / rack / U
+position, coloured by a live thermal/power heatmap. This is the current snapshot; everything behind it
+is backed by continuous historical telemetry.</sub>
 
 ## Problem Statement
 
-Running AMD Instinct fleets at scale, **observability and health
+Running rack-based GPU fleets at scale, **observability and health
 monitoring** are what keep jobs productive. Operators — whether a
 hyperscaler, a startup neocloud, an established software org, or an
 early-stage team — need open, ready-made building blocks for
@@ -37,7 +56,7 @@ and fleet-wide monitoring — a useful articulation of what good GPU
 observability looks like in practice.
 
 GYANAM aims to make those building blocks available and open. As a GPU
-hardware company, AMD's interest is straightforward: **faster debug and
+hardware company, our interest is straightforward: **faster debug and
 faster turnaround, so customer productivity returns as quickly as
 possible — regardless of fleet size or customer maturity.** Debug
 organizations today too often receive
@@ -70,7 +89,7 @@ The GPU Observability Assistant provides:
     exported.
 -   **Customer-initiated data packaging** — operators decide what
     snapshots to share when filing tickets or RMAs.
--   **Reference implementation for the ecosystem** — an open AMD-GPU
+-   **Reference implementation for the ecosystem** — an open GPU
     observability/debug baseline that OEMs, cloud partners, and customers
     can adopt and align around open standards.
 
@@ -80,37 +99,22 @@ What works today for cluster-wide and fleet-wide debug and observability:
 
 | Capability | Details |
 |------------|---------|
-| **Out-of-band telemetry collection** | DMTF Redfish telemetry gathering (Redfish Aggregation or proxy-based) sized for a standard 5K-GPU cluster (typical of a training or inference AI cluster size). Categories available for deep-dive: temperature (GPU die, HBM memory, VR, board), power (per-GPU, aggregate, board), voltage & current (HBM, VDD, GPU-IO, VR rails), GPU utilization & memory bandwidth, link & connectivity (retimer, processor-port / interconnect), and health & status rollups — validated against AMD Instinct MI325 / MI350 reference artifacts |
-| **Alternative transports** | SSH-proxy for air-gapped BMCs; SSE streaming where supported |
-| **Schema-aware extraction** | 33 JSONPath metric schemas + auto-discovery of numeric fields |
+| **Out-of-band telemetry collection** | DMTF Redfish telemetry gathering (Redfish Aggregation or proxy-based) sized for a standard 5K-GPU cluster (typical of a training or inference AI cluster size). Categories available for deep-dive: temperature (GPU die, HBM memory, VR, board), power (per-GPU, aggregate, board), voltage & current (HBM, VDD, GPU-IO, VR rails), GPU utilization & memory bandwidth, link & connectivity (retimer, processor-port / interconnect), and health & status rollups — validated against GPU UBB8 reference artifacts |
+| **Data Hall digital twin** | Interactive 3D rendering of the fleet laid out by hall / row / rack / U, seeded automatically from hostname and Redfish `Chassis` location. A live **thermal / power heatmap overlay** recolors every system by GPU die temp, board temp, or board power against a fixed per-component scale — surfacing hot racks and power imbalance at a glance — with per-system inventory on hover |
+| **Standards-aware metric onboarding** | Auto-discovers each target's `TelemetryService/MetricReports` so whatever a conformant BMC exposes is consumed without per-vendor code; 33 embedded JSONPath metric schemas remain the fallback + test fixtures |
+| **Alternative transports** | SSE streaming where the BMC supports it; webhook fallback for alert delivery |
+| **Schema-aware extraction** | JSONPath metric schemas + auto-discovery of numeric fields |
 | **GPU health metrics** | Temperature, power, clock, ECC/memory errors, and other OOB sensor data |
-| **Time-series storage** | InfluxDB 2.7 (default) or Prometheus, with 15-min / hourly downsampling and tiered retention |
+| **Time-series storage** | InfluxDB 2.7, with 15-min / hourly downsampling and tiered retention |
 | **Pre-built Grafana dashboards** | 11 dashboards — fleet-wide, per-system drill-down, and historical trend views |
 | **Fleet outlier detection** | Dashboard surfacing hot GPUs, high-power consumers, and thermal imbalance across the fleet |
 | **Alerting** | Real-time SSE / webhook alert subscriptions with severity routing and history |
 | **On-demand diagnostic logs** | Per-target log-bundle collection, download, and sharing for debug / RMA |
 | **Debug-evidence export** | CSV export pipeline with pre-flight count, chunking, retry, and server-side aggregation |
+| **Redfish interop profile** | A DMTF [DSP0272](https://www.dmtf.org/dsp/DSP0272) profile ([`profiles/`](profiles/)) declaring the **minimal set of Redfish APIs a system must support to onboard into GYANAM** — vendors can self-test conformance with the DMTF Redfish-Interop-Validator |
 | **Security posture** | SSRF/CSRF protection, bcrypt auth, Fernet-encrypted credentials, path-traversal protection, CodeQL-scanned (see [`docs/CODEQL_REPORT.md`](docs/CODEQL_REPORT.md)) |
 
-## Roadmap
-
-Future work continues the same charter — a debug and observability
-reference for AMD GPU products — by broadening *what* and *where* we can
-observe:
-
-- **In-band GPU telemetry via AMD Device Metrics Exporter (DME)** —
-  integrate [AMD Device Metrics
-  Exporter](https://rocm.blogs.amd.com/software-tools-optimization/device-metrics-exporter/README.html)
-  to complement out-of-band Redfish data with rich in-band, hardware-level
-  metrics: per-process attribution (`KFD_PROCESS_ID`), field-identifier
-  reliability events (`GPU_AFID_ERRORS`), thermal/power/utilization
-  violation counters, HBM thermal monitoring, and fine-grained clock
-  behavior — turning diagnosis from inference-based into data-driven.
-- **VM-level telemetry and log collection** — extend collection beyond the
-  bare-metal BMC view into virtualized / tenant GPU environments making use of industry standard references.
-
-Have a use case or want to help land one of these? See
-[Contributing](#contributing).
+Have a use case or want to help? See [Contributing](#contributing).
 
 ## Quick Start
 
@@ -136,47 +140,58 @@ setup, and export recipes are documented in the
 
 ## Screenshots
 
+The gallery follows the same arc as the tool itself: start from the **live snapshot**, drop into
+the **historical time-series** that explains it, let the history **surface the outliers**, and finish
+with the **evidence** you collect and share to close out a root-cause.
+
 <!-- Gallery — capture per docs/screenshots/README.md -->
 
 <a href="docs/screenshots/02-fleet-heatmap.png">
-  <img src="docs/screenshots/02-fleet-heatmap.png" alt="Fleet temperature heatmap" width="800">
+  <img src="docs/screenshots/02-fleet-heatmap.png" alt="Fleet temperature and power heatmap over time" width="800">
 </a>
-<br/><sub><b>Fleet Heatmap</b> — temperature and power distribution across every GPU in the fleet, at a glance.</sub>
-
-<br/><br/>
-
-<a href="docs/screenshots/03-targets-page.png">
-  <img src="docs/screenshots/03-targets-page.png" alt="Targets management page" width="800">
-</a>
-<br/><sub><b>Targets</b> — bulk CSV import, per-target test &amp; on-demand log collection, live telemetry-gathering status.</sub>
+<br/><sub><b>Fleet Heatmap</b> — temperature and power across every GPU in the fleet. A Grafana view backed
+by the full time-series history, so you can scrub back and watch the fleet heat up or cool down over any window.</sub>
 
 <br/><br/>
 
 <a href="docs/screenshots/04-gpu-compute.png">
-  <img src="docs/screenshots/04-gpu-compute.png" alt="Per-system GPU compute dashboard" width="800">
+  <img src="docs/screenshots/04-gpu-compute.png" alt="Per-system GPU compute dashboard with historical time-series" width="800">
 </a>
-<br/><sub><b>Per-system drill-down</b> — every GPU's compute, memory, interconnect, and power broken out.</sub>
+<br/><sub><b>Per-system drill-down</b> — every GPU's compute, memory, interconnect, and power as historical
+time-series, not just a live reading. This is where you see <em>how</em> a system reached its current state
+and compare it against its neighbours.</sub>
+
+<br/><br/>
+
+<a href="docs/screenshots/07-fleet-outliers.png">
+  <img src="docs/screenshots/07-fleet-outliers.png" alt="Fleet outliers dashboard derived from telemetry history" width="800">
+</a>
+<br/><sub><b>Outlier detection</b> — hot GPUs, high-power consumers, thermal imbalance. Derived from the
+telemetry history so a transient spike and a sustained trend read differently — anomalies surface fast.</sub>
 
 <br/><br/>
 
 <a href="docs/screenshots/05-alerts-page.png">
   <img src="docs/screenshots/05-alerts-page.png" alt="Alerts subscription and history page" width="800">
 </a>
-<br/><sub><b>Alerts</b> — real-time SSE / webhook subscriptions with severity routing and history.</sub>
+<br/><sub><b>Alerts</b> — real-time SSE / webhook subscriptions with severity routing, plus the full alert
+history alongside the telemetry that triggered it.</sub>
 
 <br/><br/>
 
 <a href="docs/screenshots/06-collected-logs.png">
   <img src="docs/screenshots/06-collected-logs.png" alt="Collected diagnostic log bundles" width="800">
 </a>
-<br/><sub><b>Diagnostic log bundles</b> — on-demand harvest, download, and share for RMA or debug tickets.</sub>
+<br/><sub><b>Diagnostic log bundles</b> — the evidence layer: on-demand harvest, download, and share for
+RMA or debug tickets, pairing the time-series record with logs from the moment of failure for root-cause.</sub>
 
 <br/><br/>
 
-<a href="docs/screenshots/07-fleet-outliers.png">
-  <img src="docs/screenshots/07-fleet-outliers.png" alt="Fleet outliers dashboard" width="800">
+<a href="docs/screenshots/03-targets-page.png">
+  <img src="docs/screenshots/03-targets-page.png" alt="Targets management page" width="800">
 </a>
-<br/><sub><b>Outlier detection</b> — hot GPUs, high-power consumers, thermal imbalance — surfaces fleet anomalies fast.</sub>
+<br/><sub><b>Targets</b> — what the twin is built from: bulk CSV import, per-target test &amp; on-demand log
+collection, and live telemetry-gathering status for every node.</sub>
 
 > Screenshots above expect PNG files under [`docs/screenshots/`](docs/screenshots/)
 
@@ -215,6 +230,7 @@ Copyright © 2026 Advanced Micro Devices, Inc.
 | [Class Diagram (PDF)](docs/class-diagram.pdf) | Class relationships across layers (source: [`docs/class-diagram.mmd`](docs/class-diagram.mmd)) |
 | [`docs/SCALABILITY.md`](docs/SCALABILITY.md) | Tuning per fleet size + understanding the runtime architecture |
 | [`docs/DATA_EXPORT_REFERENCE.md`](docs/DATA_EXPORT_REFERENCE.md) | Exporting metrics to CSV (gyanam.sh wrapper + native InfluxDB recipes) |
+| [`profiles/README.md`](profiles/README.md) | Redfish interop profile — the minimal Redfish APIs a system must expose to onboard, and how to validate a BMC against it |
 | [`scripts/README.md`](scripts/README.md) | Volume / disk-space monitoring scripts and automated growth tracking |
 | [`LINTING.md`](LINTING.md) | Pre-commit / ruff / mypy / shellcheck setup |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute, DCO sign-off, PR workflow |

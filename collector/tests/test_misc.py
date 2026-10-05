@@ -5,12 +5,6 @@
 import pytest
 from src.api import dependencies
 from src.config import get_config, get_settings, load_config
-from src.exporters.prometheus import PrometheusExporter
-
-
-async def test_base_async_context_manager():
-    async with PrometheusExporter() as exp:
-        assert exp is not None
 
 
 def test_dependency_service_stubs():

@@ -4,12 +4,12 @@
 
 **GYANAM — GPU Observability Assistant**. The project's primary goal is
 to support **large-scale GPU observability and any debug effort** on
-AMD Instinct fleets. It gathers telemetry from GPU servers through DMTF
-Redfish-defined interfaces — Redfish Aggregation on ODM/OEM BMCs that
-support it, or proxy-based collection otherwise (with SSH-proxy and SSE
-alternatives) — parses telemetry through a
-schema-aware extraction pipeline, stores metrics in InfluxDB
-(Prometheus also supported), surfaces them via Grafana, and adds
+GPU UBB8 / rack-based GPU fleets. It gathers telemetry from GPU servers through DMTF
+Redfish-defined interfaces over HTTP(S) — direct polling of the metric
+report endpoints, with an optional SSE event stream for push-based alerts —
+parses telemetry through a
+schema-aware extraction pipeline, stores metrics in InfluxDB,
+surfaces them via Grafana, and adds
 on-demand diagnostic-log collection + alert subscriptions + a CSV
 export pipeline for debug-evidence sharing. The codebase / repo
 short-name remains `gyanam`.
@@ -138,6 +138,10 @@ collector/
       dependencies.py        # Shared app_state dict, getter functions
       routes/
         targets.py           # Target CRUD, bulk import, test-connection
+                             # (seeds data-hall placement from hostname on create,
+                             #  from Redfish Chassis Location on test-connection)
+        datahall.py          # Data Hall view: hall/row/rack/U render + manual
+                             # placement assignment + bulk hostname auto-resolve
         logs.py              # Collected-log download/delete
         alerts.py            # Alert browsing, manager-stats proxy
         schemas.py           # Schema viewer
@@ -150,7 +154,11 @@ collector/
       base.py                # Metric / BaseExporter abstractions
       influxdb.py            # Buffered async writes, reconnect-on-failure,
                              # _flush_event signaling, gzipped HTTP
-      prometheus.py          # Alternative Prometheus backend
+    location/
+      models.py              # Placement value object + source precedence
+      hostname_parser.py     # Config-driven hostname -> placement (token/regex rules)
+      redfish_location.py    # Placement from Redfish Chassis Location.Placement
+      resolver.py            # Merge candidates by precedence (manual>redfish>hostname)
     parser/
       extractor.py           # Schema-based metric extraction (JSONPath)
       discovery.py           # Auto-discovery of numeric fields
@@ -168,7 +176,6 @@ collector/
                              # normalization helpers used by the webhook path)
       log_baseline.py        # One-shot baseline pull of existing LogService entries
       webhook_subscriber.py  # Per-target webhook subscription mgmt
-      ssh_transport.py       # SSH-proxy transport for air-gapped BMCs
 grafana/
   provisioning/
     dashboards/              # 11 dashboard JSON files (auto-provisioned)
@@ -343,10 +350,9 @@ addressed. Replacement notes for each:
   `exporter.get_health_metrics()`. New fields include
   `cached_clients`, `client_cache_hit_rate_pct`, `inflight`,
   `polls_dropped_queue_full`, `consecutive_batch_failures`, `reconnects`.
-- `is_connected` in the exporter health check now requires *both* a live
+- `is_connected` in the exporter health check requires *both* a live
   `write_api` *and* a recent successful write within `_PIPELINE_DEAD_AFTER_S`
-  (default 600s). The old check stayed `true` for 7 hours during a silent
-  hang — that's fixed.
+  (default 600s), so a live-but-not-writing client is reported as unhealthy.
 
 ## Security Status
 
@@ -355,6 +361,14 @@ addressed. Replacement notes for each:
 - SSRF prevention with loopback blocking
 - CSRF tokens with HMAC + expiry
 - bcrypt password hashing with timing-safe comparison
+- Default-password lockout: login is **refused** (both Basic-auth and the form
+  path) while the shipped `changeme` hash is in use, unless
+  `GYANAM_ALLOW_DEFAULT_PASSWORD=1` is set. Set a real `password_hash` /
+  `UI_PASSWORD`, or that flag for local/dev, to log in.
+- Internal control endpoint auth: the collector's state-changing
+  `POST /poll/{id}` (port 8081) requires the shared `X-Gyanam-Internal` token
+  derived from `ENCRYPTION_KEY` (both containers share it); the API forwards it
+  automatically.
 - Fernet encryption for stored credentials
 - Path traversal protection in log operations
 - SQLAlchemy ORM (no SQL injection)
@@ -381,7 +395,6 @@ addressed. Replacement notes for each:
 - No rate limiting on any endpoint
 - No RBAC (single admin account)
 - No audit logging
-- Default "changeme" password (warns but doesn't refuse)
 - No secrets rotation mechanism
 - Docker network not segmented
 
@@ -389,14 +402,14 @@ addressed. Replacement notes for each:
 
 A pytest suite lives under `collector/tests/` covering the parser
 (extractor/discovery/schema/log-parser/unpacker), config, auth/CSRF, exporters
-(Prometheus + InfluxDB buffering), the Redfish client helpers, the alert
+(InfluxDB buffering), the Redfish client helpers, the alert
 subsystem (repository dedup/ordering/window/counts/pagination/cursors + SSE
 subscriber parsing/backoff), input validators, log-collector path-traversal
 defense, and the FastAPI routes (auth enforcement, CSRF, alerts, targets CRUD +
 bulk CSV import, health). Tests run against **SQLite** with HTTP mocked — no
 PostgreSQL / live InfluxDB / BMC required (`asyncio_mode=auto`).
 
-Canonical run (in the collector image, with coverage + `--cov-fail-under=35`):
+Canonical run (in the collector image, with coverage + `--cov-fail-under=95`):
 
 ```bash
 ./scripts/run-tests.sh                 # full suite + coverage
@@ -404,12 +417,13 @@ Canonical run (in the collector image, with coverage + `--cov-fail-under=35`):
 ```
 
 Local run: `cd collector && pip install -r requirements.txt -r requirements-dev.txt && PYTHONPATH=. python -m pytest`.
-Dev-only test deps are in `collector/requirements-dev.txt`. **~56% coverage**
-across 220+ tests; the gate is `--cov-fail-under=50`. See **`TESTING.md`** for
-layout, conventions, and coverage notes. **Lower coverage / future work:** the
+Dev-only test deps are in `collector/requirements-dev.txt`. **~96% coverage**
+across 1000+ tests; the gate is `--cov-fail-under=95` (new code must land with
+tests). See **`TESTING.md`** for layout, conventions, and coverage notes. The
 async orchestration loops (`poller` scheduling, `sse_subscriber`,
-`ssh_transport`, `alert_subscriber` reconnect, `influxdb` flush/reconnect,
-`collector_main`/`api_main` lifespans).
+`alert_subscriber` reconnect, `influxdb` flush/reconnect,
+`collector_main`/`api_main` lifespans) are covered by the live smoke suite
+(`scripts/smoke-test.sh`) rather than mocked unit tests.
 
 ## CodeQL
 
@@ -439,8 +453,19 @@ docker run --rm -v "$(pwd)/docs:/data" minlag/mermaid-cli:latest \
 
 When you edit a `.mmd`, regenerate the `.pdf` and commit both.
 
+## Redfish Interoperability Profile
+
+`profiles/GyanamTelemetryAggregator.v1_0_2.json` is a DMTF
+[DSP0272](https://www.dmtf.org/dsp/DSP0272) interop profile declaring what a BMC
+must expose for gyanam to work with it unmodified — **Mandatory** = the core
+gyanam needs to function; **Recommended** = unlocks GPU/firmware inventory,
+standards-based metric-unit resolution, and event-driven diagnostic-log
+collection. Vendors can self-test a live system with the DMTF
+`Redfish-Interop-Validator`. See `profiles/README.md`.
+
 ## See Also
 
+- `profiles/` — Redfish interop profile + how to validate a system against it
 - `docs/architecture.mmd` (+ `.pdf`) — runtime data flow + 5-container layout
 - `docs/class-diagram.mmd` (+ `.pdf`) — class relationships across layers
 - `docs/SCALABILITY.md` — sizing / tuning per fleet size

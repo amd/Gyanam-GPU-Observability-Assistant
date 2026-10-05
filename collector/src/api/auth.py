@@ -23,6 +23,7 @@ import base64
 import hashlib
 import hmac
 import logging
+import os
 import secrets
 import time
 
@@ -39,6 +40,37 @@ SESSION_MAX_AGE = 28800  # 8 hours
 # The hash of the default password 'changeme' — used only to detect
 # whether the operator has changed the default and log a warning.
 _DEFAULT_HASH = "$2b$12$DDVvJVK1RdIj//rkWa7g8Op8Sc00hu64FJ9lwMZ/.8hvlXkF7jLaW"
+
+
+def _default_password_allowed() -> bool:
+    """True only if the operator has explicitly opted into the insecure default
+    via GYANAM_ALLOW_DEFAULT_PASSWORD (for local/dev use)."""
+    return os.environ.get("GYANAM_ALLOW_DEFAULT_PASSWORD", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
+def default_password_blocks_login(password_hash: str) -> bool:
+    """Refuse authentication when the shipped default password ('changeme') is
+    still configured and hasn't been explicitly allowed.
+
+    A known default credential is effectively no authentication, so we fail
+    closed on BOTH the Basic-auth and form-login paths. Operators override by
+    setting a real password_hash/UI_PASSWORD, or GYANAM_ALLOW_DEFAULT_PASSWORD=1
+    to deliberately keep the default (never in production).
+    """
+    if password_hash == _DEFAULT_HASH and not _default_password_allowed():
+        logger.critical(
+            "Refusing login: the default password 'changeme' is in use. Set a "
+            "real password (UI_PASSWORD / password_hash in config), or set "
+            "GYANAM_ALLOW_DEFAULT_PASSWORD=1 to explicitly permit the default "
+            "(NOT for production)."
+        )
+        return True
+    return False
 
 
 class LoginRequiredError(Exception):
@@ -194,11 +226,9 @@ def _check_basic_auth(request: Request) -> str | None:
     correct_username = secrets.compare_digest(username, config.ui.auth.username)
 
     password_hash = config.ui.auth.password_hash
-    if password_hash == _DEFAULT_HASH:
-        logger.warning(
-            "SECURITY WARNING: Using default password 'changeme'. "
-            "Please set a secure password_hash in config.yaml!"
-        )
+    # Fail closed on the shipped default credential unless explicitly allowed.
+    if default_password_blocks_login(password_hash):
+        return None
 
     correct_password = verify_password(password, password_hash)
 

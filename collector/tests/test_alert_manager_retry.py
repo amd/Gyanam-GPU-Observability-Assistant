@@ -21,6 +21,9 @@ class _FakeRepo:
     async def get_all_targets(self, enabled_only=False):
         return self.targets
 
+    async def get_active_targets(self):
+        return self.targets
+
     def decrypt_password(self, target):
         return "pw"
 

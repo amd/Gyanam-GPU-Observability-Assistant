@@ -34,7 +34,7 @@ if ! docker image inspect "${IMAGE}" >/dev/null 2>&1; then
 fi
 
 # Enforce the coverage floor only on a full run; subset runs (args given) skip it.
-COV_GATE="--cov-fail-under=50"
+COV_GATE="--cov-fail-under=95"
 if [[ $# -gt 0 ]]; then
     COV_GATE=""
 fi
@@ -49,4 +49,4 @@ docker run --rm -w /app -e PYTHONPATH=/app \
     -v "${REPO_ROOT}/collector/pytest.ini:/app/pytest.ini:ro" \
     -v "${REPO_ROOT}/collector/requirements-dev.txt:/app/requirements-dev.txt:ro" \
     "${IMAGE}" \
-    sh -c "pip install --no-cache-dir -q ${PIP_FLAGS} pytest-cov pytest-httpx && python -m pytest --cov=src --cov-report=term-missing:skip-covered ${COV_GATE} ${PYTEST_TARGET}"
+    sh -c "pip install --no-cache-dir -q ${PIP_FLAGS} pytest-cov pytest-httpx && python -m pytest --ignore=tests/live --cov=src --cov-report=term-missing:skip-covered ${COV_GATE} ${PYTEST_TARGET}"

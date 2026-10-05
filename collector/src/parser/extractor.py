@@ -20,6 +20,7 @@
 """Metric extractor using JSONPath-based schema definitions."""
 
 import logging
+import math
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -27,7 +28,6 @@ from typing import Any
 from jsonpath_ng.exceptions import JsonPathParserError
 from jsonpath_ng.ext import parse as jsonpath_parse
 
-from .redfish_log_parser import RedfishLogParser
 from .schema import MetricSchema, SchemaLoader
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,6 @@ class MetricExtractor:
         """
         self.schema_loader = schema_loader
         self._compiled_patterns: dict[str, Any] = {}
-        self.redfish_log_parser = RedfishLogParser()
 
     def extract_from_data(
         self,
@@ -196,13 +195,21 @@ class MetricExtractor:
             return 1.0 if value else 0.0
 
         if isinstance(value, int | float):
-            return float(value)
+            # Reject NaN/Inf (InfluxDB rejects non-finite line protocol at write
+            # time) and oversized ints (a huge JSON integer OverflowErrors on the
+            # float() conversion) — either would otherwise fail the whole batch.
+            try:
+                f = float(value)
+            except (OverflowError, ValueError):
+                return None
+            return f if math.isfinite(f) else None
 
         if isinstance(value, str):
-            # Try to parse numeric string
+            # Try to parse numeric string (json also accepts bare NaN/Infinity)
             try:
-                return float(value)
-            except ValueError:
+                f = float(value)
+                return f if math.isfinite(f) else None
+            except (ValueError, OverflowError):
                 pass
 
             # Handle common string representations

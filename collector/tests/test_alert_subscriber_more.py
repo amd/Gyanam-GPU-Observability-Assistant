@@ -101,3 +101,37 @@ def test_process_event_missing_severity_is_kept():
     )
     assert len(seen) == 1
     assert seen[0].severity == "OK"
+
+
+# ---- _connect_and_listen (streamed SSE via httpx_mock) ----
+
+SSE_URL = "https://bmc/redfish/v1/EventService/SSE"
+
+
+async def test_connect_and_listen_processes_event(httpx_mock):
+    captured = []
+    sub = _sub(callback=captured.append)
+    sub._running = True  # the listen loop checks this per line
+    body = (
+        b"data: "
+        + json.dumps({"Events": [{"Severity": "Critical", "Message": "hot"}]}).encode()
+        + b"\n\n"
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=SSE_URL,
+        status_code=200,
+        headers={"content-type": "text/event-stream"},
+        content=body,
+    )
+    await sub._connect_and_listen()
+    assert len(captured) == 1 and captured[0].message == "hot"
+
+
+async def test_connect_and_listen_non_200_raises(httpx_mock):
+    import pytest
+
+    sub = _sub()
+    httpx_mock.add_response(method="GET", url=SSE_URL, status_code=404, content=b"nope")
+    with pytest.raises(RuntimeError):
+        await sub._connect_and_listen()

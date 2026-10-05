@@ -115,3 +115,10 @@ def test_cleanup_old_files(tmp_path):
     old = time.time() - 7200
     os.utime(old_dir, (old, old))
     assert up.cleanup_old_files(max_age_seconds=3600) >= 1
+
+
+def test_extracted_file_report_type_derived_from_name(unpacker):
+    import gzip
+
+    files = unpacker.unpack(gzip.compress(b'{"MetricValues": []}'), target_name="sysZ")
+    assert files and files[0].report_type == "sysZ_telemetry"  # derived from filename

@@ -36,6 +36,7 @@ import httpx
 
 from ..database.models import Target
 from ..database.repository import TargetRepository
+from .http_client import make_bmc_client
 from .poller import PollResult
 
 logger = logging.getLogger(__name__)
@@ -100,7 +101,15 @@ class SSEConnection:
         logger.info(f"SSE subscription stopped for {self.target.name}")
 
     async def _connection_loop(self, result_queue: asyncio.Queue) -> None:
-        """Main loop: connect, stream events, reconnect on failure."""
+        """Main loop: connect, stream events, reconnect on failure.
+
+        Every iteration — whether the stream raised or returned cleanly — ends
+        with a backoff sleep. A BMC that accepts the connection (HTTP 200) and
+        then immediately EOFs would otherwise spin this loop with zero delay,
+        pegging a CPU core and hammering the BMC. Backoff is only *reset* once
+        the stream proves productive (``_stream_events`` resets it after the
+        first event), so a flapping endpoint keeps backing off.
+        """
         while self._running:
             try:
                 await self._stream_events(result_queue)
@@ -112,11 +121,20 @@ class SSEConnection:
                     f"SSE connection lost for {self.target.name}: {e} "
                     f"(attempt {self._consecutive_errors}, reconnecting in {self._current_delay}s)"
                 )
-                if self._running:
-                    # Exponential backoff with jitter to avoid thundering herd
-                    jitter = random.uniform(0, self._current_delay * 0.3)
-                    await asyncio.sleep(self._current_delay + jitter)
-                    self._current_delay = min(self._current_delay * 2, self.max_reconnect_delay)
+            else:
+                # Stream returned without error (clean EOF). Still a disconnect.
+                self._consecutive_errors += 1
+                logger.info(
+                    f"SSE stream ended for {self.target.name} "
+                    f"(reconnecting in {self._current_delay}s)"
+                )
+            if not self._running:
+                break
+            # Exponential backoff with jitter — applied on EVERY reconnect,
+            # including clean closes, to avoid a tight reconnect loop.
+            jitter = random.uniform(0, self._current_delay * 0.3)
+            await asyncio.sleep(self._current_delay + jitter)
+            self._current_delay = min(self._current_delay * 2, self.max_reconnect_delay)
 
     # Max time (seconds) to wait for any line from the stream before assuming dead
     STREAM_ACTIVITY_TIMEOUT = 600  # 10 minutes
@@ -136,18 +154,23 @@ class SSEConnection:
         logger.info(f"Connecting SSE: {self.target.name} -> {url}")
 
         async with (
-            httpx.AsyncClient(
-                verify=self.target.verify_ssl,
-                timeout=httpx.Timeout(self.connection_timeout, read=None),
+            make_bmc_client(
+                verify_ssl=self.target.verify_ssl,
+                timeout=self.connection_timeout,
+                # Unbounded read: the SSE stream can idle between events without
+                # the connection being considered dead (activity is policed
+                # separately via STREAM_ACTIVITY_TIMEOUT).
+                read_timeout=None,
             ) as client,
             client.stream("GET", url, headers=headers, auth=auth) as response,
         ):
             if response.status_code != 200:
                 raise RuntimeError(f"SSE connection failed: HTTP {response.status_code}")
 
-            # Reset backoff on successful connection
-            self._current_delay = self.reconnect_delay
-            self._consecutive_errors = 0
+            # NB: backoff is intentionally NOT reset here. A BMC can return 200
+            # and then immediately close; resetting on connect alone lets a
+            # flapping endpoint reconnect at the floor delay forever. Backoff is
+            # reset in _process_event once a real event arrives (proven useful).
             logger.info(f"SSE connected: {self.target.name}")
 
             # Parse SSE stream with activity timeout
@@ -168,6 +191,10 @@ class SSEConnection:
                     # Empty line = end of event
                     if event_data and event_type == "MetricReport":
                         await self._process_event(event_data, result_queue)
+                        # A real event proves the stream is productive: reset
+                        # backoff so the next (post-disconnect) retry is prompt.
+                        self._current_delay = self.reconnect_delay
+                        self._consecutive_errors = 0
                     event_type = ""
                     event_data = []
 
@@ -312,7 +339,7 @@ class SSEManager:
 
     async def _sync_connections(self) -> None:
         """Reconcile active SSE connections with the target database."""
-        targets = await self.repository.get_all_targets(enabled_only=True)
+        targets = await self.repository.get_active_targets()
 
         # Find SSE targets
         sse_targets = {t.id: t for t in targets if t.connection_mode == "sse"}

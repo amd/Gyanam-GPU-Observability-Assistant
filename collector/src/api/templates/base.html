@@ -6,6 +6,12 @@
     <title>{% block title %}GYANAM - GPU Observability Assistant{% endblock %}</title>
     <link rel="stylesheet" href="/static/gyanam.css?v=1">
     {% block extra_styles %}{% endblock %}
+    <style>
+        /* Give the Systems / Data Hall nav icons an accent (matches their page
+           headers) so they aren't plain monochrome. */
+        nav a[href="/systems"] svg { color: #0891b2; }
+        nav a[href="/datahall"] svg { color: #6366f1; }
+    </style>
 </head>
 <body>
     {% block nav %}
@@ -19,18 +25,15 @@
             </div>
             <div style="display: flex; align-items: flex-end; gap: 20px;">
                 <ul>
-                    <li><a href="/targets" class="{% if request.url.path.startswith('/targets') %}active{% endif %}">🎯 Targets</a></li>
+                    <li><a href="/systems" class="{% if request.url.path.startswith('/systems') %}active{% endif %}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="vertical-align:-3px;margin-right:4px"><rect x="3" y="5" width="18" height="5.5" rx="1.2"/><rect x="3" y="13.5" width="18" height="5.5" rx="1.2"/><circle cx="6.5" cy="7.75" r=".9" fill="currentColor" stroke="none"/><circle cx="6.5" cy="16.25" r=".9" fill="currentColor" stroke="none"/><line x1="9.5" y1="7.75" x2="17.5" y2="7.75"/><line x1="9.5" y1="16.25" x2="17.5" y2="16.25"/></svg>Systems</a></li>
+                    <li><a href="/datahall" class="{% if request.url.path.startswith('/datahall') %}active{% endif %}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px"><rect x="3.5" y="4" width="7" height="16" rx="1.2"/><rect x="13.5" y="4" width="7" height="16" rx="1.2"/><line x1="3.5" y1="9" x2="10.5" y2="9"/><line x1="3.5" y1="14" x2="10.5" y2="14"/><line x1="13.5" y1="9" x2="20.5" y2="9"/><line x1="13.5" y1="14" x2="20.5" y2="14"/></svg>Data Hall View</a></li>
                     <li><a href="/alerts" class="{% if request.url.path.startswith('/alerts') %}active{% endif %}">🔔 Alerts</a></li>
                     <li><a href="/logs" class="{% if request.url.path.startswith('/logs') %}active{% endif %}">📋 Logs</a></li>
                     <li class="external-links">
                         <a href="http://{{ request.url.hostname }}:{{ grafana_port }}" target="_blank" title="Open Grafana Dashboard">📊 Grafana</a>
                     </li>
                     <li>
-                        {% if metrics_backend == 'prometheus' %}
-                        <a href="http://{{ request.url.hostname }}:{{ prometheus_port }}" target="_blank" title="Open Prometheus">📈 Prometheus</a>
-                        {% else %}
                         <a href="http://{{ request.url.hostname }}:{{ influxdb_port }}" target="_blank" title="Open InfluxDB">📈 InfluxDB</a>
-                        {% endif %}
                     </li>
                 </ul>
                 {% if user %}
@@ -63,7 +66,7 @@
         <div class="container">
             <strong>GYANAM</strong> - GPU Observability Assistant v0.1.0
             <br>
-            <span style="font-size: 0.75rem;">Developed by AMD Instinct Full Stack AI System Debug Team</span>
+            <span style="font-size: 0.75rem;">Developed by the Full Stack AI System Debug Team</span>
         </div>
     </footer>
 

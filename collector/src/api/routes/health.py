@@ -32,21 +32,22 @@ The collector service (separate process) handles:
 
 import json
 import logging
+from typing import Any
 
-import httpx
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from ...config import get_settings
 from ..auth import get_current_user
+from ..collector_client import COLLECTOR_BASE_URL, get_json
 from ..dependencies import get_log_collector, get_repository
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Collector service health endpoint (internal docker network)
-COLLECTOR_HEALTH_URL = "http://collector:8081/health/detailed"
+# Collector service health endpoint (internal docker network).
+COLLECTOR_HEALTH_PATH = "/health/detailed"
+COLLECTOR_HEALTH_URL = f"{COLLECTOR_BASE_URL}{COLLECTOR_HEALTH_PATH}"
 
 
 @router.get("/health")
@@ -56,15 +57,18 @@ async def health_check():
 
 
 @router.get("/health/detailed")
-async def detailed_health_check():
+async def detailed_health_check(user: str = Depends(get_current_user)):
     """Detailed health check with both API and Collector service status.
 
     This endpoint queries the collector service's internal health endpoint
     and combines it with API service status for a complete view.
+
+    Auth-gated: the payload includes the per-target subscriber roster, failure
+    reasons and the shard topology — fleet recon an unauthenticated caller must
+    not get. The bare ``/health`` above stays open for the Docker healthcheck.
     """
     repository = get_repository()
     log_collector = get_log_collector()
-    settings = get_settings()
 
     # Check API service database
     db_healthy = False
@@ -92,33 +96,21 @@ async def detailed_health_check():
         # Don't expose raw exception text to the HTTP response; log it instead.
         log_collector_message = f"unavailable ({type(e).__name__})"
 
-    # Query collector service health (separate docker container)
-    collector_health = None
-    collector_error = None
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(COLLECTOR_HEALTH_URL)
-            if response.status_code == 200:
-                collector_health = response.json()
-    except httpx.RequestError as e:
-        # Don't expose raw exception text to the HTTP response; log it instead.
-        logger.warning(f"Collector health query failed: {e}", exc_info=True)
-        collector_error = f"unavailable (cannot reach collector: {type(e).__name__})"
-    except httpx.TimeoutException:
-        collector_error = "Collector service timeout"
-    except Exception as e:
-        # Don't expose raw exception text to the HTTP response; log it instead.
-        logger.warning(f"Collector health query failed: {e}", exc_info=True)
-        collector_error = f"unavailable ({type(e).__name__})"
+    # Query collector service health (separate docker container). The shared
+    # helper returns None on any transport error, non-200, or unparseable body
+    # (logging the exception type); surface that as an "unavailable" state and
+    # don't expose raw exception text to the HTTP response.
+    collector_health = await get_json(COLLECTOR_HEALTH_PATH, timeout=5.0)
+    collector_error = None if collector_health else "unavailable (cannot reach collector)"
 
     # Determine overall health
     api_healthy = db_healthy and log_collector_healthy
     collector_healthy = collector_health and collector_health.get("status") == "healthy"
     overall_healthy = api_healthy and collector_healthy
 
-    result = {
+    result: dict[str, Any] = {
         "status": "healthy" if overall_healthy else "degraded",
-        "metrics_backend": settings.metrics_backend,
+        "metrics_backend": "influxdb",
         "api_service": {
             "status": "healthy" if api_healthy else "degraded",
             "components": {
@@ -142,6 +134,18 @@ async def detailed_health_check():
             "error": collector_error or "Unknown error",
             "components": {},
         }
+
+    # Shard roster (empty for a single collector) — one row per live collector,
+    # so operators can see the fleet split across shards.
+    try:
+        shards = await repository.get_collector_stats()
+        if len(shards) > 1:
+            result["shards"] = [
+                {"collector_id": s.get("collector_id"), "owned_targets": s.get("owned_targets", 0)}
+                for s in shards
+            ]
+    except Exception:  # noqa: BLE001 — diagnostics must never 500 on this extra
+        pass
 
     return result
 

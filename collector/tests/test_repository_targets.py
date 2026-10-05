@@ -2,6 +2,46 @@
 # SPDX-License-Identifier: MIT
 """Tests for TargetRepository target CRUD + credential encryption."""
 
+import pytest
+from sqlalchemy.exc import OperationalError
+from src.database.repository import _retry_on_locked
+
+
+async def test_retry_on_locked_retries_then_succeeds():
+    calls = {"n": 0}
+
+    @_retry_on_locked(max_attempts=5, base_delay=0)
+    async def flaky():
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise OperationalError("stmt", {}, Exception("database is locked"))
+        return "ok"
+
+    assert await flaky() == "ok"
+    assert calls["n"] == 3
+
+
+async def test_retry_on_locked_gives_up_after_max():
+    @_retry_on_locked(max_attempts=2, base_delay=0)
+    async def always_locked():
+        raise OperationalError("stmt", {}, Exception("database is locked"))
+
+    with pytest.raises(OperationalError):
+        await always_locked()
+
+
+async def test_retry_on_locked_reraises_other_errors_immediately():
+    calls = {"n": 0}
+
+    @_retry_on_locked(max_attempts=5, base_delay=0)
+    async def other_error():
+        calls["n"] += 1
+        raise OperationalError("stmt", {}, Exception("no such table"))
+
+    with pytest.raises(OperationalError):
+        await other_error()
+    assert calls["n"] == 1  # non-lock error is not retried
+
 
 async def _make(repo, **kw):
     kw.setdefault("name", "gpu1")
@@ -48,20 +88,6 @@ async def test_delete_target(repo):
     assert await repo.delete_target(t.id) is True
     assert await repo.get_target(t.id) is None
     assert await repo.delete_target(t.id) is False
-
-
-async def test_ssh_proxy_host_lookup(repo):
-    t = await _make(
-        repo,
-        name="proxy",
-        host="10.5.5.5",
-        connection_mode="ssh_proxy",
-        ssh_proxy_host="proxy.example.com",
-        ssh_proxy_username="root",
-        ssh_password="k",
-    )
-    found = await repo.get_target_by_ssh_proxy_host("proxy.example.com")
-    assert found is not None and found.id == t.id
 
 
 async def test_update_poll_status_batch(repo):

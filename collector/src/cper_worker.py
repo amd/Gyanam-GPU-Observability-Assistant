@@ -34,19 +34,9 @@ import logging
 import time
 from contextlib import suppress
 
-from prometheus_client import Counter, Gauge
-
 from .redfish import cper_decoder
 
 logger = logging.getLogger(__name__)
-
-# CPER enrichment observability.
-CPER_DECODED_TOTAL = Counter("gyanam_cper_decoded_total", "CPER records successfully decoded")
-CPER_FAILED_TOTAL = Counter("gyanam_cper_failed_total", "CPER decode/fetch failures")
-CPER_BACKLOG = Gauge("gyanam_cper_backlog", "Alerts in each CPER enrichment state", ["state"])
-
-# States surfaced as backlog gauges.
-_BACKLOG_STATES = ("pending", "decoded", "fetch_failed", "decode_failed", "unavailable", "no_data")
 
 
 class CperEnrichmentWorker:
@@ -119,10 +109,8 @@ class CperEnrichmentWorker:
         }
 
     def _refresh_backlog(self, counts: dict) -> None:
-        """Cache CPER backlog counts and publish them as Prometheus gauges."""
+        """Cache CPER backlog counts for alert-manager stats."""
         self._status_counts = dict(counts)
-        for state in _BACKLOG_STATES:
-            CPER_BACKLOG.labels(state=state).set(counts.get(state, 0))
 
     async def _loop(self) -> None:
         """Periodically decode CPER attachments for pending alerts."""
@@ -154,7 +142,30 @@ class CperEnrichmentWorker:
                 self._target_sems[row.target_id] = tsem
             async with tsem, sem:
                 if self._running:
-                    return await self._enrich_one(row)
+                    try:
+                        return await self._enrich_one(row)
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception as e:
+                        # Any UNEXPECTED failure (not already turned into an
+                        # outcome by _enrich_one) must still advance the attempt
+                        # counter — otherwise a poison row is re-selected every
+                        # cycle forever and never finalizes.
+                        self._failed += 1
+                        attempts = row.attempts + 1
+                        terminal = attempts >= self.max_attempts
+                        logger.warning(
+                            "CPER enrich crashed for alert %s (attempt %d/%d): %s",
+                            row.id,
+                            attempts,
+                            self.max_attempts,
+                            type(e).__name__,
+                        )
+                        return {
+                            "id": row.id,
+                            "status": "decode_failed" if terminal else "pending",
+                            "increment_attempt": True,
+                        }
             return None
 
         # Maintenance cadence is wall-clock based, NOT per-cycle: the adaptive
@@ -226,7 +237,6 @@ class CperEnrichmentWorker:
                 cper_decoder.enrich_amd_sections(decoded)
                 refined = cper_decoder.summarize_cper(decoded)
                 self._decoded += 1
-                CPER_DECODED_TOTAL.inc()
                 return {
                     "id": row.id,
                     "status": "decoded",
@@ -260,7 +270,6 @@ class CperEnrichmentWorker:
             # Transient (network/5xx/oversize): count the attempt and retry later
             # until max_attempts, then give up with a terminal status.
             self._failed += 1
-            CPER_FAILED_TOTAL.inc()
             attempts = row.attempts + 1
             terminal = attempts >= self.max_attempts
             logger.warning(
@@ -284,7 +293,6 @@ class CperEnrichmentWorker:
         )
         if decoded is None:
             self._failed += 1
-            CPER_FAILED_TOTAL.inc()
             attempts = row.attempts + 1
             terminal = attempts >= self.max_attempts
             return {
@@ -297,7 +305,6 @@ class CperEnrichmentWorker:
         cper_decoder.enrich_amd_sections(decoded)
         refined = cper_decoder.summarize_cper(decoded)
         self._decoded += 1
-        CPER_DECODED_TOTAL.inc()
         logger.debug("Decoded CPER for alert %d: %s", row.id, refined[:120])
         return {
             "id": row.id,

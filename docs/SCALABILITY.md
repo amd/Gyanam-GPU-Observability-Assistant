@@ -15,7 +15,6 @@ share a SQLite file.
 Targets (BMCs)
      │
      ├── Direct GET (collect every 5m, persistent client cache) ──┐
-     ├── SSH Proxy (collect every 5m)                            ─┤
      └── SSE Subscription (real-time stream)                  ─┘
                                   │
                                   ▼
@@ -105,18 +104,6 @@ Conservative real:   100 × (300 ÷ 5) =  6,000 targets/cycle
 (InfluxDB ingestion + result-processor CPU are usually the next
 bottleneck before the collector itself).
 
-### SSH Proxy (request-based collection)
-
-SSH connect + sequential `curl`/tool calls. Typical collection duration: 8-20s
-warm (the SSH transport is also cached on the persistent client).
-
-```
-Default: 100 × (300 ÷ 15) = 2,000 targets/cycle (theoretical)
-```
-
-**Practical limit: 100-200 targets** (SSH-proxy fan-out is more
-network-fragile than direct GET).
-
 ### SSE (Streaming)
 
 One persistent TCP connection per target. No periodic-collection overhead. Bounded by:
@@ -130,11 +117,11 @@ not connections).
 
 ### Mixed Deployment Examples
 
-| Configuration | Direct | SSH Proxy | SSE | Total | `max_concurrent` |
-|---------------|--------|-----------|-----|-------|------------------|
-| Small | 20 | 10 | 20 | 50 | 30 |
-| Medium | 100 | 30 | 70 | 200 | 50 |
-| Large (default) | 200 | 50 | 250 | 500 | 100 |
+| Configuration | Direct | SSE | Total | `max_concurrent` |
+|---------------|--------|-----|-------|------------------|
+| Small | 30 | 20 | 50 | 30 |
+| Medium | 130 | 70 | 200 | 50 |
+| Large (default) | 250 | 250 | 500 | 100 |
 
 ## Result Processing Pipeline
 
@@ -232,27 +219,125 @@ collector: { mem_limit: 2g, cpus: 2 }
 influxdb:  { mem_limit: 4g, cpus: 2 }
 ```
 
-### For 500+ targets — sharding required
+### For 500+ targets — horizontal collector sharding
 
-The current architecture has the following hard ceilings that no amount
-of in-process tuning can solve:
+A single collector is bounded by one Python event loop: the GIL caps
+extraction throughput around one core's worth of work, regardless of
+in-process tuning. (SQLite single-writer contention and the single
+InfluxDB writer pipeline are secondary — in practice the event loop
+saturates first; InfluxDB typically sits <5% CPU while one collector is
+pegged at 100%.)
 
-- **SQLite single-writer**: even with batching, write contention scales
-  linearly with target count.
-- **Single Python process per collector**: the GIL bounds extraction
-  throughput around ~600 results/min on one core.
-- **Single InfluxDB writer pipeline**: each collector talks to one
-  InfluxDB; write rate caps around 50-100K points/sec.
+**Horizontal sharding (implemented, elastic, lease-based — ON by default).**
+The shipped `docker-compose.yml` enables sharding (`COLLECTOR_SHARDING=true`)
+and runs **3 collector replicas** by default, each capped at
+`MAX_TARGETS_PER_SHARD=200` — sized for a fleet up to **~500 targets**
+(3 × 200 = 600 capacity, with headroom). Replicas automatically divide the
+fleet between themselves — no manual target partitioning:
 
-Recommended approach beyond ~750 targets:
+```bash
+# .env — defaults shown; override only to retune
+COLLECTOR_SHARDING=true
+MAX_TARGETS_PER_SHARD=200          # per-replica cap (config.yaml default)
 
-- **Shard collectors by target group** — run multiple collector
-  containers, each with a partition of targets. They can write to a
-  shared InfluxDB or per-shard InfluxDB instances.
-- **Migrate state DB to PostgreSQL** — the SQLAlchemy code already has
-  a PostgreSQL branch (`repository.py:91-100`). Just point `DATABASE_URL`
-  at `postgresql+asyncpg://…` and add a `postgres` service to
-  `docker-compose.yml`.
+# Replica count: 3 by default (deploy.replicas in compose). Scale for fleet size:
+docker compose up -d --scale collector=1   # small fleets (≤200 targets)
+docker compose up -d --scale collector=3   # ~500 targets (default)
+docker compose up -d --scale collector=N   # keep N × cap ≥ fleet size
+```
+
+Each replica owns a slice of the fleet (how the slice is chosen depends on
+the balancing mode below) as rows in the shared `shard_leases` table,
+heartbeated on a TTL; a replica that stops heartbeating has its leases
+reclaimed by the survivors, so targets rebalance as replicas are added or
+removed. `get_active_targets()` returns only the owned slice, so metric
+polling, alert SSE and webhook subscriptions, diagnostic log collection, and
+inventory enrichment all shard together. The API merges per-replica state
+from `collector_stats` / per-collector `heatmap_snapshots`, so the fleet
+views stay whole. The leading `DELETE` in each claim/reconcile pass takes
+SQLite's write lock, serializing passes across replicas so no target is ever
+double-owned.
+
+**Balancing strategy (`COLLECTOR_BALANCE`, default `dynamic`).**
+
+- **`dynamic` — Rendezvous (HRW) hashing (recommended).** Each target's owner is
+  a stable hash of `(target_id, collector_id)`, bounded by the *fair share*
+  `ceil(enabled / live_collectors)`. Load lands balanced to **within ±1** (e.g.
+  302 targets / 3 replicas → 101/101/100, not 200/102/0), and adding or removing a
+  replica moves only ~1/N of the fleet rather than reshuffling it. Each collector
+  recomputes its slice every claim pass from the live-collector set (fresh
+  `collector_stats` rows) and reconciles the `shard_leases` table to match. Handoff
+  is **lazy and gap-free**: a collector keeps polling a target it has shed until its
+  lease on it expires, and the new owner can only claim once it is stale — so a
+  target is never un-owned mid-handoff. Because HRW keys on the collector id, each
+  replica self-assigns a **stable `collector-<ordinal>`** id (lowest free ordinal in
+  a `collector_slots` table) so a redeploy under `--scale` doesn't reshuffle the
+  fleet; set an explicit `COLLECTOR_ID` (e.g. a k8s StatefulSet pod name) to bypass.
+  Like all the lease/heartbeat TTLs here, slot liveness assumes replicas share a
+  wall clock (true for compose replicas on one host; k8s StatefulSets pin
+  `COLLECTOR_ID` and skip the slot table) — keep clocks within a lease TTL of each
+  other if you run collectors across hosts.
+- **`static` — greedy id-order claiming (fallback).** Each replica claims up to
+  `MAX_TARGETS_PER_SHARD` targets in id order; replicas fill in turn so one may sit
+  idle (302/3 at cap 200 → 200/102/0). Correct and simple, but not load-balanced.
+  Flip with `COLLECTOR_BALANCE=static` if dynamic ever misbehaves — the two modes
+  share the lease table and steal-guard, so a rolling switch never double-owns a
+  target (balance is just uneven until all replicas agree on the mode).
+
+In both modes `get_active_targets()` returns only the owned slice, so metric
+polling, **alert SSE and webhook subscriptions, diagnostic log collection**, and
+inventory enrichment all shard on the same leases. The API merges per-replica state
+from `collector_stats` / per-collector `heatmap_snapshots`, so the fleet views stay
+whole.
+
+**Sizing & failover.** Capacity is `replicas × MAX_TARGETS_PER_SHARD`; keep
+it above the enabled-target count or the surplus goes unpolled (a
+`Fleet under-provisioned` warning fires — every renew pass in dynamic mode, once at
+startup in static mode). The default cap of 200 is a **steady-state** size: if one
+of the three replicas is lost, the two survivors cover 2 × 200 = 400, leaving ~100
+targets unpolled until the replica auto-restarts and reclaims (within one
+lease TTL, ~75 s). For zero-gap single-replica failover at 500 targets,
+raise the cap so `(replicas − 1) × cap ≥ fleet` (e.g. cap 250). Small
+fleets can run a single collector (`--scale collector=1`); it owns the whole
+fleet up to the cap and never needs the lease table to rebalance.
+
+**Operational preconditions (correctness, not just tuning):**
+
+- **`COLLECTOR_ID` must be unique per replica.** It defaults to the
+  container hostname (unique under `--scale`/`replicas`), which is safe.
+  Do **not** set the same `COLLECTOR_ID` on multiple replicas — they would
+  heartbeat each other's leases, never go stale, and double-poll the shared
+  targets (duplicate writes + duplicate BMC subscriptions), with the cap
+  applied per-id instead of per-process.
+- **`claim_interval_seconds` must be well below `lease_ttl_seconds`**
+  (defaults 20 vs 75 — keep `lease_ttl ≳ 3 × claim_interval`). The
+  heartbeat cadence equals the claim interval; if it meets or exceeds the
+  TTL, a live replica lets its own leases expire and ownership flaps.
+- **Each replica must advertise its own routable `ALERT_WEBHOOK_BASE_URL`**
+  if webhook alerting is used. A webhook delivered to a replica that does
+  not own the target is dropped (events are not forwarded between shards);
+  a single shared/load-balanced webhook URL will silently lose events.
+- **Provision capacity ≥ fleet size.** With `N × MAX_TARGETS_PER_SHARD <`
+  enabled targets, the overflow is simply never claimed — those targets go
+  unpolled (graceful degradation, but currently only lightly surfaced in
+  logs). Size `N` and the cap so the product exceeds the fleet with
+  headroom for one replica loss.
+- **Freshness windows.** A departed replica's `collector_stats` and
+  `heatmap_snapshots` rows age out of their read windows rather than being
+  deleted on crash; during that window fleet aggregates can briefly
+  double-count or show a stale heatmap value for a reclaimed host. Keep the
+  stats/heatmap max-age ≤ `lease_ttl` to minimise the window.
+
+**Known limitation — leases balance *count*, not *cost*.** A replica owning
+fewer but heavier targets (more/larger metric reports) can saturate while a
+peer idles. If one shard sustains ~100% CPU, add a replica; a future
+improvement is to weight leases by observed poll cost.
+
+**Beyond sharding — migrate the state DB to PostgreSQL.** The SQLAlchemy
+code already has a PostgreSQL branch (`repository.py:91-100`). Point
+`DATABASE_URL` at `postgresql+asyncpg://…` and add a `postgres` service to
+`docker-compose.yml` to remove the SQLite single-writer ceiling for the
+shared coordination tables.
 
 ## Alert Subsystem Scalability
 

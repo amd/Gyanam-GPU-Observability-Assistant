@@ -26,7 +26,7 @@
 
 schemas:
   # ========================================================================
-  # REDFISH METRIC REPORTS - AMD Instinct GPU Telemetry
+  # REDFISH METRIC REPORTS - GPU UBB8 Telemetry
   # ========================================================================
 
   # All Redfish MetricReports/All metrics

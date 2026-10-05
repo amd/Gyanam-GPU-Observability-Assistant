@@ -19,6 +19,8 @@
 # SOFTWARE.
 """Repository for CRUD operations on target configurations."""
 
+import asyncio
+import functools
 import hashlib
 import json
 import logging
@@ -27,10 +29,24 @@ from datetime import UTC, datetime, timedelta
 
 from cryptography.fernet import Fernet
 from sqlalchemy import case, delete, event, func, select, text, update
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import defer
 
-from .models import Alert, AlertBase, Base, CollectedLog, LogCursor, Target
+from ..location import PINNED_SOURCE, Placement, should_overwrite
+from ..util.timeutil import to_naive_utc as _to_naive_utc
+from .models import (
+    Alert,
+    AlertBase,
+    Base,
+    CollectedLog,
+    CollectorSlot,
+    CollectorStats,
+    HeatmapSnapshot,
+    LogCursor,
+    ShardLease,
+    Target,
+)
 
 
 @dataclass
@@ -47,18 +63,41 @@ class PendingCper:
 logger = logging.getLogger(__name__)
 
 
-def _to_naive_utc(dt: datetime | None) -> datetime | None:
-    """Normalize a datetime to naive UTC for consistent SQLite storage/compare.
+def _retry_on_locked(max_attempts: int = 5, base_delay: float = 0.1):
+    """Decorator: retry an async repository write on a transient SQLite
+    'database is locked' error, with a short exponential backoff.
 
-    SQLite stores DateTime as an ISO string; mixing tz-aware values (which
-    serialize with a ``+00:00`` suffix) and naive ones breaks lexicographic
-    range comparisons. We store everything as naive UTC.
+    WAL + ``busy_timeout`` absorb most contention, but the API and collector
+    processes share the targets DB, so a burst of operator writes (e.g. placing
+    many rack slots) racing the poller's status writer can still momentarily
+    lock. A few quick retries keep those operator-initiated writes from
+    surfacing as a 500 instead of just completing a beat later.
     """
-    if dt is None:
-        return None
-    if dt.tzinfo is not None:
-        return dt.astimezone(UTC).replace(tzinfo=None)
-    return dt
+
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            attempt = 0
+            while True:
+                try:
+                    return await func(*args, **kwargs)
+                except OperationalError as e:
+                    if "database is locked" not in str(e).lower() or attempt >= max_attempts - 1:
+                        raise
+                    delay = base_delay * (2**attempt)
+                    logger.warning(
+                        "%s hit 'database is locked'; retrying in %.2fs (attempt %d/%d)",
+                        func.__name__,
+                        delay,
+                        attempt + 1,
+                        max_attempts,
+                    )
+                    await asyncio.sleep(delay)
+                    attempt += 1
+
+        return wrapper
+
+    return decorator
 
 
 def _cper_eligible(raw: dict | None) -> bool:
@@ -137,7 +176,7 @@ class TargetRepository:
     """Repository for managing target configurations in the database."""
 
     @staticmethod
-    def _build_engine(url: str, *, pool_size: int = 50, max_overflow: int = 50):
+    def _build_engine(url: str, *, pool_size: int = 20, max_overflow: int = 10):
         """Create a tuned async engine, applying WAL for SQLite.
 
         pool_size/max_overflow apply to non-SQLite (PostgreSQL) engines. Keep
@@ -160,6 +199,15 @@ class TargetRepository:
             def set_sqlite_pragma(dbapi_conn, connection_record):
                 cursor = dbapi_conn.cursor()
                 cursor.execute("PRAGMA journal_mode=WAL")
+                # Wait up to 15s for a write lock instead of failing immediately
+                # with "database is locked". Under concurrent writers (poller
+                # status writer + on-demand log collection) the bare WAL config
+                # still raised OperationalError on contention; busy_timeout makes
+                # writers queue instead of erroring.
+                cursor.execute("PRAGMA busy_timeout=15000")
+                # NORMAL is the recommended durability for WAL — safe against
+                # application crashes, and avoids an fsync per transaction.
+                cursor.execute("PRAGMA synchronous=NORMAL")
                 cursor.close()
         else:
             # PostgreSQL/MySQL
@@ -214,6 +262,11 @@ class TargetRepository:
         # Main store (targets, collected_logs) — fatal if it fails: the app can't
         # run without target configuration.
         async with self.engine.begin() as conn:
+            # heatmap_snapshots gained a composite (collector_id, metric) key for
+            # sharding; the column-only auto-migrator can't change a PK, so drop the
+            # stale table (it's an ephemeral cache, rebuilt within seconds) and let
+            # create_all rebuild it with the new schema.
+            await conn.run_sync(self._drop_stale_heatmap_snapshots)
             await conn.run_sync(Base.metadata.create_all)
             await conn.run_sync(lambda c: self._migrate_metadata(c, Base.metadata))
 
@@ -242,6 +295,18 @@ class TargetRepository:
                 type(e).__name__,
                 e,
             )
+
+    @staticmethod
+    def _drop_stale_heatmap_snapshots(conn) -> None:
+        """Drop heatmap_snapshots if it predates the (collector_id, metric) key."""
+        import sqlalchemy as sa
+
+        inspector = sa.inspect(conn)
+        if not inspector.has_table("heatmap_snapshots"):
+            return
+        cols = {c["name"] for c in inspector.get_columns("heatmap_snapshots")}
+        if "collector_id" not in cols:
+            conn.execute(sa.text("DROP TABLE heatmap_snapshots"))
 
     @staticmethod
     def _migrate_metadata(conn, metadata) -> None:
@@ -291,6 +356,7 @@ class TargetRepository:
         await self.engine.dispose()
         await self.alert_engine.dispose()
 
+    @_retry_on_locked()
     async def create_target(
         self,
         name: str,
@@ -307,15 +373,10 @@ class TargetRepository:
         poll_interval_override: int | None = None,
         tags: dict | None = None,
         metric_reports_override: list | None = None,
+        metric_discovery_mode: str = "auto",
         connection_mode: str = "direct",
         sse_endpoint: str | None = None,
         alert_sse_endpoint: str | None = None,
-        ssh_proxy_host: str | None = None,
-        ssh_proxy_port: int = 22,
-        ssh_proxy_username: str | None = None,
-        ssh_key: str | None = None,
-        ssh_password: str | None = None,
-        ssh_command_template: str | None = None,
     ) -> Target:
         """Create a new target configuration.
 
@@ -353,17 +414,10 @@ class TargetRepository:
                 metric_reports_override=json.dumps(metric_reports_override)
                 if metric_reports_override
                 else None,
+                metric_discovery_mode=metric_discovery_mode,
                 connection_mode=connection_mode,
                 sse_endpoint=sse_endpoint,
                 alert_sse_endpoint=alert_sse_endpoint,
-                ssh_proxy_host=ssh_proxy_host,
-                ssh_proxy_port=ssh_proxy_port,
-                ssh_proxy_username=ssh_proxy_username,
-                encrypted_ssh_key=self.encryption.encrypt(ssh_key) if ssh_key else None,
-                encrypted_ssh_password=self.encryption.encrypt(ssh_password)
-                if ssh_password
-                else None,
-                ssh_command_template=ssh_command_template,
             )
             session.add(target)
             await session.commit()
@@ -382,17 +436,6 @@ class TargetRepository:
             result = await session.execute(select(Target).where(Target.host == host))
             return result.scalar_one_or_none()  # type: ignore[no-any-return]
 
-    async def get_target_by_ssh_proxy_host(self, ssh_proxy_host: str) -> Target | None:
-        """Get an SSH proxy target by its proxy host address."""
-        async with self.session_factory() as session:
-            result = await session.execute(
-                select(Target).where(
-                    Target.connection_mode == "ssh_proxy",
-                    Target.ssh_proxy_host == ssh_proxy_host,
-                )
-            )
-            return result.scalar_one_or_none()  # type: ignore[no-any-return]
-
     async def get_all_targets(self, enabled_only: bool = False) -> list[Target]:
         """Get all targets, optionally filtered by enabled status."""
         async with self.session_factory() as session:
@@ -400,6 +443,16 @@ class TargetRepository:
             if enabled_only:
                 query = query.where(Target.enabled.is_(True))
             result = await session.execute(query.order_by(Target.name))
+            return list(result.scalars().all())
+
+    async def get_enabled_target_ids(self) -> list[int]:
+        """Just the ids of enabled targets — the input to HRW allocation.
+
+        Dynamic sharding recomputes the assignment every claim pass (~20s); it
+        only needs ids, so this avoids loading (and decrypting) full Target rows.
+        """
+        async with self.session_factory() as session:
+            result = await session.execute(select(Target.id).where(Target.enabled.is_(True)))
             return list(result.scalars().all())
 
     # Fields that can be updated via update_target()
@@ -417,16 +470,22 @@ class TargetRepository:
             "poll_interval_override",
             "tags",
             "metric_reports_override",
+            "metric_discovery_mode",
             "connection_mode",
             "sse_endpoint",
             "alert_sse_endpoint",
-            "ssh_proxy_host",
-            "ssh_proxy_port",
-            "ssh_proxy_username",
-            "ssh_command_template",
+            "loc_site",
+            "loc_hall",
+            "loc_row",
+            "loc_rack",
+            "loc_rack_u",
+            "loc_rack_u_height",
+            "loc_unit_type",
+            "loc_source",
         }
     )
 
+    @_retry_on_locked()
     async def update_target(self, target_id: int, **kwargs) -> Target | None:
         """Update a target configuration.
 
@@ -453,18 +512,6 @@ class TargetRepository:
                 token = kwargs.pop("token")
                 kwargs["encrypted_token"] = self.encryption.encrypt(token) if token else None
 
-            # Handle SSH key encryption if provided
-            if "ssh_key" in kwargs:
-                ssh_key = kwargs.pop("ssh_key")
-                kwargs["encrypted_ssh_key"] = self.encryption.encrypt(ssh_key) if ssh_key else None
-
-            # Handle SSH password encryption if provided
-            if "ssh_password" in kwargs:
-                ssh_pwd = kwargs.pop("ssh_password")
-                kwargs["encrypted_ssh_password"] = (
-                    self.encryption.encrypt(ssh_pwd) if ssh_pwd else None
-                )
-
             # Handle tags serialization
             if "tags" in kwargs and isinstance(kwargs["tags"], dict):
                 kwargs["tags"] = json.dumps(kwargs["tags"])
@@ -479,8 +526,6 @@ class TargetRepository:
             allowed = self._UPDATABLE_FIELDS | {
                 "encrypted_password",
                 "encrypted_token",
-                "encrypted_ssh_key",
-                "encrypted_ssh_password",
             }
             for key, value in kwargs.items():
                 if key in allowed and hasattr(target, key):
@@ -490,6 +535,113 @@ class TargetRepository:
             await session.refresh(target)
             return target  # type: ignore[no-any-return]
 
+    @_retry_on_locked()
+    async def set_target_location(
+        self, target_id: int, placement: Placement, force: bool = False
+    ) -> Target | None:
+        """Persist a system's physical placement, honouring source precedence.
+
+        The write is skipped (existing placement kept) when the incoming
+        ``placement.source`` is lower-trust than what is already stored —
+        unless ``force`` is set — so an operator's manual correction is never
+        clobbered by an automated hostname/Redfish re-resolution.
+
+        Args:
+            target_id: Target to place.
+            placement: The candidate placement (must carry a ``source``).
+            force: Bypass the precedence guard (e.g. explicit manual override).
+
+        Returns:
+            The (possibly unchanged) Target, or None if not found.
+        """
+        async with self.session_factory() as session:
+            result = await session.execute(select(Target).where(Target.id == target_id))
+            target = result.scalar_one_or_none()
+            if not target:
+                return None
+
+            if not force and not should_overwrite(target.loc_source, placement.source):
+                return target  # type: ignore[no-any-return]  # keep higher-trust placement
+
+            for column, value in placement.to_columns().items():
+                setattr(target, column, value)
+
+            await session.commit()
+            await session.refresh(target)
+            return target  # type: ignore[no-any-return]
+
+    @_retry_on_locked()
+    async def set_target_inventory(
+        self,
+        target_id: int,
+        inventory_json: str,
+        source: str,
+        location_check: str | None,
+        updated_at: datetime,
+    ) -> Target | None:
+        """Persist the basic inventory read from the BMC for a target."""
+        async with self.session_factory() as session:
+            result = await session.execute(select(Target).where(Target.id == target_id))
+            target = result.scalar_one_or_none()
+            if not target:
+                return None
+
+            target.inventory_json = inventory_json
+            target.inventory_source = source
+            target.location_check = location_check
+            target.inventory_updated_at = updated_at
+
+            await session.commit()
+            await session.refresh(target)
+            return target  # type: ignore[no-any-return]
+
+    @_retry_on_locked()
+    async def set_target_height(
+        self, target_id: int, height_u: int, source: str = "redfish"
+    ) -> Target | None:
+        """Update only the rack-unit height, honouring placement precedence.
+
+        Used when a BMC reports a chassis height but no rack placement — we want
+        to record the height without clobbering a manual placement, so this goes
+        through the same ``should_overwrite`` guard as ``set_target_location``.
+        """
+        async with self.session_factory() as session:
+            result = await session.execute(select(Target).where(Target.id == target_id))
+            target = result.scalar_one_or_none()
+            if not target:
+                return None
+            if not should_overwrite(target.loc_source, source):
+                return target  # type: ignore[no-any-return]  # keep higher-trust height
+
+            target.loc_rack_u_height = height_u
+            await session.commit()
+            await session.refresh(target)
+            return target  # type: ignore[no-any-return]
+
+    @_retry_on_locked()
+    async def clear_target_location(self, target_id: int) -> Target | None:
+        """Remove a system's placement so it returns to the Unplaced tray.
+
+        The coordinates are cleared but ``loc_source`` is set to the highest-rank
+        ``pinned`` sentinel rather than null, so a subsequent automated
+        hostname/Redfish resolve cannot silently re-place the system against the
+        operator's intent. An explicit manual placement (force=True) still wins.
+        """
+        async with self.session_factory() as session:
+            result = await session.execute(select(Target).where(Target.id == target_id))
+            target = result.scalar_one_or_none()
+            if not target:
+                return None
+
+            for column in Placement().to_columns():
+                setattr(target, column, None)
+            target.loc_source = PINNED_SOURCE
+
+            await session.commit()
+            await session.refresh(target)
+            return target  # type: ignore[no-any-return]
+
+    @_retry_on_locked()
     async def delete_target(self, target_id: int) -> bool:
         """Delete a target configuration.
 
@@ -632,18 +784,6 @@ class TargetRepository:
             return self.encryption.decrypt(target.encrypted_token)
         return None
 
-    def decrypt_ssh_key(self, target: Target) -> str | None:
-        """Decrypt the SSH private key for a target, if present."""
-        if target.encrypted_ssh_key:
-            return self.encryption.decrypt(target.encrypted_ssh_key)
-        return None
-
-    def decrypt_ssh_password(self, target: Target) -> str | None:
-        """Decrypt the SSH password for a target, if present."""
-        if target.encrypted_ssh_password:
-            return self.encryption.decrypt(target.encrypted_ssh_password)
-        return None
-
     def get_target_tags(self, target: Target) -> dict:
         """Get the tags dictionary for a target."""
         if target.tags:
@@ -656,6 +796,74 @@ class TargetRepository:
             return json.loads(target.metric_reports_override)  # type: ignore[no-any-return]
         return None
 
+    def get_discovered_metric_reports(self, target: Target) -> list[dict] | None:
+        """Auto-discovered metric reports for a target, or None.
+
+        Only honoured when the target is in "auto" discovery mode; a "manual"
+        target uses its override / the global default instead.
+        """
+        if getattr(target, "metric_discovery_mode", "auto") != "auto":
+            return None
+        if target.discovered_reports:
+            return json.loads(target.discovered_reports)  # type: ignore[no-any-return]
+        return None
+
+    def resolve_metric_reports(self, target: Target, global_default: list | None) -> list | None:
+        """Reports the poller should fetch.
+
+        - An explicit per-target override always wins outright.
+        - Otherwise, auto-discovered reports are *unioned* with the global
+          defaults (deduped by URI, aggregate reports last). The union matters:
+          the defaults are GET by direct URI and succeed even on BMCs that don't
+          enumerate them in their MetricReports collection, so merging guarantees
+          those known-good reports (e.g. GPU temp) are never lost when a BMC
+          under-enumerates — while still consuming whatever extra reports it does
+          expose.
+        - With no override and nothing discovered, fall back to the defaults.
+        """
+        override = self.get_target_metric_reports(target)
+        if override:
+            return override
+        discovered = self.get_discovered_metric_reports(target)
+        if not discovered:
+            return global_default
+        return self._merge_reports(discovered, global_default or [])
+
+    @staticmethod
+    def _merge_reports(discovered: list, defaults: list) -> list:
+        """Union two report lists by URI, keeping aggregate reports ('All') last."""
+
+        def uri_of(r):
+            return r.get("uri") if isinstance(r, dict) else getattr(r, "uri", None)
+
+        def is_aggregate(r):
+            rt = (
+                (r.get("report_type") if isinstance(r, dict) else getattr(r, "report_type", ""))
+                or ""
+            ).casefold()
+            return rt in ("all", "comprehensive") or (uri_of(r) or "").casefold().endswith("/all")
+
+        seen: set[str] = set()
+        merged = []
+        for r in [*discovered, *defaults]:
+            u = uri_of(r)
+            if u and u not in seen:
+                seen.add(u)
+                merged.append(r)
+        # Stable sort: specific reports first so they claim their MetricProperties
+        # before the aggregate 'All' report during the poller's dedup pass.
+        merged.sort(key=is_aggregate)
+        return merged
+
+    async def set_discovered_reports(self, target_id: int, reports: list[dict] | None) -> None:
+        """Persist auto-discovered metric reports for a target (enricher-driven)."""
+        async with self.session_factory() as session:
+            target = await session.get(Target, target_id)
+            if target is None:
+                return
+            target.discovered_reports = json.dumps(reports) if reports else None
+            await session.commit()
+
     # ---- CollectedLog CRUD ----
 
     async def create_collected_log(
@@ -667,6 +875,8 @@ class TargetRepository:
         file_path: str,
         status: str = "pending",
         file_size_bytes: int | None = None,
+        trigger: str = "manual",
+        trigger_message_id: str | None = None,
     ) -> CollectedLog:
         """Create a new collected log record."""
         async with self.session_factory() as session:
@@ -678,11 +888,467 @@ class TargetRepository:
                 file_path=file_path,
                 status=status,
                 file_size_bytes=file_size_bytes,
+                trigger=trigger,
+                trigger_message_id=trigger_message_id,
             )
             session.add(log)
             await session.commit()
             await session.refresh(log)
             return log
+
+    # ---- Heatmap snapshot (collector publishes; API reads) ----
+
+    async def upsert_heatmap_snapshot(
+        self, metric: str, values: dict, collector_id: str = ""
+    ) -> None:
+        """Publish this collector's latest {host: value} map for a heatmap metric.
+
+        Replaces only the calling collector's row for the metric; shards never
+        clobber each other's hosts.
+        """
+        payload = json.dumps(values)
+        async with self.session_factory() as session:
+            row = await session.get(HeatmapSnapshot, (collector_id, metric))
+            if row is None:
+                session.add(
+                    HeatmapSnapshot(
+                        collector_id=collector_id,
+                        metric=metric,
+                        data=payload,
+                        updated_at=datetime.now(UTC),
+                    )
+                )
+            else:
+                row.data = payload
+                row.updated_at = datetime.now(UTC)
+            await session.commit()
+
+    async def get_heatmap_snapshot(
+        self, metric: str, max_age_seconds: float = 300.0
+    ) -> dict | None:
+        """Merged {host: value} for a metric across all fresh shards, or None.
+
+        Reads every collector's row for the metric and merges the fresh ones
+        (dropping rows from shards that stopped publishing). Returns None when no
+        fresh data exists so the UI renders "no data" rather than a frozen map.
+        """
+        now = datetime.now(UTC)
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(HeatmapSnapshot).where(HeatmapSnapshot.metric == metric)
+            )
+            # Collect fresh rows with their timestamps, then merge OLDEST-first so
+            # the newest-publishing shard wins any per-host overlap. After a
+            # rebalance the old owner can briefly keep republishing a shed host's
+            # last value; newest-wins biases the Data Hall toward the new owner's
+            # live reading rather than an arbitrary row order.
+            fresh_rows: list[tuple[datetime, dict]] = []
+            for row in result.scalars():
+                updated = row.updated_at
+                if updated is not None and updated.tzinfo is None:
+                    updated = updated.replace(tzinfo=UTC)
+                if updated is not None and (now - updated).total_seconds() > max_age_seconds:
+                    continue  # stale shard — skip
+                try:
+                    data = json.loads(row.data)
+                except (ValueError, TypeError):
+                    continue
+                fresh_rows.append((updated or now, data))
+            if not fresh_rows:
+                return None
+            merged: dict = {}
+            for _updated, data in sorted(fresh_rows, key=lambda r: r[0]):
+                merged.update(data)
+            return merged
+
+    # ---- Shard leases (horizontal sharding) ----
+
+    def set_shard_context(self, collector_id: str, lease_ttl_seconds: float) -> None:
+        """Enable shard-aware target selection for this (collector) repository.
+
+        Once set, ``get_active_targets`` returns only this collector's owned slice.
+        The API never calls this, so its views keep seeing the whole fleet.
+        """
+        self._shard = (collector_id, lease_ttl_seconds)
+
+    async def get_active_targets(self) -> list[Target]:
+        """Targets this process should collect from.
+
+        The owned shard slice when sharding is enabled; otherwise every enabled
+        target (unchanged single-collector behavior).
+        """
+        shard = getattr(self, "_shard", None)
+        if shard is not None:
+            return await self.get_owned_targets(shard[0], shard[1])
+        return await self.get_all_targets(enabled_only=True)
+
+    @_retry_on_locked()
+    async def claim_shard_targets(
+        self, collector_id: str, max_targets: int, lease_ttl_seconds: float
+    ) -> int:
+        """Renew/reclaim/claim leases for this collector; return count now owned.
+
+        One serialized pass: sweep leases for deboarded targets, heartbeat my own,
+        then claim unowned-or-stale targets up to the cap. SQLite serializes writes
+        and the ``ON CONFLICT ... WHERE stale`` guard makes claims race-safe across
+        collectors (a target a peer just renewed can't be stolen).
+        """
+        now = datetime.now(UTC).replace(tzinfo=None)  # naive UTC to match SQLite storage
+        stale = (datetime.now(UTC) - timedelta(seconds=lease_ttl_seconds)).replace(tzinfo=None)
+        async with self.session_factory() as session:
+            # Sweep leases whose target is gone/disabled.
+            await session.execute(
+                text(
+                    "DELETE FROM shard_leases WHERE target_id NOT IN "
+                    "(SELECT id FROM targets WHERE enabled = 1)"
+                )
+            )
+            # Heartbeat my leases.
+            await session.execute(
+                update(ShardLease)
+                .where(ShardLease.collector_id == collector_id)
+                .values(updated_at=now)
+            )
+            owned = (
+                await session.execute(
+                    select(func.count())
+                    .select_from(ShardLease)
+                    .where(ShardLease.collector_id == collector_id)
+                )
+            ).scalar_one()
+            capacity = max_targets - owned
+            if capacity > 0:
+                claimable = (
+                    (
+                        await session.execute(
+                            text(
+                                "SELECT t.id FROM targets t "
+                                "LEFT JOIN shard_leases l ON l.target_id = t.id "
+                                "WHERE t.enabled = 1 AND (l.target_id IS NULL OR l.updated_at < :stale) "
+                                "ORDER BY t.id LIMIT :cap"
+                            ),
+                            {"stale": stale, "cap": capacity},
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+                for tid in claimable:
+                    await session.execute(
+                        text(
+                            "INSERT INTO shard_leases(target_id, collector_id, updated_at) "
+                            "VALUES(:tid, :cid, :now) "
+                            "ON CONFLICT(target_id) DO UPDATE SET collector_id=:cid, updated_at=:now "
+                            "WHERE shard_leases.updated_at < :stale"
+                        ),
+                        {"tid": tid, "cid": collector_id, "now": now, "stale": stale},
+                    )
+            await session.commit()
+            owned = (
+                await session.execute(
+                    select(func.count())
+                    .select_from(ShardLease)
+                    .where(ShardLease.collector_id == collector_id)
+                )
+            ).scalar_one()
+            return int(owned)
+
+    @_retry_on_locked()
+    async def reconcile_shard_leases(
+        self, collector_id: str, mine_ids: list[int], cap: int, lease_ttl_seconds: float
+    ) -> int:
+        """Dynamic (HRW) path: make the lease table match this collector's slice.
+
+        ``mine_ids`` is the target set assigned to this collector by the pure
+        allocator (computed OUTSIDE this txn — the sha256 work must not run under
+        SQLite's write lock). One serialized pass:
+          1. Sweep leases for disabled/gone targets.
+          2. **Lazy shed:** renew (claim/heartbeat) ONLY the leases in my slice.
+             Leases I no longer want are simply NOT renewed — they expire after
+             ``lease_ttl`` and a peer claims them once stale. I keep polling a
+             shed target until my lease on it goes stale, so handoff is gap-free.
+          3. **Steal-guard:** the claim upsert only takes a row that is unowned,
+             already mine, or stale — never a peer's fresh lease.
+          4. **Orphan safety-net:** after claiming my slice, if I'm below ``cap``,
+             also claim any enabled target with NO fresh owner (unowned or stale).
+             Unlike the static path, HRW can leave a target in nobody's slice —
+             during asymmetric membership views, cold start, or when a peer's
+             reconcile is failing while it still looks live. This bounded sweep
+             guarantees such orphans are covered within one pass; adopted orphans
+             outside my HRW slice are lazy-shed again once their rightful owner
+             reclaims them. Inactive in steady state (no orphans to find).
+        Returns the number of fresh leases now held (includes shed-but-not-yet-
+        stale targets I'm still polling).
+        """
+        async with self.session_factory() as session:
+            # (1) Sweep leases whose target is gone/disabled. Takes the write lock
+            # up front, serializing reconcile passes across collectors. Read the
+            # clock AFTER the lock is held so a long busy-wait can't backdate the
+            # heartbeat (and over-widen the stale cutoff).
+            await session.execute(
+                text(
+                    "DELETE FROM shard_leases WHERE target_id NOT IN "
+                    "(SELECT id FROM targets WHERE enabled = 1)"
+                )
+            )
+            now = datetime.now(UTC).replace(tzinfo=None)  # naive UTC to match storage
+            stale = now - timedelta(seconds=lease_ttl_seconds)
+            claim_sql = text(
+                "INSERT INTO shard_leases(target_id, collector_id, updated_at) "
+                "VALUES(:tid, :cid, :now) "
+                "ON CONFLICT(target_id) DO UPDATE SET collector_id=:cid, updated_at=:now "
+                "WHERE shard_leases.collector_id = :cid OR shard_leases.updated_at < :stale"
+            )
+            # Guard against a target disabled between the id-read and now: only
+            # claim ids that are still enabled. Chunk the IN() to stay well under
+            # SQLite's bound-parameter limit for large slices.
+            enabled_mine: list[int] = []
+            unique_mine = sorted(set(mine_ids))
+            for i in range(0, len(unique_mine), 500):
+                chunk = unique_mine[i : i + 500]
+                rows = (
+                    (
+                        await session.execute(
+                            select(Target.id).where(Target.enabled.is_(True), Target.id.in_(chunk))
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+                enabled_mine.extend(rows)
+            # (2+3) Claim/renew my slice with the steal-guard. The ``collector_id=
+            # :cid`` branch renews my own leases (the heartbeat); the stale branch
+            # reclaims a dead peer's; a peer's FRESH lease is left untouched.
+            for tid in enabled_mine:
+                await session.execute(
+                    claim_sql, {"tid": tid, "cid": collector_id, "now": now, "stale": stale}
+                )
+            # (4) Orphan safety-net sweep, bounded by remaining capacity.
+            owned_now = (
+                await session.execute(
+                    select(func.count())
+                    .select_from(ShardLease)
+                    .where(ShardLease.collector_id == collector_id, ShardLease.updated_at >= stale)
+                )
+            ).scalar_one()
+            capacity = cap - int(owned_now)
+            if capacity > 0:
+                orphans = (
+                    (
+                        await session.execute(
+                            text(
+                                "SELECT t.id FROM targets t "
+                                "LEFT JOIN shard_leases l ON l.target_id = t.id "
+                                "WHERE t.enabled = 1 AND (l.target_id IS NULL OR l.updated_at < :stale) "
+                                "ORDER BY t.id LIMIT :cap"
+                            ),
+                            {"stale": stale, "cap": capacity},
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+                for tid in orphans:
+                    await session.execute(
+                        claim_sql, {"tid": tid, "cid": collector_id, "now": now, "stale": stale}
+                    )
+            await session.commit()
+            owned = (
+                await session.execute(
+                    select(func.count())
+                    .select_from(ShardLease)
+                    .where(ShardLease.collector_id == collector_id, ShardLease.updated_at >= stale)
+                )
+            ).scalar_one()
+            return int(owned)
+
+    @_retry_on_locked()
+    async def claim_collector_slot(self, token: str, lease_ttl_seconds: float) -> int:
+        """Claim or renew a stable ordinal for this process; return the ordinal.
+
+        Idempotent: if ``token`` already holds a slot, renew its heartbeat and
+        return it; otherwise claim the lowest free ordinal (one with no fresh
+        heartbeat). The opening DELETE of stale slots takes SQLite's write lock,
+        serializing concurrent claims so two starting replicas can't grab the same
+        ordinal (the loser blocks, re-reads, and takes the next free one).
+        """
+        now = datetime.now(UTC).replace(tzinfo=None)
+        stale = (datetime.now(UTC) - timedelta(seconds=lease_ttl_seconds)).replace(tzinfo=None)
+        async with self.session_factory() as session:
+            await session.execute(delete(CollectorSlot).where(CollectorSlot.updated_at < stale))
+            existing = (
+                await session.execute(select(CollectorSlot).where(CollectorSlot.token == token))
+            ).scalar_one_or_none()
+            if existing is not None:
+                existing.updated_at = now
+                await session.commit()
+                return int(existing.ordinal)
+            taken = set((await session.execute(select(CollectorSlot.ordinal))).scalars().all())
+            ordinal = 0
+            while ordinal in taken:
+                ordinal += 1
+            session.add(CollectorSlot(ordinal=ordinal, token=token, updated_at=now))
+            await session.commit()
+            return ordinal
+
+    @_retry_on_locked()
+    async def renew_collector_slot(
+        self, token: str, ordinal: int, lease_ttl_seconds: float
+    ) -> bool:
+        """Re-assert ownership of a SPECIFIC ordinal for the renew loop.
+
+        Unlike claim_collector_slot (which grabs the lowest free ordinal at
+        startup), this keeps the process on its ORIGINAL ordinal so its
+        collector_id never drifts: if the process stalls long enough for its slot
+        to be reaped but no peer took the ordinal, it simply re-inserts it. Returns
+        True while this token (still) holds ``ordinal``; returns False only if
+        another token has taken it — a genuine identity loss the caller must treat
+        as fatal (continuing would double-own under a shared id).
+        """
+        now = datetime.now(UTC).replace(tzinfo=None)
+        stale = (datetime.now(UTC) - timedelta(seconds=lease_ttl_seconds)).replace(tzinfo=None)
+        async with self.session_factory() as session:
+            await session.execute(delete(CollectorSlot).where(CollectorSlot.updated_at < stale))
+            row = await session.get(CollectorSlot, ordinal)
+            if row is None:
+                session.add(CollectorSlot(ordinal=ordinal, token=token, updated_at=now))
+                await session.commit()
+                return True
+            if row.token == token:
+                row.updated_at = now
+                await session.commit()
+                return True
+            await session.commit()
+            return False  # another process took our ordinal -> identity lost
+
+    @_retry_on_locked()
+    async def release_collector_slot(self, token: str) -> None:
+        """Release this process's ordinal so a peer can reuse it immediately."""
+        async with self.session_factory() as session:
+            await session.execute(delete(CollectorSlot).where(CollectorSlot.token == token))
+            await session.commit()
+
+    async def count_all_shard_leases(self, lease_ttl_seconds: float) -> int:
+        """Total fresh leases held across *all* collectors (fleet coverage check)."""
+        fresh = (datetime.now(UTC) - timedelta(seconds=lease_ttl_seconds)).replace(tzinfo=None)
+        async with self.session_factory() as session:
+            total = (
+                await session.execute(
+                    select(func.count())
+                    .select_from(ShardLease)
+                    .where(ShardLease.updated_at >= fresh)
+                )
+            ).scalar_one()
+            return int(total)
+
+    async def get_owned_targets(
+        self, collector_id: str, lease_ttl_seconds: float, enabled_only: bool = True
+    ) -> list[Target]:
+        """Enabled targets this collector holds a fresh lease on."""
+        fresh = (datetime.now(UTC) - timedelta(seconds=lease_ttl_seconds)).replace(tzinfo=None)
+        async with self.session_factory() as session:
+            stmt = (
+                select(Target)
+                .join(ShardLease, ShardLease.target_id == Target.id)
+                .where(ShardLease.collector_id == collector_id, ShardLease.updated_at >= fresh)
+            )
+            if enabled_only:
+                stmt = stmt.where(Target.enabled.is_(True))
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    @_retry_on_locked()
+    async def release_shard_leases(self, collector_id: str) -> None:
+        """Drop this collector's leases AND its membership/stats row on graceful
+        shutdown, so peers rebalance immediately.
+
+        Deleting the ``collector_stats`` row matters for the dynamic (HRW) path:
+        peers derive the live-collector set from fresh ``collector_stats`` rows,
+        so a departing collector must disappear from that set now — otherwise its
+        freed targets sit unclaimed (nobody computes them as theirs) until the row
+        ages out ``membership_ttl`` later.
+        """
+        async with self.session_factory() as session:
+            await session.execute(delete(ShardLease).where(ShardLease.collector_id == collector_id))
+            await session.execute(
+                delete(CollectorStats).where(CollectorStats.collector_id == collector_id)
+            )
+            # Also drop this collector's heatmap rows so a departing shard's last
+            # values don't linger in the Data Hall merge until they age out.
+            await session.execute(
+                delete(HeatmapSnapshot).where(HeatmapSnapshot.collector_id == collector_id)
+            )
+            await session.commit()
+
+    # ---- Collector stats (per-shard, aggregated by the API) ----
+
+    @_retry_on_locked()
+    async def upsert_collector_stats(
+        self, collector_id: str, data: dict, owned_targets: int
+    ) -> None:
+        """Publish this collector's health/subscription stats for API aggregation."""
+        payload = json.dumps(data)
+        now = datetime.now(UTC).replace(tzinfo=None)
+        async with self.session_factory() as session:
+            row = await session.get(CollectorStats, collector_id)
+            if row is None:
+                session.add(
+                    CollectorStats(
+                        collector_id=collector_id,
+                        data=payload,
+                        owned_targets=owned_targets,
+                        updated_at=now,
+                    )
+                )
+            else:
+                row.data = payload
+                row.owned_targets = owned_targets
+                row.updated_at = now
+            await session.commit()
+
+    async def get_collector_stats(self, max_age_seconds: float = 75.0) -> list[dict]:
+        """All fresh per-collector stat rows (stale shards dropped).
+
+        Default freshness window is kept at/below the shard lease TTL (75s) so a
+        departed collector's row drops out before — not after — its leases are
+        reclaimed, avoiding a window where fleet aggregates double-count.
+        """
+        fresh = (datetime.now(UTC) - timedelta(seconds=max_age_seconds)).replace(tzinfo=None)
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(CollectorStats).where(CollectorStats.updated_at >= fresh)
+            )
+            out = []
+            for row in result.scalars():
+                try:
+                    data = json.loads(row.data)
+                except (ValueError, TypeError):
+                    data = {}
+                out.append(
+                    {
+                        "collector_id": row.collector_id,
+                        "owned_targets": row.owned_targets,
+                        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+                        **data,
+                    }
+                )
+            return out
+
+    async def get_last_policy_collection_time(self, target_id: int) -> datetime | None:
+        """Most recent policy-triggered collection time for a target (for rearm).
+
+        Considers any non-failed policy collection (pending/collecting/completed)
+        so an in-flight collection also holds off a duplicate.
+        """
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(func.max(CollectedLog.collected_at)).where(
+                    CollectedLog.target_id == target_id,
+                    CollectedLog.trigger == "policy",
+                    CollectedLog.status != "failed",
+                )
+            )
+            return result.scalar_one_or_none()  # type: ignore[no-any-return]
 
     _COLLECTED_LOG_UPDATABLE = frozenset(
         {
@@ -713,13 +1379,33 @@ class TargetRepository:
             result = await session.execute(select(CollectedLog).where(CollectedLog.id == log_id))
             return result.scalar_one_or_none()  # type: ignore[no-any-return]
 
-    async def get_all_collected_logs(self) -> list[CollectedLog]:
-        """Get all collected logs, newest first."""
+    # Upper bound on a single collected-logs page — prevents a request from
+    # ever materializing the whole (unbounded, retention-sized) table.
+    MAX_LOG_PAGE_SIZE = 1000
+
+    async def get_all_collected_logs(
+        self, limit: int | None = None, offset: int = 0
+    ) -> list[CollectedLog]:
+        """Get collected logs, newest first.
+
+        ``limit`` is capped at :attr:`MAX_LOG_PAGE_SIZE`; callers that serve HTTP
+        responses MUST pass a limit so a large history can't exhaust memory. A
+        ``None`` limit (internal/batch callers) still returns the full set.
+        """
         async with self.session_factory() as session:
-            result = await session.execute(
-                select(CollectedLog).order_by(CollectedLog.collected_at.desc())
-            )
+            stmt = select(CollectedLog).order_by(CollectedLog.collected_at.desc())
+            if limit is not None:
+                stmt = stmt.limit(min(max(1, limit), self.MAX_LOG_PAGE_SIZE))
+                if offset:
+                    stmt = stmt.offset(max(0, offset))
+            result = await session.execute(stmt)
             return list(result.scalars().all())
+
+    async def count_collected_logs(self) -> int:
+        """Total number of collected-log records (for pagination)."""
+        async with self.session_factory() as session:
+            result = await session.execute(select(func.count()).select_from(CollectedLog))
+            return int(result.scalar_one())
 
     async def delete_collected_log(self, log_id: int) -> CollectedLog | None:
         """Delete a collected log record and return it for file cleanup."""
@@ -746,33 +1432,89 @@ class TargetRepository:
             )
             return detached
 
-    async def delete_expired_logs(self, max_age_days: int) -> list[CollectedLog]:
-        """Find and delete logs older than max_age_days. Returns deleted records for file cleanup."""
-        cutoff = datetime.now(UTC) - timedelta(days=max_age_days)
+    @_retry_on_locked()
+    async def delete_prior_target_logs(
+        self, target_id: int, keep_log_id: int
+    ) -> list[CollectedLog]:
+        """Delete a target's older *completed* diagnostic logs, keeping only
+        ``keep_log_id`` (the freshest). Returns the removed records so the caller
+        can delete their files.
+
+        A new diagnostic bundle supersedes the previous one from the same node,
+        so we don't retain duplicate copies — this bounds total stored logs to
+        roughly one per node. Failed records are left untouched (audit trail);
+        they carry no large file and are pruned by age-based retention.
+        """
         async with self.session_factory() as session:
             result = await session.execute(
-                select(CollectedLog).where(CollectedLog.collected_at < cutoff)
-            )
-            expired = list(result.scalars().all())
-            if not expired:
-                return []
-            # Capture file paths before deleting
-            detached = []
-            for log in expired:
-                detached.append(
-                    CollectedLog(
-                        id=log.id,
-                        target_id=log.target_id,
-                        target_name=log.target_name,
-                        target_host=log.target_host,
-                        filename=log.filename,
-                        file_path=log.file_path,
-                        status=log.status,
-                    )
+                select(CollectedLog).where(
+                    CollectedLog.target_id == target_id,
+                    CollectedLog.id != keep_log_id,
+                    CollectedLog.status == "completed",
                 )
-                await session.delete(log)
+            )
+            old = list(result.scalars().all())
+            if not old:
+                return []
+            detached = [
+                CollectedLog(
+                    id=log.id,
+                    target_id=log.target_id,
+                    target_name=log.target_name,
+                    target_host=log.target_host,
+                    filename=log.filename,
+                    file_path=log.file_path,
+                    status=log.status,
+                )
+                for log in old
+            ]
+            await session.execute(
+                delete(CollectedLog).where(CollectedLog.id.in_([log.id for log in old]))
+            )
             await session.commit()
             return detached
+
+    async def delete_expired_logs(self, max_age_days: int) -> list[CollectedLog]:
+        """Find and delete logs older than max_age_days. Returns deleted records for file cleanup.
+
+        Processed in bounded chunks so a large expiry backlog (e.g. after a long
+        retention change or downtime) can't load the whole table into memory or
+        issue one row-at-a-time delete per record.
+        """
+        cutoff = datetime.now(UTC) - timedelta(days=max_age_days)
+        chunk_size = self.MAX_LOG_PAGE_SIZE
+        detached: list[CollectedLog] = []
+        while True:
+            async with self.session_factory() as session:
+                result = await session.execute(
+                    select(CollectedLog)
+                    .where(CollectedLog.collected_at < cutoff)
+                    .order_by(CollectedLog.collected_at.asc())
+                    .limit(chunk_size)
+                )
+                expired = list(result.scalars().all())
+                if not expired:
+                    break
+                ids = [log.id for log in expired]
+                for log in expired:
+                    # Capture file paths before deleting (for on-disk cleanup).
+                    detached.append(
+                        CollectedLog(
+                            id=log.id,
+                            target_id=log.target_id,
+                            target_name=log.target_name,
+                            target_host=log.target_host,
+                            filename=log.filename,
+                            file_path=log.file_path,
+                            status=log.status,
+                        )
+                    )
+                # Single bulk DELETE for the chunk instead of per-row ORM deletes.
+                await session.execute(delete(CollectedLog).where(CollectedLog.id.in_(ids)))
+                await session.commit()
+                if len(expired) < chunk_size:
+                    break
+        return detached
 
     # ========================================================================
     # Alert Management
@@ -864,9 +1606,24 @@ class TargetRepository:
             if not new_rows:
                 return 0
 
-            session.add_all([Alert(**r) for r in new_rows])
-            await session.commit()
-            return len(new_rows)
+            try:
+                session.add_all([Alert(**r) for r in new_rows])
+                await session.commit()
+                return len(new_rows)
+            except IntegrityError:
+                # A concurrent writer inserted an overlapping dedup_key between
+                # our existence check and this commit. Rather than lose the whole
+                # batch, re-insert row-by-row and skip only the true collisions.
+                await session.rollback()
+                inserted = 0
+                for r in new_rows:
+                    try:
+                        async with session.begin():
+                            session.add(Alert(**r))
+                        inserted += 1
+                    except IntegrityError:
+                        await session.rollback()
+                return inserted
 
     async def alert_source_seen(self, target_id: int, source_id: str) -> bool:
         """Whether a timestamp-less baseline entry is already stored.
@@ -1067,18 +1824,41 @@ class TargetRepository:
         Used once to enrich history. Scans rows with NULL cper_status whose
         raw_data indicates CPER, in Python (dialect-portable), and flips them to
         'pending'. Returns the number marked.
+
+        Processed in id-ordered chunks loading only (id, raw_data) — never the
+        whole alerts table (incl. large JSONB blobs) at once — so the backfill
+        stays memory-bounded on a big history.
         """
         marked = 0
-        async with self.alert_session_factory() as session:
-            result = await session.execute(
-                select(Alert).where(Alert.cper_status.is_(None), Alert.raw_data.is_not(None))
-            )
-            for alert in result.scalars():
-                if _cper_eligible(alert.raw_data):
-                    alert.cper_status = "pending"
-                    marked += 1
-            if marked:
-                await session.commit()
+        chunk = 1000
+        last_id = 0
+        while True:
+            async with self.alert_session_factory() as session:
+                result = await session.execute(
+                    select(Alert.id, Alert.raw_data)
+                    .where(
+                        Alert.cper_status.is_(None),
+                        Alert.raw_data.is_not(None),
+                        Alert.id > last_id,
+                    )
+                    .order_by(Alert.id.asc())
+                    .limit(chunk)
+                )
+                batch = result.all()
+                if not batch:
+                    break
+                last_id = batch[-1].id
+                eligible_ids = [row.id for row in batch if _cper_eligible(row.raw_data)]
+                if eligible_ids:
+                    await session.execute(
+                        update(Alert)
+                        .where(Alert.id.in_(eligible_ids))
+                        .values(cper_status="pending")
+                    )
+                    await session.commit()
+                    marked += len(eligible_ids)
+                if len(batch) < chunk:
+                    break
         return marked
 
     async def get_alert(self, alert_id: int) -> Alert | None:
@@ -1254,18 +2034,6 @@ class TargetRepository:
                 "last_24h": recent_count or 0,
             }
 
-    async def delete_alert(self, alert_id: int) -> Alert | None:
-        """Delete an alert by ID. Returns the (detached) alert or None."""
-        async with self.alert_session_factory() as session:
-            result = await session.execute(
-                select(Alert).where(Alert.id == alert_id).options(defer(Alert.raw_data))
-            )
-            alert = result.scalar_one_or_none()
-            if alert:
-                await session.delete(alert)
-                await session.commit()
-            return alert  # type: ignore[no-any-return]
-
     async def ping_alert_store(self) -> bool:
         """Return True if the alert store is reachable (SELECT 1)."""
         try:
@@ -1358,4 +2126,26 @@ class TargetRepository:
                         updated_at=_to_naive_utc(datetime.now(UTC)),
                     )
                 )
-            await session.commit()
+            try:
+                await session.commit()
+            except IntegrityError:
+                # Another worker inserted this (target_id, entries_uri) cursor
+                # concurrently (unique index). Fold our value into theirs instead
+                # of failing: re-read and advance the high-water mark if ours is
+                # newer.
+                await session.rollback()
+                async with self.alert_session_factory() as session2:
+                    existing = await session2.scalar(
+                        select(LogCursor).where(
+                            LogCursor.target_id == target_id,
+                            LogCursor.entries_uri == entries_uri,
+                        )
+                    )
+                    if (
+                        existing
+                        and last_created
+                        and (existing.last_created is None or last_created > existing.last_created)
+                    ):
+                        existing.last_created = last_created
+                        existing.updated_at = _to_naive_utc(datetime.now(UTC))
+                        await session2.commit()

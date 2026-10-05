@@ -5,24 +5,24 @@ title: GYANAM — GPU Observability Assistant — Architecture
 %% Rendered PDF (docs/architecture.pdf) is regenerated separately —
 %% see scripts/README.md "Regenerating diagrams".
 graph TD
-    subgraph targets["AMD Instinct BMC Targets"]
+    subgraph targets["GPU UBB8 BMC Systems"]
         T1[Direct HTTPS<br/>per-target persistent client]
-        T2[SSH Proxy<br/>curl / redfishclient]
         T3[SSE Subscription<br/>real-time push]
     end
 
-    subgraph docker["Docker Compose — 5 containers"]
+    subgraph docker["Docker Compose — 5 services (collector scales to N replicas)"]
 
         subgraph api["Container: api (FastAPI) — Port 8080"]
-            UI["Web UI: Targets / CSV Import / Logs / Health / Alerts"]
+            UI["Web UI: Targets / CSV Import / Logs / Health / Alerts / Data Hall"]
             APIREST["REST routes:<br/>targets, logs, alerts, schemas, health"]
-            LC[Log Collector<br/>on-demand bundle download]
+            DATAHALL["Data Hall 3D twin<br/>layout + heatmap + placement<br/>reads targets·placement·inventory<br/>+ merged HeatmapSnapshot"]
+            LC["Log Collector<br/>on-demand bundle download<br/>rediscovers endpoint on 404"]
         end
 
-        subgraph collector["Container: collector (Python asyncio) — Internal Port 8081"]
+        subgraph collector["Container: collector ×N replicas (Python asyncio, sharded) — Internal Port 8081"]
+            SHARDMGR["Shard Manager<br/>owns a balanced slice (HRW, ≤ cap)<br/>heartbeat on TTL + reclaim stale leases<br/>(elastic: rebalance on scale ↑/↓)"]
             POLLER["RedfishPoller<br/>fire-and-forget scheduling<br/>max_concurrent=100"]
             CLIENTS["Persistent client cache<br/>_clients[target_id]<br/>(httpx.AsyncClient + Redfish session)"]
-            SSHT[SSH Transport<br/>asyncssh + SCP]
             SSEMGR[SSE Manager<br/>persistent streams]
             ALERTMGR["Alert Manager<br/>SSE + webhook fallback<br/>rate-limited"]
             WHRX["Webhook Receiver<br/>POST /redfish-webhook/&lt;id&gt;"]
@@ -30,11 +30,13 @@ graph TD
             Q["asyncio.Queue<br/>maxsize=1000"]
             STATUSW["Status Writer Loop<br/>(5s batched UPDATE)"]
             EXTRACT["Result Processor<br/>asyncio.to_thread →<br/>dedicated ThreadPoolExecutor<br/>workers = max(16, processors*2)"]
-            EXP["InfluxDB Exporter<br/>_flush_event signal<br/>batch_size=5000<br/>max_concurrent_writes=10<br/>HTTP gzip<br/>reconnect on 3 failures"]
+            EXP["InfluxDB Exporter<br/>_flush_event signal<br/>line-protocol serialize off-loop (to_thread)<br/>HTTP gzip<br/>reconnect on 3 failures"]
             HSRV[Internal Health Server<br/>:8081/health, /health/detailed]
+            ENRICHER["Inventory Enricher<br/>Redfish inventory walk<br/>+ placement resolve (hostname/Redfish)<br/>+ metric-report auto-discovery"]
+            HMAP["Heatmap snapshot task<br/>HeatmapCache.latest() →<br/>per-collector HeatmapSnapshot"]
         end
 
-        SQLITE[(SQLite — WAL mode<br/>shared via shared_data volume<br/>Target / CollectedLog)]
+        SQLITE[(SQLite — WAL mode<br/>shared via shared_data volume<br/>Target / CollectedLog<br/>ShardLease / CollectorStats / CollectorSlot<br/>HeatmapSnapshot per-collector)]
 
         subgraph postgres["Container: postgres (PostgreSQL 16) — internal :5432"]
             PGALERT[(Alert store<br/>high-volume Redfish<br/>alert/event history)]
@@ -55,11 +57,9 @@ graph TD
 
     %% Data plane (telemetry collection)
     T1 --> CLIENTS
-    T2 --> SSHT
     T3 --> SSEMGR
 
     CLIENTS --> POLLER
-    SSHT --> POLLER
 
     POLLER --> Q
     SSEMGR --> Q
@@ -79,10 +79,19 @@ graph TD
     %% Control plane / status
     POLLER -->|"collection completed"| STATUSW
     STATUSW -->|"batched UPDATE Target"| SQLITE
-    POLLER -.->|"reads enabled targets"| SQLITE
-    SSEMGR -.->|"reads SSE targets"| SQLITE
-    ALERTMGR -.->|"reads alert subscriptions"| SQLITE
+    POLLER -.->|"reads owned (shard) targets"| SQLITE
+    SSEMGR -.->|"reads owned SSE targets"| SQLITE
+    ALERTMGR -.->|"reads owned alert subscriptions"| SQLITE
     LC --> SQLITE
+    SHARDMGR -.->|"claim / heartbeat / reclaim leases"| SQLITE
+    ALERTMGR -.->|"publish per-collector stats"| SQLITE
+
+    %% Digital twin / Data Hall
+    EXP -.->|"records live values"| HMAP
+    HMAP -->|"per-collector HeatmapSnapshot"| SQLITE
+    ENRICHER -.->|"inventory walk (Redfish)"| CLIENTS
+    ENRICHER -->|"inventory + placement"| SQLITE
+    DATAHALL -.->|"targets·placement·inventory<br/>+ merged heatmap"| SQLITE
 
     %% Alerts
     T3 --> ALERTMGR
@@ -95,10 +104,10 @@ graph TD
 
     %% Service-to-service
     APIREST -.->|"trigger collection<br/>http://collector:8081/poll/{id}"| POLLER
-    APIREST -.->|"fetch live stats<br/>http://collector:8081/health/detailed"| HSRV
+    APIREST -.->|"aggregate shard stats<br/>(reads CollectorStats across replicas)"| SQLITE
+    APIREST -.->|"fallback live stats<br/>http://collector:8081/health/detailed"| HSRV
     APIREST --> SQLITE
-    LC -.->|"on-demand bundle (Redfish/SSH)"| CLIENTS
-    LC -.->|"on-demand bundle (Redfish/SSH)"| SSHT
+    LC -.->|"on-demand bundle (Redfish, direct to BMC)<br/>+ test-connection inventory walk"| T1
 
     classDef target fill:#fef3c7,stroke:#f59e0b
     classDef apiContainer fill:#e0e7ff,stroke:#6366f1
@@ -108,9 +117,9 @@ graph TD
     classDef influxdb fill:#f0fdf4,stroke:#22c55e
     classDef grafana fill:#fff7ed,stroke:#f97316
 
-    class T1,T2,T3 target
-    class UI,APIREST,LC apiContainer
-    class POLLER,CLIENTS,SSHT,SSEMGR,ALERTMGR,WHRX,CPERW,Q,STATUSW,EXTRACT,EXP,HSRV colContainer
+    class T1,T3 target
+    class UI,APIREST,DATAHALL,LC apiContainer
+    class SHARDMGR,POLLER,CLIENTS,SSEMGR,ALERTMGR,WHRX,CPERW,Q,STATUSW,EXTRACT,EXP,HSRV,ENRICHER,HMAP colContainer
     class SQLITE sqliteNode
     class PGALERT postgres
     class IBRAW,IB15M,IBHR influxdb

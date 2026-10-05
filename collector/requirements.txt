@@ -6,6 +6,8 @@ jinja2>=3.1.6
 
 # Database
 sqlalchemy>=2.0.36
+# Required by SQLAlchemy's asyncio engine (was previously pulled in transitively).
+greenlet>=3.0.0
 aiosqlite>=0.20.0
 # PostgreSQL async driver for the alert store
 asyncpg>=0.30.0
@@ -15,12 +17,6 @@ influxdb-client[async]>=1.48.0
 
 # HTTP Client for Redfish
 httpx>=0.28.0
-
-# SSH Client for proxy-based Redfish access
-asyncssh>=2.17.0
-
-# Prometheus metrics exposition
-prometheus-client>=0.21.0
 
 # Configuration
 pyyaml>=6.0.2

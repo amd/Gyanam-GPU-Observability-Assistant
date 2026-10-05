@@ -77,8 +77,9 @@ class Target(Base):
     # Optional token-based auth (encrypted)
     encrypted_token: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Connection mode: "direct" (default), "ssh_proxy", or "sse"
-    # server_default ensures ALTER TABLE migration works on existing SQLite rows
+    # Connection mode: "direct" (default) or "sse". Redfish over HTTP(S) is the
+    # transport; "sse" additionally subscribes to the EventService SSE stream.
+    # server_default ensures ALTER TABLE migration works on existing SQLite rows.
     connection_mode: Mapped[str] = mapped_column(
         String(20), default="direct", server_default="direct"
     )
@@ -94,14 +95,6 @@ class Target(Base):
         Text, nullable=True
     )  # Override default /redfish/v1/EventService/SSE
 
-    # SSH proxy settings (used when connection_mode == "ssh_proxy")
-    ssh_proxy_host: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    ssh_proxy_port: Mapped[int] = mapped_column(Integer, default=22, server_default="22")
-    ssh_proxy_username: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    encrypted_ssh_key: Mapped[str | None] = mapped_column(Text, nullable=True)
-    encrypted_ssh_password: Mapped[str | None] = mapped_column(Text, nullable=True)
-    ssh_command_template: Mapped[str | None] = mapped_column(Text, nullable=True)
-
     # Polling configuration
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     poll_interval_override: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -109,8 +102,47 @@ class Target(Base):
     # Tags to add to all metrics from this target
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON string
 
-    # Per-target metric report URI overrides (JSON list of {"uri": ..., "report_type": ...})
+    # Per-target metric report URI overrides (JSON list of {"uri": ..., "report_type": ...}).
+    # When set, this is an explicit operator pin that always wins over discovery.
     metric_reports_override: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Metric-report selection mode: "auto" (enumerate the target's
+    # TelemetryService/MetricReports) or "manual" (use the override / global
+    # default only). Auto-discovered reports are cached in discovered_reports.
+    metric_discovery_mode: Mapped[str] = mapped_column(
+        String(16), default="auto", server_default="auto"
+    )
+    # JSON list of {"uri": ..., "report_type": ...} discovered from the target's
+    # TelemetryService; refreshed by the inventory enricher pass.
+    discovered_reports: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Physical placement in the data hall. Resolved automatically from the host
+    # naming convention or the Redfish Chassis Location at registration time, and
+    # overridable from the Data Hall view. All nullable — a system with no known
+    # placement simply renders in the "Unplaced" tray.
+    loc_site: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    loc_hall: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    loc_row: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    loc_rack: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Bottom-most rack unit the system occupies (Redfish Placement.RackOffset).
+    loc_rack_u: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Height of the system in rack units (not in Redfish Placement; defaults to 1).
+    loc_rack_u_height: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Rack-unit standard: "EIA_310" (1.75in U) or "OpenU" (OCP 48mm).
+    loc_unit_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # Provenance of the placement: "hostname", "redfish", or "manual". Drives the
+    # overwrite precedence (manual > redfish > hostname) on re-resolution.
+    loc_source: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
+    # Basic inventory read once from the BMC via standard Redfish GETs
+    # (Chassis/Systems/Managers). JSON blob surfaced in the Data Hall tooltip.
+    inventory_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Timestamp of the last successful inventory pull (drives the one-time /
+    # staleness logic in the background enricher).
+    inventory_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    inventory_source: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # Agreement between name-derived and BMC-derived location: "match" | "mismatch".
+    location_check: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     # Status tracking
     last_poll_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -137,16 +169,15 @@ class Target(Base):
             return f"{protocol}://{self.host}"
         return f"{protocol}://{self.host}:{self.port}"
 
-    @property
-    def telemetry_url(self) -> str:
-        """Get the full telemetry endpoint URL."""
-        return f"{self.base_url}{self.telemetry_endpoint}"
-
 
 class CollectedLog(Base):
     """Record of a collected diagnostic log bundle."""
 
     __tablename__ = "collected_logs"
+    # collected_at drives both the newest-first listing (ORDER BY) and the
+    # retention sweep (WHERE collected_at < cutoff); without this index both
+    # do a full-table scan as history grows.
+    __table_args__ = (Index("ix_collected_logs_collected_at", "collected_at"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
@@ -165,6 +196,14 @@ class CollectedLog(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     duration_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
 
+    # What triggered this collection: "manual" (operator), "policy" (auto on a
+    # fatal/critical event), or "bulk". For "policy", trigger_message_id records
+    # the Redfish MessageId that fired it. Also drives the policy rearm window.
+    trigger: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="manual", server_default="manual"
+    )
+    trigger_message_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Timestamps
     collected_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
@@ -175,6 +214,106 @@ class CollectedLog(Base):
 
     def __repr__(self) -> str:
         return f"<CollectedLog(id={self.id}, target='{self.target_name}', status='{self.status}')>"
+
+
+class HeatmapSnapshot(Base):
+    """Latest heatmap value per host for one UI metric, published by the collector.
+
+    The Data Hall heatmap reads this (fast, local SQLite) instead of calling the
+    collector's in-process cache over HTTP — whose latency spikes when the
+    collector event loop is busy flushing to InfluxDB. The collector refreshes
+    these rows on a short interval from its in-memory HEATMAP cache.
+    """
+
+    __tablename__ = "heatmap_snapshots"
+
+    # Composite key (collector_id, metric): with sharding, each collector owns and
+    # replaces its own row for a metric; the API merges fresh rows across shards.
+    collector_id: Mapped[str] = mapped_column(String(64), primary_key=True, default="")
+    # UI metric key: "gpu_temp" | "board_temp" | "power".
+    metric: Mapped[str] = mapped_column(String(32), primary_key=True)
+    # JSON object {host: value}.
+    data: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<HeatmapSnapshot(collector_id='{self.collector_id}', "
+            f"metric='{self.metric}', updated_at='{self.updated_at}')>"
+        )
+
+
+class ShardLease(Base):
+    """One row per target: which collector currently owns (polls) it.
+
+    Collectors claim targets up to a per-shard cap and renew ``updated_at`` as a
+    heartbeat. A lease whose heartbeat goes stale (owner died) is reclaimable by
+    any collector, which is how work rebalances on crash / scale-down. Deboarded
+    targets have their lease swept. Only used when sharding is enabled; a single
+    collector owns everything without touching this table.
+    """
+
+    __tablename__ = "shard_leases"
+
+    target_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    collector_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+
+
+class CollectorStats(Base):
+    """Per-collector health/stats snapshot, published to shared SQLite.
+
+    With sharding the API can't HTTP-poll one collector for fleet stats, so each
+    collector writes its own row here (owned-target count, subscription counts,
+    health) and the API aggregates across live rows (stale rows = dead shards).
+    """
+
+    __tablename__ = "collector_stats"
+
+    collector_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    # JSON blob of the collector's health/alert/subscription stats.
+    data: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    owned_targets: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<CollectorStats(collector_id='{self.collector_id}', "
+            f"owned_targets={self.owned_targets}, updated_at='{self.updated_at}')>"
+        )
+
+
+class CollectorSlot(Base):
+    """Stable ordinal claimed by one collector process (dynamic-sharding only).
+
+    Rendezvous hashing keys on the collector id, so that id must be STABLE across
+    restarts or every redeploy reshuffles the whole fleet. Under docker-compose
+    ``--scale`` the container hostname is unique but not stable, so each process
+    claims the lowest free ordinal here (heartbeated on a TTL, reclaimed when
+    stale) and derives ``COLLECTOR_ID = collector-<ordinal>``. The ordinal SET is
+    stable across redeploys even as the process-to-ordinal mapping changes, so the
+    HRW partition — and thus target ownership — stays put. An explicitly-set
+    COLLECTOR_ID (e.g. a k8s StatefulSet pod name) bypasses this table entirely.
+    """
+
+    __tablename__ = "collector_slots"
+
+    # Ordinal 0..N-1 -> COLLECTOR_ID "collector-<ordinal>".
+    ordinal: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # Per-process instance token (the container hostname) identifying the holder.
+    token: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<CollectorSlot(ordinal={self.ordinal}, token='{self.token}')>"
 
 
 class Alert(AlertBase):

@@ -185,11 +185,13 @@ init_env() {
     local grafana_admin_pass
     local encryption_key
     local postgres_pass
+    local ui_pass
     influx_token=$(generate_password)$(generate_password)
     influx_admin_pass=$(generate_password)
     grafana_admin_pass=$(generate_password)
     encryption_key=$(generate_encryption_key)
     postgres_pass=$(generate_password)$(generate_password)
+    ui_pass=$(generate_password)
 
     cat > "${ENV_FILE}" << EOF
 # GPU Metrics Collector - Environment Configuration
@@ -224,6 +226,11 @@ GRAFANA_ADMIN_PASSWORD=${grafana_admin_pass}
 # Collector Configuration
 ENCRYPTION_KEY=${encryption_key}
 
+# Web UI login. Auto-generated so a fresh install can log in; without a real
+# UI_PASSWORD the app refuses the shipped 'changeme' default and NO login works.
+UI_USERNAME=admin
+UI_PASSWORD=${ui_pass}
+
 # PostgreSQL alert store (high-volume Redfish alert/event history)
 # Password is auto-generated URL-safe (embedded in ALERTS_DATABASE_URL).
 POSTGRES_USER=gyanam
@@ -235,20 +242,17 @@ POSTGRES_DB=gyanam_alerts
 # the pip/PyPI install. Empty = full TLS verification (default).
 PIP_TRUSTED_HOST=
 
-# Metrics Backend: "influxdb" (default) or "prometheus"
-METRICS_BACKEND=influxdb
-
 # Port Configuration (change for multiple deployments on same host)
 API_PORT=8080
 INFLUXDB_PORT=8086
 GRAFANA_PORT=3000
-PROMETHEUS_PORT=9090
 EOF
 
     chmod 600 "${ENV_FILE}"
     print_success "Environment file created: ${ENV_FILE}"
     echo ""
     print_info "Generated credentials:"
+    echo "  Web UI Login:            admin / ${ui_pass}"
     echo "  InfluxDB Admin Password: ${influx_admin_pass}"
     echo "  Grafana Admin Password:  ${grafana_admin_pass}"
     echo ""
@@ -296,17 +300,9 @@ cmd_start() {
     local gra_port="${GRAFANA_PORT:-3000}"
     local port_conflict=false
 
-    local backend="${METRICS_BACKEND:-influxdb}"
-
     check_port_available "${api_port}" "API" || port_conflict=true
     check_port_available "${gra_port}" "GRAFANA" || port_conflict=true
-
-    if [[ "${backend}" == "prometheus" ]]; then
-        local prom_port="${PROMETHEUS_PORT:-9090}"
-        check_port_available "${prom_port}" "PROMETHEUS" || port_conflict=true
-    else
-        check_port_available "${inf_port}" "INFLUXDB" || port_conflict=true
-    fi
+    check_port_available "${inf_port}" "INFLUXDB" || port_conflict=true
 
     if [[ "${port_conflict}" == "true" ]]; then
         echo ""
@@ -315,25 +311,14 @@ cmd_start() {
     fi
 
     cd "${SCRIPT_DIR}"
-    if [[ "${backend}" == "prometheus" ]]; then
-        print_info "Using Prometheus backend"
-        ${COMPOSE_CMD} -p ${PROJECT_NAME} -f docker-compose.yml -f docker-compose.prometheus.yml up -d
-    else
-        print_info "Using InfluxDB backend"
-        ${COMPOSE_CMD} -p ${PROJECT_NAME} up -d
-    fi
+    ${COMPOSE_CMD} -p ${PROJECT_NAME} up -d
 
     echo ""
     print_success "Services started successfully!"
     echo ""
     print_info "Access the services at:"
     echo "  Web UI:        http://localhost:${api_port}"
-    if [[ "${backend}" == "prometheus" ]]; then
-        local prom_port="${PROMETHEUS_PORT:-9090}"
-        echo "  Prometheus:    http://localhost:${prom_port}"
-    else
-        echo "  InfluxDB:      http://localhost:${inf_port}"
-    fi
+    echo "  InfluxDB:      http://localhost:${inf_port}"
     echo "  Grafana:       http://localhost:${gra_port}"
     echo ""
     print_info "Use './gyanam.sh logs -f' to view logs"
@@ -344,15 +329,7 @@ cmd_stop() {
     print_info "Stopping GPU Metrics Collector services..."
 
     cd "${SCRIPT_DIR}"
-    # shellcheck source=/dev/null
-    source "${ENV_FILE}" 2>/dev/null || true
-    local backend="${METRICS_BACKEND:-influxdb}"
-
-    if [[ "${backend}" == "prometheus" ]]; then
-        ${COMPOSE_CMD} -p ${PROJECT_NAME} -f docker-compose.yml -f docker-compose.prometheus.yml down
-    else
-        ${COMPOSE_CMD} -p ${PROJECT_NAME} down
-    fi
+    ${COMPOSE_CMD} -p ${PROJECT_NAME} down
 
     print_success "Services stopped successfully!"
 }
@@ -381,9 +358,8 @@ cmd_status() {
     local api_port="${API_PORT:-8080}"
     local inf_port="${INFLUXDB_PORT:-8086}"
     local gra_port="${GRAFANA_PORT:-3000}"
-    local backend="${METRICS_BACKEND:-influxdb}"
 
-    print_info "Health checks (backend: ${backend}):"
+    print_info "Health checks:"
 
     # Collector (background service - check if process is running)
     local collector_status
@@ -401,20 +377,11 @@ cmd_status() {
         print_warning "API:        not responding (port ${api_port})"
     fi
 
-    # Metrics backend
-    if [[ "${backend}" == "prometheus" ]]; then
-        local prom_port="${PROMETHEUS_PORT:-9090}"
-        if curl -sf http://localhost:${prom_port}/-/healthy > /dev/null 2>&1; then
-            print_success "Prometheus: healthy (port ${prom_port})"
-        else
-            print_warning "Prometheus: not responding (port ${prom_port})"
-        fi
+    # Metrics backend (InfluxDB)
+    if curl -sf http://localhost:${inf_port}/ping > /dev/null 2>&1; then
+        print_success "InfluxDB:   healthy (port ${inf_port})"
     else
-        if curl -sf http://localhost:${inf_port}/ping > /dev/null 2>&1; then
-            print_success "InfluxDB:   healthy (port ${inf_port})"
-        else
-            print_warning "InfluxDB:   not responding (port ${inf_port})"
-        fi
+        print_warning "InfluxDB:   not responding (port ${inf_port})"
     fi
 
     # Grafana
@@ -448,7 +415,7 @@ cmd_setup_15m_downsampling() {
     check_env
 
     cd "${SCRIPT_DIR}"
-    ${COMPOSE_CMD} -p ${PROJECT_NAME} exec influxdb /bin/bash /docker-entrypoint-initdb.d/setup-15m-downsampling.sh
+    ${COMPOSE_CMD} -p ${PROJECT_NAME} exec influxdb /bin/bash /influxdb-scripts/setup-15m-downsampling.sh
 
     print_success "15-minute downsampling configured!"
 }
@@ -459,7 +426,7 @@ cmd_setup_hourly_downsampling() {
     check_env
 
     cd "${SCRIPT_DIR}"
-    ${COMPOSE_CMD} -p ${PROJECT_NAME} exec influxdb /bin/bash /docker-entrypoint-initdb.d/setup-hourly-downsampling.sh
+    ${COMPOSE_CMD} -p ${PROJECT_NAME} exec influxdb /bin/bash /influxdb-scripts/setup-hourly-downsampling.sh
 
     print_success "Hourly downsampling configured!"
 }
@@ -700,15 +667,7 @@ cmd_clean() {
     print_info "Stopping services and removing volumes..."
 
     cd "${SCRIPT_DIR}"
-    # shellcheck source=/dev/null
-    source "${ENV_FILE}" 2>/dev/null || true
-    local backend="${METRICS_BACKEND:-influxdb}"
-
-    if [[ "${backend}" == "prometheus" ]]; then
-        ${COMPOSE_CMD} -p ${PROJECT_NAME} -f docker-compose.yml -f docker-compose.prometheus.yml down -v
-    else
-        ${COMPOSE_CMD} -p ${PROJECT_NAME} down -v
-    fi
+    ${COMPOSE_CMD} -p ${PROJECT_NAME} down -v
 
     print_success "Cleanup completed!"
 }

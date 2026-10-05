@@ -12,15 +12,10 @@ architecture, start with the [README](README.md).
 
 - **Report bugs** and request features via GitHub Issues — see
   [Reporting issues](#reporting-issues) below.
-- **Add or refine metric schemas** in
-  [`collector/config/metrics_schema.yaml`](collector/config/metrics_schema.yaml).
 - **Contribute Grafana dashboards** under
   [`grafana/provisioning/dashboards/`](grafana/provisioning/dashboards/).
-- **Improve transports / collection paths** (Redfish, SSH-proxy, SSE).
+- **Improve transports / collection paths** (Redfish Aggregation / proxy, SSE).
 - **Improve documentation** under [`docs/`](docs/).
-- **Help land roadmap items** (in-band telemetry via AMD Device Metrics
-  Exporter, VM-level telemetry, broader log collection, security
-  hardening).
 
 ## Reporting issues
 
@@ -40,7 +35,7 @@ A good **bug report** includes:
 
 - GYANAM version or git commit (`git rev-parse --short HEAD`).
 - Deployment details — OS, Docker version, fleet size, and which transport
-  (Redfish / SSH-proxy / SSE).
+  (Redfish Aggregation / proxy / SSE).
 - Exact steps to reproduce.
 - What you expected vs. what actually happened.
 - Relevant logs (`./gyanam.sh logs <service>`) and any error output, with
@@ -142,11 +137,53 @@ instead of opening a public issue or PR.
    ./gyanam.sh start
    ```
 
-4. If tests exist for the area you touch, run them:
+## Testing
 
-   ```bash
-   cd collector && python -m pytest tests/ -v
-   ```
+GYANAM has **two test tiers**, and a PR must pass **both**:
+
+### 1. Unit tests (fast, fully mocked) — run on every change
+
+Runs the whole suite in the collector image with coverage enforced. No running
+stack required.
+
+```bash
+./scripts/run-tests.sh
+```
+
+- All tests must pass.
+- **Coverage gate: ≥ 95%** (`--cov-fail-under=95`). The run fails if coverage
+  drops below that — so new code needs tests, and dead code should be removed
+  rather than left uncovered.
+
+### 2. Live smoke tests (against a running stack) — run before you open the PR
+
+These hit the *actual* running services and catch the regressions mocks can't:
+image/dependency drift, cross-service wiring, template/route 500s, and real
+SQLite/PostgreSQL/InfluxDB connectivity.
+
+```bash
+./gyanam.sh init     # one-time: generates .env with secrets
+./gyanam.sh build
+./gyanam.sh start    # wait until `./gyanam.sh status` shows everything healthy
+./scripts/smoke-test.sh
+```
+
+- **Read-only by default** — safe to run against any stack, including a live
+  one. It only reads health, renders every page, lists targets, exports CSV.
+- The create/update/delete round-trip (which *writes* to the database) is
+  **gated** behind `GYANAM_LIVE_MUTATE=1` — only enable it on a throwaway/CI
+  stack, never a real fleet:
+
+  ```bash
+  GYANAM_LIVE_MUTATE=1 ./scripts/smoke-test.sh
+  ```
+
+CI runs both tiers on a disposable stack. **To be approved and merged, a PR
+should include the output of both runs in its description** (the tail of
+`./scripts/run-tests.sh` showing the pass count + coverage %, and the
+`./scripts/smoke-test.sh` summary line). Sharing both results helps every
+contribution keep the codebase healthy and the deployment solid as the project
+grows.
 
 ## Commit message convention
 
@@ -169,6 +206,9 @@ Before opening a PR, confirm:
 
 - [ ] Every commit has a valid `Signed-off-by` line (DCO).
 - [ ] Linters / pre-commit hooks pass (see [`LINTING.md`](LINTING.md)).
+- [ ] **Both test tiers pass and their output is pasted in the PR description**
+      — `./scripts/run-tests.sh` (pass count + coverage ≥ 95%) and
+      `./scripts/smoke-test.sh` (against a running stack). See [Testing](#testing).
 - [ ] Changes are scoped and the description explains the *why*.
 - [ ] Documentation is updated when behavior or configuration changes.
 - [ ] Any new dashboards or schemas follow the existing structure.

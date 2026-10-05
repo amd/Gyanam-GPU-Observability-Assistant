@@ -29,6 +29,21 @@ async def test_login_missing_csrf(noauth_client):
     assert r.status_code in (403, 422)
 
 
+async def test_login_refused_when_default_password_not_allowed(noauth_client, monkeypatch):
+    """With the default 'changeme' hash and no allow-flag, login fails closed."""
+    import src.api.auth as auth
+
+    monkeypatch.delenv("GYANAM_ALLOW_DEFAULT_PASSWORD", raising=False)
+    # Sanity: the test config really is still on the default hash.
+    assert auth.default_password_blocks_login(auth._DEFAULT_HASH) is True
+    r = await noauth_client.post(
+        "/login",
+        data={"username": "admin", "password": "changeme", "csrf_token": generate_csrf_token()},
+        follow_redirects=False,
+    )
+    assert r.status_code == 401
+
+
 async def test_cookie_authenticates_subsequent_request(noauth_client):
     login = await noauth_client.post(
         "/login",
@@ -36,9 +51,11 @@ async def test_cookie_authenticates_subsequent_request(noauth_client):
         follow_redirects=False,
     )
     assert login.status_code == 303
-    # httpx client retains the Set-Cookie; the protected index must now load.
-    r = await noauth_client.get("/")
-    assert r.status_code == 200
+    # httpx client retains the Set-Cookie; the protected index must now authorise
+    # (authed -> redirect to /systems; unauthed would bounce to /login).
+    r = await noauth_client.get("/", follow_redirects=False)
+    assert r.status_code in (302, 303, 307)
+    assert r.headers.get("location") == "/systems"
 
 
 async def test_logout(noauth_client):

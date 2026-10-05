@@ -44,7 +44,9 @@ async def test_logs_list_and_delete(client, repo):
     )
     listing = await client.get("/logs/api")
     assert listing.status_code == 200
-    assert any(item["filename"] == "b.gz" for item in listing.json())
+    body = listing.json()
+    assert body["total"] >= 1
+    assert any(item["filename"] == "b.gz" for item in body["logs"])
     r = await client.delete(f"/logs/api/{log.id}")
     assert r.status_code == 200
 

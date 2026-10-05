@@ -22,10 +22,11 @@
 import asyncio
 import logging
 import random
+import time
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from ..database.models import Target
 from ..database.repository import TargetRepository
@@ -52,9 +53,14 @@ class PollResult:
     error_message: str | None
     poll_time: datetime
     duration_ms: float
-    target_tags: dict[str, str] = None  # Custom tags from target config
+    target_tags: dict[str, str] | None = None  # Custom tags from target config
     data: list | None = None  # List of (report_type, json_dict) tuples from GET (bypasses unpacker)
     collection_method: str = "task"  # "get" or "task" for logging
+    # Report coverage for the GET path so a PARTIAL collection (e.g. 1 of 6
+    # reports returned) is observable instead of being indistinguishable from a
+    # full success. 0/0 on the task-based path (single blob).
+    reports_succeeded: int = 0
+    reports_expected: int = 0
 
 
 # Type for callback function that processes poll results
@@ -122,8 +128,11 @@ class RedfishPoller:
         self._status_writer_task: asyncio.Task | None = None
         # Limit queue size to prevent memory issues if results aren't consumed
         self._result_queue: asyncio.Queue[PollResult] = asyncio.Queue(maxsize=1000)
-        # Track next poll time per target to support poll_interval_override
-        self._next_poll_time: dict[int, datetime] = {}
+        # Track next poll time per target to support poll_interval_override.
+        # Uses a MONOTONIC clock (time.monotonic, seconds) rather than wall time
+        # so an NTP step can't make every target suddenly due (thundering herd)
+        # or stall polling for the size of a backward jump.
+        self._next_poll_time: dict[int, float] = {}
         # In-flight poll tasks keyed by target id. Prevents a slow poll from being
         # double-scheduled and lets us await all on shutdown.
         self._inflight: dict[int, asyncio.Task] = {}
@@ -137,9 +146,16 @@ class RedfishPoller:
         # round-trip on every cycle. Evicted on any poll failure.
         self._clients: dict[int, RedfishClient] = {}
         self._client_locks: dict[int, asyncio.Lock] = {}
+        # Tracks fire-and-forget client-eviction tasks so they aren't GC'd
+        # mid-flight and are awaited on shutdown.
+        self._eviction_tasks: set[asyncio.Task] = set()
         # Stats
         self._polls_started = 0
         self._polls_completed = 0
+        # Monotonic timestamp of the most recent poll completion — a liveness
+        # signal for health (the flag `_running` alone can't tell a stalled loop
+        # from a healthy one). None until the first poll completes.
+        self._last_completed_monotonic: float | None = None
         self._polls_dropped_queue_full = 0
         self._client_cache_hits = 0
         self._client_cache_misses = 0
@@ -183,6 +199,12 @@ class RedfishPoller:
             with suppress(asyncio.CancelledError):
                 await self._status_writer_task
 
+        # Await any in-flight fire-and-forget client evictions before we close
+        # the rest, so their session DELETEs aren't abandoned.
+        if self._eviction_tasks:
+            with suppress(asyncio.CancelledError):
+                await asyncio.gather(*list(self._eviction_tasks), return_exceptions=True)
+
         # Close all cached Redfish clients (session DELETE + httpx aclose).
         if self._clients:
             logger.info(f"Closing {len(self._clients)} cached Redfish clients...")
@@ -196,7 +218,6 @@ class RedfishPoller:
         target: Target,
         password: str,
         token: str | None,
-        ssh_transport,
     ) -> RedfishClient | None:
         """Return a connected client for `target`, creating one if needed.
 
@@ -226,7 +247,6 @@ class RedfishPoller:
                 task_timeout=self.task_timeout,
                 download_timeout=self.download_timeout,
                 cleanup_task_on_success=True,
-                ssh_transport=ssh_transport,
             )
             try:
                 await client.connect()
@@ -261,7 +281,7 @@ class RedfishPoller:
         if not new_targets:
             return
 
-        now = datetime.now(UTC)
+        now = time.monotonic()
         base_interval = self.poll_interval
 
         # Calculate stagger delay for new targets
@@ -287,9 +307,8 @@ class RedfishPoller:
             jitter = random.uniform(-interval * 0.01, interval * 0.01)
             final_offset = max(0, offset_seconds + jitter)
 
-            # Schedule
-            next_poll = now + timedelta(seconds=final_offset)
-            self._next_poll_time[target.id] = next_poll
+            # Schedule (monotonic seconds)
+            self._next_poll_time[target.id] = now + final_offset
 
             logger.info(
                 f"New target '{target.name}' scheduled for first poll in {final_offset:.1f}s"
@@ -311,7 +330,7 @@ class RedfishPoller:
         - Target 299 polls at t=299s
         - Result: ~1 target/second constant rate vs 300 targets every 5min burst
         """
-        targets = await self.repository.get_all_targets(enabled_only=True)
+        targets = await self.repository.get_active_targets()
 
         if not targets:
             return
@@ -322,7 +341,7 @@ class RedfishPoller:
         if not poll_targets:
             return
 
-        now = datetime.now(UTC)
+        now = time.monotonic()
         base_interval = self.poll_interval
 
         # Calculate stagger delay per target to spread evenly across interval
@@ -352,8 +371,7 @@ class RedfishPoller:
             # Ensure offset is never negative (can happen if jitter is negative for first targets)
             final_offset = max(0, offset_seconds + jitter)
 
-            next_poll = now + timedelta(seconds=final_offset)
-            self._next_poll_time[target.id] = next_poll
+            self._next_poll_time[target.id] = now + final_offset
 
             if idx < 3 or idx >= len(poll_targets) - 3:
                 # Log first 3 and last 3 for visibility
@@ -421,13 +439,13 @@ class RedfishPoller:
         cycle runs long. Each poll task self-completes and self-reports
         its result via the result queue and pending status buffer.
         """
-        targets = await self.repository.get_all_targets(enabled_only=True)
+        targets = await self.repository.get_active_targets()
 
         if not targets:
             logger.debug("No enabled targets to poll")
             return
 
-        now = datetime.now(UTC)
+        now = time.monotonic()
         due_targets: list[Target] = []
         new_targets: list[Target] = []
 
@@ -462,9 +480,12 @@ class RedfishPoller:
         for stale_id in list(self._clients.keys()):
             if stale_id not in active_ids:
                 # Schedule eviction; awaiting close inline would slow down the
-                # scheduler. Fire-and-forget is fine — the done-callback isn't
-                # needed because we've already removed from _clients.
-                asyncio.create_task(self._close_client(stale_id))
+                # scheduler. Keep a strong reference in a set (asyncio only holds
+                # a weak one) so the task can't be GC'd mid-close, and await any
+                # stragglers on shutdown.
+                evict = asyncio.create_task(self._close_client(stale_id))
+                self._eviction_tasks.add(evict)
+                evict.add_done_callback(self._eviction_tasks.discard)
                 self._client_locks.pop(stale_id, None)
 
         if not due_targets:
@@ -478,7 +499,7 @@ class RedfishPoller:
         for target in due_targets:
             interval = self._get_target_interval(target, poll_succeeded=True)
             jitter = random.uniform(-interval * 0.02, interval * 0.02)
-            self._next_poll_time[target.id] = now + timedelta(seconds=interval + jitter)
+            self._next_poll_time[target.id] = now + interval + jitter
 
         logger.info(
             f"Scheduling {len(due_targets)} due polls "
@@ -520,6 +541,7 @@ class RedfishPoller:
             return
         finally:
             self._polls_completed += 1
+            self._last_completed_monotonic = time.monotonic()
 
         if result is None:
             return
@@ -549,9 +571,7 @@ class RedfishPoller:
                 if fresh is not None:
                     interval = self._get_target_interval(fresh, poll_succeeded=False)
                     jitter = random.uniform(-interval * 0.02, interval * 0.02)
-                    self._next_poll_time[target.id] = datetime.now(UTC) + timedelta(
-                        seconds=interval + jitter
-                    )
+                    self._next_poll_time[target.id] = time.monotonic() + interval + jitter
             except Exception as e:
                 logger.debug(f"Could not refresh schedule for failed {target.name}: {e}")
 
@@ -611,38 +631,23 @@ class RedfishPoller:
         import json
 
         start_time = datetime.now(UTC)
-        target_tags = self.repository.get_target_tags(target)
-
-        # Resolve per-target metric report overrides (fall back to global config)
-        target_reports = self.repository.get_target_metric_reports(target)
-        reports_to_use = target_reports if target_reports else self.metric_reports
-
         client: RedfishClient | None = None
         try:
+            # Tags and the report set come from DB-stored JSON (target.tags,
+            # metric_reports_override, discovered_reports). Parse them INSIDE the
+            # try so a malformed value surfaces as a failed poll (status update +
+            # circuit-breaker backoff) instead of raising past _run_poll and
+            # stranding the target as a zombie that never updates status, never
+            # backs off, and never emits metrics.
+            target_tags = self.repository.get_target_tags(target)
+            # Reports to fetch: explicit override > auto-discovered > global default.
+            reports_to_use = self.repository.resolve_metric_reports(target, self.metric_reports)
+
             # Get decrypted credentials
             password = self.repository.decrypt_password(target)
             token = self.repository.decrypt_token(target)
 
-            # Create SSH transport if target uses proxy mode. The transport
-            # is owned by the cached client and reused across polls.
-            ssh_transport = None
-            if target.connection_mode == "ssh_proxy" and target.id not in self._clients:
-                from .ssh_transport import SSHTransport
-
-                ssh_key = self.repository.decrypt_ssh_key(target)
-                ssh_password = self.repository.decrypt_ssh_password(target)
-                ssh_transport = SSHTransport(
-                    proxy_host=target.ssh_proxy_host,
-                    proxy_port=target.ssh_proxy_port or 22,
-                    proxy_username=target.ssh_proxy_username or "root",
-                    ssh_key=ssh_key,
-                    ssh_password=ssh_password,
-                    command_template=target.ssh_command_template,
-                    command_timeout=self.download_timeout,
-                    verify_ssl=target.verify_ssl,
-                )
-
-            client = await self._get_client(target, password, token, ssh_transport)
+            client = await self._get_client(target, password, token)
             if client is None:
                 # Connect failure already logged; surface as a failed poll.
                 end_time = datetime.now(UTC)
@@ -665,6 +670,8 @@ class RedfishPoller:
             collection_method = "task"
             response = None
             parsed_data = None
+            reports_succeeded = 0
+            reports_expected = 0
 
             # --- GET-first attempt: parallel fetch of all reports ---
             if reports_to_use:
@@ -680,15 +687,22 @@ class RedfishPoller:
                     get_resp = await client.get_metric_report(uri)
                     if not get_resp.success:
                         logger.info(
-                            f"GET {rtype} report failed for {target.name}: "
-                            f"{get_resp.error_message}"
+                            f"GET {rtype} report failed for {target.name}: {get_resp.error_message}"
                         )
                         return None
                     try:
-                        data = json.loads(get_resp.content)
+                        # Large metric reports (100s of KB) are expensive to
+                        # parse; offload those to a thread so one big payload
+                        # can't stall the event loop (every target's polls and
+                        # the SSE heartbeat share it). Small reports parse inline
+                        # to avoid thread-hop overhead.
+                        content = get_resp.content
+                        if len(content) > 262144:
+                            data = await asyncio.to_thread(json.loads, content)
+                        else:
+                            data = json.loads(content)
                         logger.debug(
-                            f"GET {rtype} report succeeded for {target.name} "
-                            f"({len(get_resp.content)} bytes)"
+                            f"GET {rtype} report succeeded for {target.name} ({len(content)} bytes)"
                         )
                         return (rtype, data, get_resp)
                     except (json.JSONDecodeError, UnicodeDecodeError) as e:
@@ -712,14 +726,30 @@ class RedfishPoller:
                         report_tuples.append((rtype, data))
                         last_resp = resp
 
+                reports_succeeded = len(report_tuples)
+                reports_expected = len(reports_to_use)
                 if report_tuples:
                     parsed_data = report_tuples
                     response = last_resp  # Use last successful response for content/type
                     collection_method = "get"
-                    logger.info(
-                        f"GET collected {len(report_tuples)}/{len(reports_to_use)} "
-                        f"reports for {target.name}"
-                    )
+                    if reports_succeeded < reports_expected:
+                        # PARTIAL collection — the poll still "succeeds" (don't trip
+                        # the circuit breaker for a mostly-working target), but WARN
+                        # so the dropped reports aren't silently invisible the way a
+                        # lone logger.info per failure is.
+                        logger.warning(
+                            "PARTIAL GET collection for %s: %d/%d reports returned "
+                            "(%d missing this cycle)",
+                            target.name,
+                            reports_succeeded,
+                            reports_expected,
+                            reports_expected - reports_succeeded,
+                        )
+                    else:
+                        logger.info(
+                            f"GET collected {reports_succeeded}/{reports_expected} "
+                            f"reports for {target.name}"
+                        )
                 else:
                     logger.info(
                         f"All GET reports failed for {target.name}, "
@@ -756,6 +786,8 @@ class RedfishPoller:
                 target_tags=target_tags,
                 data=parsed_data,
                 collection_method=collection_method,
+                reports_succeeded=reports_succeeded,
+                reports_expected=reports_expected,
             )
 
             # NOTE: status update is deliberately not committed here. The
@@ -829,12 +861,12 @@ class RedfishPoller:
     def get_stats(self) -> dict:
         """Return poller stats for the health endpoint."""
         total_lookups = self._client_cache_hits + self._client_cache_misses
-        hit_rate = (
-            round(self._client_cache_hits / total_lookups * 100, 1) if total_lookups else 0.0
-        )
+        hit_rate = round(self._client_cache_hits / total_lookups * 100, 1) if total_lookups else 0.0
         return {
             "polls_started": self._polls_started,
             "polls_completed": self._polls_completed,
+            "seconds_since_last_poll": self._seconds_since_last_poll(),
+            "making_progress": self.is_making_progress(),
             "inflight": len(self._inflight),
             "pending_status_updates": len(self._pending_status),
             "result_queue_size": self._result_queue.qsize(),
@@ -845,6 +877,30 @@ class RedfishPoller:
             "client_cache_hits": self._client_cache_hits,
             "client_cache_misses": self._client_cache_misses,
         }
+
+    def _seconds_since_last_poll(self) -> float | None:
+        """Seconds since the last poll completed, or None if none yet."""
+        if self._last_completed_monotonic is None:
+            return None
+        return round(time.monotonic() - self._last_completed_monotonic, 1)
+
+    def is_making_progress(self) -> bool:
+        """True if the poll loop is alive and completing polls.
+
+        Distinguishes a healthy poller from one whose loop has stalled while
+        ``_running`` still reads True. We allow a generous window — three poll
+        intervals, floored at 10 min — before declaring the loop stalled, so a
+        slow cycle or a fleet of briefly-unreachable targets isn't flagged.
+        A poller that hasn't completed its first poll yet (startup) is treated
+        as progressing.
+        """
+        if not self._running:
+            return False
+        elapsed = self._seconds_since_last_poll()
+        if elapsed is None:
+            return True  # startup: no completion yet, not a stall
+        stall_after = max(600, self.poll_interval * 3)
+        return elapsed < stall_after
 
     async def get_results(self, timeout: float = 0.1) -> list[PollResult]:
         """Get pending poll results from the queue.

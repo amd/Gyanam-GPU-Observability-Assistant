@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Data Hall View - GYANAM{% endblock %}
+
+{% block content %}
+<style>
+    .twin-stage { position: relative; height: 74vh; min-height: 440px;
+                  background: #0b1220; border-radius: 10px; overflow: hidden; }
+    #twin-canvas { position: absolute; inset: 0; }
+
+    /* Overlays */
+    .twin-overlay { position: absolute; z-index: 5; }
+    .twin-legend { left: 12px; bottom: 12px; display: flex; gap: 14px;
+                   background: rgba(15,23,42,0.72); padding: 8px 12px; border-radius: 8px;
+                   font-size: 0.78rem; color: #cbd5e1; }
+    .twin-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .twin-sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+    .twin-sw.success { background: #16a34a; } .twin-sw.error { background: #6b7280; }
+    .twin-sw.pending { background: #64748b; }
+
+    .twin-unplaced { right: 12px; top: 12px; width: 210px; max-height: 72%;
+                     background: rgba(15,23,42,0.82); border: 1px solid #1e293b;
+                     border-radius: 10px; padding: 10px; color: #e2e8f0; overflow: auto; }
+    .twin-unplaced h4 { margin: 0 0 8px; font-size: 0.8rem; font-weight: 600; color: #cbd5e1; }
+    .twin-chip { display: flex; align-items: center; gap: 7px; padding: 5px 8px; margin: 4px 0;
+                 border-radius: 6px; font-size: 0.78rem; background: #1e293b; cursor: pointer;
+                 border: 1px solid transparent; white-space: nowrap; overflow: hidden;
+                 text-overflow: ellipsis; }
+    .twin-chip:hover { background: #273449; }
+    .twin-chip.selected { border-color: #38bdf8; background: #0c4a6e; }
+    .twin-chip .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .twin-chip .dot.success { background: #16a34a; } .twin-chip .dot.error { background: #6b7280; }
+    .twin-chip .dot.pending { background: #94a3b8; }
+
+    .twin-hint { left: 50%; top: 12px; transform: translateX(-50%);
+                 background: rgba(12,74,110,0.92); color: #e0f2fe; padding: 6px 14px;
+                 border-radius: 999px; font-size: 0.8rem; display: none; }
+    .twin-empty { position: absolute; inset: 0; display: none; align-items: center;
+                  justify-content: center; flex-direction: column; color: #94a3b8;
+                  text-align: center; gap: 8px; z-index: 4; }
+
+    .twin-rack-label { color: #e2e8f0; font-size: 0.72rem; font-weight: 600;
+                       background: rgba(15,23,42,0.7); padding: 1px 6px; border-radius: 4px;
+                       white-space: nowrap; }
+    .twin-rack-warn { color: #fbbf24; font-size: 0.68rem; white-space: nowrap; }
+
+    #twin-tooltip { position: fixed; z-index: 50; display: none; pointer-events: none;
+                    background: #1e293b; color: #fff; padding: 6px 10px; border-radius: 6px;
+                    font-size: 0.75rem; line-height: 1.35; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+
+    /* Modal (shared styling with the old grid modal) */
+    .twin-modal { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 2000;
+                  display: none; align-items: center; justify-content: center; }
+    .twin-modal.open { display: flex; }
+    .twin-modal .box { background: #fff; border-radius: 10px; width: 360px; max-width: 92vw;
+                       padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
+    .twin-modal h3 { margin: 0 0 4px; font-size: 1.05rem; }
+    .twin-modal .sub { color: #64748b; font-size: 0.8rem; margin-bottom: 14px; word-break: break-all; }
+    .tf { margin-bottom: 10px; }
+    .tf label { display: block; font-size: 0.75rem; color: #475569; margin-bottom: 3px; }
+    .tf input, .tf select { width: 100%; padding: 6px 8px; font-size: 0.85rem;
+                            border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+    .tf2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tfa { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; }
+
+    .twin-fallback { display: none; padding: 12px 4px; }
+
+    /* Status / heatmap selector: an inline segmented single-select button group. */
+    .twin-seg { display: inline-flex; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+    .twin-seg-btn { padding: 5px 10px; background: #fff; border: none; border-left: 1px solid #e2e8f0;
+                    font-size: 0.85rem; color: #334155; cursor: pointer; white-space: nowrap; }
+    .twin-seg-btn:first-child { border-left: none; }
+    .twin-seg-btn:hover { background: #f1f5f9; }
+    .twin-seg-btn.selected { background: #6366f1; color: #fff; }
+    .twin-seg-btn.selected:hover { background: #4f46e5; }
+</style>
+
+<div class="card">
+    <div class="card-header">
+        <h2><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:6px;color:#6366f1"><rect x="3.5" y="4" width="7" height="16" rx="1.2"/><rect x="13.5" y="4" width="7" height="16" rx="1.2"/><line x1="3.5" y1="9" x2="10.5" y2="9"/><line x1="3.5" y1="14" x2="10.5" y2="14"/><line x1="13.5" y1="9" x2="20.5" y2="9"/><line x1="13.5" y1="14" x2="20.5" y2="14"/></svg>Data Hall View
+            <span id="twin-stats" style="font-weight: 400; font-size: 0.9rem; color: #64748b;">
+                {{ stats.placed }} placed · {{ stats.unplaced }} unplaced · {{ stats.halls }} hall(s)
+            </span>
+        </h2>
+        <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+            <!-- Row 1: search + hall + view actions -->
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <input id="twin-find" type="text" placeholder="🔍 Find rack or system…" autocomplete="off"
+                       style="padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.85rem; width: 190px;">
+                <label style="font-size: 0.8rem; color: #64748b;">Hall:</label>
+                <select id="twin-hall-select" style="padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.85rem;"></select>
+                <button id="twin-reset-cam" class="btn btn-sm" style="background:#64748b; color:#fff;">⟲ Reset view</button>
+                <button id="twin-resolve" class="btn btn-sm" style="background:#0891b2; color:#fff;">🪄 Auto-resolve</button>
+            </div>
+            <!-- Row 2: colour-by selector -->
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <label style="font-size: 0.8rem; color: #64748b;">Colour by:</label>
+                <div id="twin-heatmap-group" class="twin-seg" role="group" aria-label="Colour systems by status or live telemetry">
+                    <button class="twin-seg-btn selected" role="radio" aria-checked="true" data-value="">Status</button>
+                    <button class="twin-seg-btn" role="radio" aria-checked="false" data-value="gpu_temp">🔥 GPU Temp</button>
+                    <button class="twin-seg-btn" role="radio" aria-checked="false" data-value="board_temp">🌡️ Board Temp</button>
+                    <button class="twin-seg-btn" role="radio" aria-checked="false" data-value="power">⚡ Power</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="padding: 0 16px 8px; color: #64748b; font-size: 0.82rem;">
+        Orbit: drag · Zoom: scroll · Pan: right-drag. Click a system to edit; select an
+        Unplaced system, then click an empty rack slot to seat it.
+    </div>
+
+    <div id="twin-stage" class="twin-stage">
+        <div id="twin-canvas"></div>
+
+        <div id="twin-hint" class="twin-overlay twin-hint">
+            Selected a system — click an empty rack slot to place it.
+        </div>
+
+        <div class="twin-overlay twin-unplaced">
+            <h4>Unplaced (<span id="twin-unplaced-count">0</span>)</h4>
+            <div id="twin-unplaced-list"></div>
+            <div id="twin-overflow-wrap" style="display:none; margin-top:10px;
+                 border-top:1px solid #334155; padding-top:8px;">
+                <h4 style="color:#f59e0b;">Overflow (<span id="twin-overflow-count">0</span>)
+                    <span style="font-weight:400; color:#94a3b8; font-size:0.72rem;">doesn't fit rack</span>
+                </h4>
+                <div id="twin-overflow-list"></div>
+            </div>
+        </div>
+
+        <div id="twin-status-legend" class="twin-overlay twin-legend">
+            <span><i class="twin-sw success"></i> Connected <strong id="twin-legend-ok">0</strong></span>
+            <span><i class="twin-sw error"></i> Unavailable <strong id="twin-legend-bad">0</strong></span>
+        </div>
+
+        <div id="twin-heat-legend" class="twin-overlay twin-legend" style="display:none;">
+            <span id="twin-heat-lo">–</span>
+            <span style="width:120px; height:11px; border-radius:3px; display:inline-block;
+                  background:linear-gradient(90deg,#1d4ed8,#16a34a,#eab308,#dc2626);"></span>
+            <span id="twin-heat-hi">–</span>
+            <span id="twin-heat-unit" style="color:#94a3b8;"></span>
+            <span id="twin-heat-nodata" style="color:#94a3b8;"></span>
+        </div>
+
+        <div id="twin-toast" class="twin-overlay" style="left: 50%; bottom: 14px; transform: translateX(-50%);
+             display: none; max-width: 420px; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem;
+             background: #1e293b; color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.35);"></div>
+
+        <div id="twin-empty" class="twin-empty">
+            <div style="font-size: 2rem;">🏗️</div>
+            <div>No systems placed in this hall yet.</div>
+            <div style="font-size: 0.8rem;">Use <strong>🪄 Auto-resolve</strong>, or select an Unplaced system and click a rack slot.</div>
+        </div>
+    </div>
+
+    <!-- No-WebGL fallback -->
+    <div id="twin-fallback" class="twin-fallback">
+        <p style="color:#b45309;">3D view unavailable (no WebGL). Showing a plain list.</p>
+        {% for hall in halls %}
+        <h3 style="font-size:0.95rem; margin:12px 0 4px;">🏛️ {{ hall.name }}</h3>
+        {% for row in hall.rows %}
+        <div style="font-size:0.8rem; color:#64748b; margin:6px 0 2px;">{{ row.name }}</div>
+        {% for rack in row.racks %}
+        <div style="margin:2px 0;"><strong>Rack {{ rack.name }}:</strong>
+            {% for s in rack.systems if s.start_u %}{{ s.name }} (U{{ s.start_u }}){% if not loop.last %}, {% endif %}{% endfor %}
+            {% if rack.overflow %}<span style="color:#b45309;"> · overflow:
+                {% for s in rack.overflow %}{{ s.name }}{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}
+        </div>
+        {% endfor %}{% endfor %}{% endfor %}
+        <h3 style="font-size:0.95rem; margin:12px 0 4px;">Unplaced ({{ unplaced|length }})</h3>
+        <div style="font-size:0.85rem; color:#475569;">
+            {% for s in unplaced %}{{ s.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+        </div>
+    </div>
+    <noscript><p style="padding:12px;">This view requires JavaScript.</p></noscript>
+</div>
+
+<div id="twin-tooltip"></div>
+
+<!-- Assignment modal -->
+<div id="twin-modal" class="twin-modal">
+    <div class="box">
+        <h3>Place system</h3>
+        <div class="sub" id="twin-m-sub"></div>
+        <input type="hidden" id="twin-m-id">
+        <div class="tf"><label>Rack</label><input type="text" id="twin-m-rack" placeholder="e.g. 05"></div>
+        <div class="tf2">
+            <div class="tf"><label>Hall</label><input type="text" id="twin-m-hall"></div>
+            <div class="tf"><label>Row</label><input type="text" id="twin-m-row"></div>
+        </div>
+        <div class="tf2">
+            <div class="tf"><label>Rack unit (U)</label><input type="number" id="twin-m-u" min="1" max="{{ rack_height }}"></div>
+            <div class="tf"><label>Height (U)</label><input type="number" id="twin-m-height" min="1" value="6"></div>
+        </div>
+        <div class="tf"><label>Rack-unit standard</label>
+            <select id="twin-m-unit">
+                <option value="EIA_310">EIA-310 (1.75")</option>
+                <option value="OpenU">OpenU (OCP 48mm)</option>
+            </select>
+        </div>
+        <div class="tfa">
+            <button id="twin-m-unplace" class="btn btn-sm" style="background:#fee2e2; color:#991b1b;">Unplace</button>
+            <div style="display:flex; gap:8px;">
+                <button id="twin-m-cancel" class="btn btn-sm" style="background:#e2e8f0;">Cancel</button>
+                <button id="twin-m-save" class="btn btn-primary btn-sm">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="twin-csrf" value="{{ csrf_token }}">
+<script id="twin-layout-data" type="application/json">{{ layout | tojson }}</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/vendor/three/three.module.min.js",
+    "three/addons/": "/static/vendor/three/addons/"
+  }
+}
+</script>
+<script type="module" src="/static/js/datahall_twin.js?v=13"></script>
+{% endblock %}

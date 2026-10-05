@@ -45,6 +45,21 @@ def test_to_numeric():
     assert d._to_numeric("x") is None
 
 
+def test_numeric_rejects_nan_inf():
+    # Non-finite values are not numeric and must not be converted (InfluxDB
+    # rejects NaN/Inf at write time).
+    d = _discovery()
+    assert d._is_numeric(float("nan")) is False
+    assert d._is_numeric(float("inf")) is False
+    assert d._is_numeric("NaN") is False
+    assert d._to_numeric(float("nan")) is None
+    assert d._to_numeric(float("-inf")) is None
+    assert d._to_numeric("inf") is None
+    # Oversized int OverflowErrors on float()/isfinite -> must degrade safely.
+    assert d._is_numeric(10**400) is False
+    assert d._to_numeric(10**400) is None
+
+
 def test_key_to_metric_name_sanitizes():
     d = _discovery()
     name = d._key_to_metric_name("GPU Temp (C)", "$.a.b")

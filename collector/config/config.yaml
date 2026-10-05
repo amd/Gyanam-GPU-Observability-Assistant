@@ -36,7 +36,7 @@ polling:
   error_retry_interval: 10
 
 redfish:
-  # Default AMD Instinct diagnostic data collection endpoint
+  # Default GPU UBB8 diagnostic data collection endpoint
   collect_endpoint: "/redfish/v1/Systems/UBB/LogServices/DiagLogs/Actions/LogService.CollectDiagnosticData"
   # Default request body for collection
   collect_body:
@@ -71,9 +71,8 @@ influxdb:
   bucket: gpu_metrics
   # Batch settings for writing metrics.
   # 5000 matches InfluxDB v2's recommended sweet spot. Larger batches
-  # (the previous 10000) increase per-write latency and amplify the cost
-  # of any single write timing out, which we observed in the lockup logs
-  # ("Can not write request body" mid-stream).
+  # increase per-write latency and amplify the cost of any single write
+  # timing out.
   batch_size: 5000
   flush_interval_seconds: 10
   # Write timeout in milliseconds (90s for high-scale deployments)
@@ -181,9 +180,120 @@ alerts:
   # Set to 0 to disable periodic re-pull (start-only).
   baseline_repull_interval_minutes: 60
 
-prometheus:
-  # Endpoint path for Prometheus scraping (only used when METRICS_BACKEND=prometheus)
-  metrics_path: /metrics
+location:
+  # Data-hall placement: rack geometry + how a system's physical location is
+  # decoded from its hostname. Placement is also read from the Redfish Chassis
+  # Location when the BMC exposes it (that takes precedence over the hostname),
+  # and can be set/corrected by hand from the Data Hall view.
+  #
+  # Rack height in rack units (U) used when rendering a rack. Default models an
+  # OCP Open Rack v3 frame (48 OpenU). OCP ORv3 reference: 600 mm external width,
+  # ~1200 mm depth, and an "OpenU" (OU) pitch of 48 mm (vs 44.45 mm for a 19"
+  # EIA-310 rack unit).
+  rack_height_u: 48
+  # GPUs per monitored system (GPU UBB = 8 OAMs). Drives the GPU total
+  # shown on the Systems page.
+  gpus_per_system: 8
+  # Default chassis height (rack units) when a system's height isn't encoded.
+  # 4U is a conservative single-system footprint; a BMC-reported chassis height
+  # or a hostname-encoded height takes precedence when available.
+  default_system_height_u: 4
+  # Rack-unit standard assumed when a source does not specify one:
+  # "OpenU" (OCP Open Rack, 48mm) or "EIA_310" (19" rack, 1.75in / 44.45mm).
+  default_unit_type: OpenU
+  # Optional full-name regexes with named capture groups
+  # (site, hall, row, rack, rack_u, height). Applied to the system NAME (and, as
+  # a fallback, the BMC host) after the domain suffix is stripped; tried before
+  # token_rules. Use these for positional schemes rather than prefix-tagged ones.
+  #
+  # Site scheme: the last two tokens are the rack and the trailing numeric slot;
+  # everything before them forms the data-hall name. This handles a variable
+  # number of leading tokens (cluster / region / site) uniformly. A cluster may
+  # span multiple data halls; each distinct hall becomes a selectable hall in the
+  # Data Hall View. Add more patterns for other naming formats.
+  name_patterns:
+    - '^(?P<hall>.+)-(?P<rack>[^-]+)-(?P<rack_u>\d+)$'
+  # Ordered (field, single-token regex) rules. The host is split on - _ . and
+  # each token is matched; the first rule claiming a still-unset field wins.
+  # Unknown tokens are ignored and partial placements are kept. Tailor these to
+  # your naming convention; reorder if a prefix means something different at
+  # your site (e.g. r<n> here means rack).
+  token_rules:
+    - {field: hall, pattern: "dh(\\d+)"}
+    - {field: hall, pattern: "hall(\\d+)"}
+    - {field: row, pattern: "row(\\d+)"}
+    - {field: rack, pattern: "rack(\\d+)"}
+    - {field: rack, pattern: "r(\\d+)"}
+    - {field: rack, pattern: "k(\\d+)"}
+    - {field: rack_u, pattern: "ru(\\d+)"}
+    - {field: rack_u, pattern: "u(\\d+)"}
+
+inventory:
+  # Background enrichment: once per system (and on a staleness interval), read
+  # basic inventory + location + chassis height from the BMC via standard
+  # Redfish GETs (Chassis/Systems/Managers). Surfaced in the Data Hall tooltip.
+  enabled: true
+  # How often the enricher loop looks for systems needing inventory (seconds).
+  collect_interval_seconds: 300
+  # Re-pull a system's inventory once it's older than this many hours.
+  # Set to 0 to pull exactly once per system and never refresh.
+  refresh_interval_hours: 24
+  # Max concurrent BMC inventory fetches.
+  max_concurrent: 8
+  # Per-request timeout for inventory GETs (seconds).
+  request_timeout: 30
+  # Skip pre-aggregated statistical MetricReports (Avg/Min/Max over Hour/Day/Week)
+  # during discovery — GYANAM downsamples itself, so polling them just adds GETs.
+  # Pin one via a per-target metric-report override if you need it.
+  discovery_exclude_aggregate_reports: true
+
+sharding:
+  # Horizontal sharding across multiple collector processes. The shipped
+  # docker-compose enables this (COLLECTOR_SHARDING=true) and runs 3 collector
+  # replicas by default — sized for fleets up to ~500 targets (3 x 200 cap).
+  # This library-level default stays false so a single standalone collector
+  # (run outside compose) owns every target without touching the lease table.
+  # Scale the replica count with `docker compose up -d --scale collector=N`;
+  # targets rebalance across shards automatically, each capped at
+  # max_targets_per_shard.
+  enabled: false
+  # Assignment strategy (override via COLLECTOR_BALANCE):
+  #   dynamic — Rendezvous (HRW) hashing: targets balanced across live collectors
+  #     to within +/-1, self-rebalancing with minimal movement as replicas join or
+  #     leave. The recommended default; replicas self-assign a stable collector-<n>
+  #     id under `--scale` (no COLLECTOR_ID needed).
+  #   static  — greedy id-order claiming up to max_targets_per_shard (fills
+  #     replicas in turn; one may sit idle). Proven fallback.
+  balance: dynamic
+  # Max targets one collector will own. In dynamic mode this is a SAFETY CEILING —
+  # the real per-pass bound is the fair share ceil(enabled / live_collectors); in
+  # static mode it is the claim cap. 200 covers a ~500-target fleet across 3
+  # replicas with headroom (3 x 200 = 600).
+  max_targets_per_shard: 200
+  # Seconds between lease renew/claim passes.
+  claim_interval_seconds: 20
+  # A lease unheartbeated for this long (owner died) is reclaimable by a peer.
+  lease_ttl_seconds: 75
+  # Dynamic mode: a collector is "live" (counted in the fair-share denominator) if
+  # its stats row is fresher than this. Keep >= 2x claim_interval and <= lease_ttl.
+  membership_ttl_seconds: 75
+
+policy:
+  # Automated diagnostic-log collection on a fatal/critical event, exposed
+  # read-only as a Redfish PolicyService at /redfish/v1/PolicyService.
+  enabled: true
+  # Disabled | AlertOnly (evaluate + log, don't collect) | Enabled (collect).
+  operating_mode: Enabled
+  # Per-target hysteresis: minimum seconds between policy-triggered collections
+  # for the same target, so an event storm can't drive a tight collection loop.
+  # Default 2 hours.
+  rearm_seconds: 7200
+  # Event severities that fire the policy (case-insensitive).
+  trigger_severities:
+    - Critical
+    - Fatal
+  # Optional allow-list of Redfish MessageIds; empty = any at the above severity.
+  trigger_message_ids: []
 
 logging:
   level: INFO

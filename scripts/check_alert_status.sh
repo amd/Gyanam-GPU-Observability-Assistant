@@ -47,7 +47,3 @@ except Exception as e:
 echo
 echo "=== Recent SSE/Alert Logs ===="
 docker compose logs collector --tail=50 2>&1 | grep -iE "sse|alert.*subscri|degraded|failed" | tail -20
-
-echo
-echo "=== Prometheus Metrics ===="
-docker compose exec api curl -s http://localhost:8080/metrics 2>/dev/null | grep "gyanam_alert"

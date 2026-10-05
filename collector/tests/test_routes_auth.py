@@ -17,8 +17,10 @@ async def test_html_route_redirects_when_unauthenticated(noauth_client):
 
 
 async def test_authenticated_index_ok(client):
-    r = await client.get("/")
-    assert r.status_code == 200
+    # The index redirects authed users to the canonical Systems page.
+    r = await client.get("/", follow_redirects=False)
+    assert r.status_code in (302, 303, 307)
+    assert r.headers.get("location") == "/systems"
 
 
 async def test_login_page_public(noauth_client):

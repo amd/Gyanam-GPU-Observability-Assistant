@@ -20,9 +20,19 @@
 """API route modules."""
 
 from .alerts import router as alerts_router
+from .datahall import router as datahall_router
 from .health import router as health_router
 from .logs import router as logs_router
+from .redfish import router as redfish_router
 from .schemas import router as schemas_router
 from .targets import router as targets_router
 
-__all__ = ["targets_router", "schemas_router", "health_router", "logs_router", "alerts_router"]
+__all__ = [
+    "targets_router",
+    "datahall_router",
+    "schemas_router",
+    "health_router",
+    "logs_router",
+    "alerts_router",
+    "redfish_router",
+]

@@ -114,7 +114,8 @@ async def test_process_webhook_event_enqueues():
             return [_alert(), _alert()]
 
     mgr._webhook_subscribers[1] = _Stub()
-    await mgr.process_webhook_event(1, {"Events": []})
+    # Context must match (a missing/mismatched Context is now rejected).
+    await mgr.process_webhook_event(1, {"Context": "target_1", "Events": []})
     assert mgr._alert_queue.qsize() == 2
 
 

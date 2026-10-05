@@ -32,6 +32,8 @@ from enum import Enum
 
 import httpx
 
+from .http_client import make_bmc_client
+
 logger = logging.getLogger(__name__)
 
 # Read-timeout (seconds) for the SSE stream. Must exceed the BMC's keepalive
@@ -364,8 +366,6 @@ class AlertSubscriber:
 
                 # Use exponential backoff schedule
                 backoff_delay = self._calculate_backoff_delay()
-                from datetime import timedelta
-
                 self._next_retry_time = datetime.now(UTC) + timedelta(seconds=backoff_delay)
                 logger.info(
                     f"Reconnecting to {self.target_name} in {backoff_delay}s "
@@ -383,12 +383,14 @@ class AlertSubscriber:
         # reconnects instead of parking forever reporting CONNECTED. Each line
         # (incl. SSE keepalive comments) resets the read clock, so a healthy
         # stream that sends periodic keepalives stays up; only a truly stalled
-        # one trips it. read=None (no timeout) was the prior silent-hang bug.
-        timeout = httpx.Timeout(30.0, read=SSE_READ_TIMEOUT_SECONDS)
-
+        # one trips it. An unbounded read (read=None) could otherwise hang
+        # indefinitely on a half-open connection.
         async with (
-            httpx.AsyncClient(
-                auth=auth, verify=self.verify_ssl, timeout=timeout, follow_redirects=True
+            make_bmc_client(
+                verify_ssl=self.verify_ssl,
+                timeout=30.0,
+                read_timeout=SSE_READ_TIMEOUT_SECONDS,
+                auth=auth,
             ) as client,
             client.stream("GET", url) as response,
         ):
@@ -417,8 +419,6 @@ class AlertSubscriber:
             self._state = SubscriptionState.CONNECTED
 
             # Track connection time and events to detect bad endpoints
-            from datetime import UTC, datetime
-
             connect_time = datetime.now(UTC)
             event_count = 0
             # SSE framing: a single event may span multiple ``data:`` lines that
@@ -460,8 +460,13 @@ class AlertSubscriber:
                     continue
 
                 if line.startswith(":"):
-                    # SSE keep-alive comment - reset the stall timer.
-                    connect_time = datetime.now(UTC)
+                    # SSE keep-alive comment (": ..."). The stream is alive — just
+                    # skip it. Do NOT reset connect_time: that timestamp anchors the
+                    # "closed too fast after connect" invalid-endpoint check below.
+                    # Resetting it on every keep-alive made a healthy-but-quiet
+                    # stream (keep-alives, no events yet) look like it had just
+                    # connected, so on any reconnect `elapsed < 30` tripped and the
+                    # target was wrongly marked FAILED_PERMANENT for hours.
                     continue
 
                 # Field line "name: value" (value has one optional leading space).

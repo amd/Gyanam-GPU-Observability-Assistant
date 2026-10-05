@@ -164,29 +164,3 @@ class RedfishLogParser:
         except json.JSONDecodeError:
             # Fall back to returning everything we collected
             return text
-
-    def save_extracted_json(self, log_path: Path, output_path: Path) -> bool:
-        """Parse log and save extracted JSON to a file.
-
-        Args:
-            log_path: Path to redfish-tree.log
-            output_path: Where to save the extracted JSON
-
-        Returns:
-            True if successful, False otherwise
-        """
-        data = self.parse_file(log_path)
-
-        if data is None:
-            return False
-
-        try:
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-
-            logger.info(f"Saved extracted JSON to {output_path}")
-            return True
-
-        except OSError as e:
-            logger.error(f"Failed to write JSON to {output_path}: {e}")
-            return False

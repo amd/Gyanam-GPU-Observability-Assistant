@@ -22,7 +22,7 @@
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
 from ..auth import get_current_user
@@ -37,26 +37,42 @@ router = APIRouter()
 # ---- JSON API ----
 
 
-@router.get("/api", summary="List all collected logs")
-async def list_logs_api(user: str = Depends(get_current_user)):
-    """Get all collected log records."""
+# Default page size for the collected-logs listing. Sized to show a full fleet
+# at a glance (the app targets up to ~500 nodes and keeps one latest bundle per
+# node), while the repository still caps any single page at MAX_LOG_PAGE_SIZE.
+_LOGS_PAGE_SIZE = 500
+
+
+@router.get("/api", summary="List collected logs (paginated)")
+async def list_logs_api(
+    user: str = Depends(get_current_user),
+    limit: int = Query(_LOGS_PAGE_SIZE, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+):
+    """Get a page of collected log records, newest first."""
     repository = get_repository()
-    logs = await repository.get_all_collected_logs()
-    return [
-        {
-            "id": log.id,
-            "target_id": log.target_id,
-            "target_name": log.target_name,
-            "target_host": log.target_host,
-            "filename": log.filename,
-            "file_size_bytes": log.file_size_bytes,
-            "status": log.status,
-            "error_message": log.error_message,
-            "duration_ms": log.duration_ms,
-            "collected_at": log.collected_at.isoformat() if log.collected_at else None,
-        }
-        for log in logs
-    ]
+    total = await repository.count_collected_logs()
+    logs = await repository.get_all_collected_logs(limit=limit, offset=offset)
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "logs": [
+            {
+                "id": log.id,
+                "target_id": log.target_id,
+                "target_name": log.target_name,
+                "target_host": log.target_host,
+                "filename": log.filename,
+                "file_size_bytes": log.file_size_bytes,
+                "status": log.status,
+                "error_message": log.error_message,
+                "duration_ms": log.duration_ms,
+                "collected_at": log.collected_at.isoformat() if log.collected_at else None,
+            }
+            for log in logs
+        ],
+    }
 
 
 @router.post("/api/{target_id}/collect", summary="Collect logs from a target")
@@ -142,10 +158,15 @@ async def delete_log_api(
 
 
 @router.get("", response_class=HTMLResponse)
-async def logs_page(request: Request, user: str = Depends(get_current_user)):
-    """Render the collected logs page."""
+async def logs_page(
+    request: Request,
+    user: str = Depends(get_current_user),
+    offset: int = Query(0, ge=0),
+):
+    """Render the collected logs page (most-recent page first)."""
     repository = get_repository()
-    logs = await repository.get_all_collected_logs()
+    total = await repository.count_collected_logs()
+    logs = await repository.get_all_collected_logs(limit=_LOGS_PAGE_SIZE, offset=offset)
     templates = request.app.state.templates
     return templates.TemplateResponse(
         request=request,
@@ -154,6 +175,13 @@ async def logs_page(request: Request, user: str = Depends(get_current_user)):
             "logs": logs,
             "user": user,
             "csrf_token": generate_csrf_token(),
+            "total": total,
+            "offset": offset,
+            "page_size": _LOGS_PAGE_SIZE,
+            "has_prev": offset > 0,
+            "has_next": offset + _LOGS_PAGE_SIZE < total,
+            "prev_offset": max(0, offset - _LOGS_PAGE_SIZE),
+            "next_offset": offset + _LOGS_PAGE_SIZE,
         },
     )
 

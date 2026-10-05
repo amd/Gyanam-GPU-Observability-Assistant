@@ -80,6 +80,42 @@ async def test_create_conflict_finds_existing(httpx_mock):
     assert s.subscription_id == "9"
 
 
+async def test_reconcile_by_context_adopts_matching(httpx_mock):
+    s = _sub()
+    # BMC already has a subscription for this target pointing at OUR address.
+    httpx_mock.add_response(
+        method="GET",
+        url=SUBS_URL,
+        json={"Members": [{"@odata.id": "/redfish/v1/EventService/Subscriptions/9"}]},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{SUBS_URL}/9",
+        json={"Context": "target_1", "Destination": s.webhook_url},
+    )
+    assert await s._reconcile_by_context() is True
+    assert s.subscription_id == "9"
+
+
+async def test_reconcile_by_context_deletes_orphan(httpx_mock):
+    s = _sub()
+    # A subscription tagged for this target but pointing at a DEAD collector.
+    httpx_mock.add_response(
+        method="GET",
+        url=SUBS_URL,
+        json={"Members": [{"@odata.id": "/redfish/v1/EventService/Subscriptions/5"}]},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{SUBS_URL}/5",
+        json={"Context": "target_1", "Destination": "http://dead-collector:8081/redfish-webhook/1"},
+    )
+    httpx_mock.add_response(method="DELETE", url=f"{SUBS_URL}/5", status_code=204)
+    # Not adopted (returns False) but the orphan was deleted.
+    assert await s._reconcile_by_context() is False
+    assert s.subscription_id is None
+
+
 async def test_delete_subscription(httpx_mock):
     s = _sub()
     s._subscription_url = f"{SUBS_URL}/7"
@@ -111,3 +147,50 @@ def test_parse_webhook_event_filters_and_args():
     alerts = s.parse_webhook_event(events)
     assert len(alerts) == 1
     assert alerts[0].severity == "Critical"
+
+
+# ---- parse_webhook_event (pure) ----
+
+
+def test_parse_webhook_events_list():
+    sub = _sub()
+    alerts = sub.parse_webhook_event(
+        {
+            "Events": [
+                {
+                    "Severity": "Critical",
+                    "Message": "a",
+                    "MessageId": "M1",
+                    "OriginOfCondition": {"@odata.id": "/redfish/x"},
+                },
+                {"Severity": "Warning", "Message": "b", "EventTimestamp": "2026-04-22T10:30:00Z"},
+            ]
+        }
+    )
+    assert len(alerts) == 2
+    assert alerts[0].origin_of_condition == "/redfish/x"
+    assert alerts[0].event_type == "Alert"  # absent -> default
+    assert alerts[1].event_timestamp is not None
+
+
+def test_parse_webhook_bare_single_event():
+    sub = _sub()
+    alerts = sub.parse_webhook_event(
+        {
+            "Severity": "Critical",
+            "Message": "hot",
+            "MessageId": "M2",
+            "OriginOfCondition": "/redfish/y",
+        }
+    )
+    assert len(alerts) == 1 and alerts[0].origin_of_condition == "/redfish/y"
+
+
+def test_parse_webhook_drops_disallowed_severity():
+    sub = _sub()  # defaults to Critical/Warning
+    alerts = sub.parse_webhook_event({"Events": [{"Severity": "OK", "Message": "fine"}]})
+    assert alerts == []
+
+
+def test_parse_webhook_empty_payload():
+    assert _sub().parse_webhook_event({}) == []

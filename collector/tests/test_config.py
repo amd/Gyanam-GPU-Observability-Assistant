@@ -2,7 +2,36 @@
 # SPDX-License-Identifier: MIT
 """Tests for configuration loading and env overrides."""
 
+import pytest
 from src.config import AppConfig, load_config, load_yaml_config
+
+
+def test_ui_password_env_overrides_hash(monkeypatch):
+    from src.api.auth import verify_password
+
+    monkeypatch.setenv("UI_PASSWORD", "Sup3r-Secret!")
+    monkeypatch.setenv("UI_USERNAME", "operator")
+    app_config, _ = load_config()
+    assert app_config.ui.auth.username == "operator"
+    # The env password is bcrypt-hashed and verifies; it's no longer the default.
+    assert verify_password("Sup3r-Secret!", app_config.ui.auth.password_hash)
+    assert not verify_password("changeme", app_config.ui.auth.password_hash)
+
+
+def test_unresolved_env_var_in_config_raises(tmp_path, monkeypatch):
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text("influxdb:\n  url: ${DEFINITELY_UNSET_VAR}\n")
+    monkeypatch.delenv("DEFINITELY_UNSET_VAR", raising=False)
+    with pytest.raises(ValueError, match="Unresolved environment variable"):
+        load_yaml_config(str(cfg))
+
+
+def test_resolved_env_var_in_config_ok(tmp_path, monkeypatch):
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text("influxdb:\n  url: ${SOME_SET_VAR}\n")
+    monkeypatch.setenv("SOME_SET_VAR", "http://h:8086")
+    data = load_yaml_config(str(cfg))
+    assert data["influxdb"]["url"] == "http://h:8086"
 
 
 def test_alerts_defaults():

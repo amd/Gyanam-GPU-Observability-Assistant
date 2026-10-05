@@ -17,6 +17,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""GPU Metrics Collector - Collects AMD Instinct GPU telemetry via Redfish API."""
+"""GPU Metrics Collector - Collects GPU UBB8 telemetry via Redfish API."""
 
 __version__ = "0.1.0"

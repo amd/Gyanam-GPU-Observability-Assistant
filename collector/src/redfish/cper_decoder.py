@@ -39,6 +39,7 @@ import tempfile
 import httpx
 
 from . import amd_cper_sections as amd_cper
+from .http_client import make_bmc_client
 
 logger = logging.getLogger(__name__)
 
@@ -69,12 +70,24 @@ async def fetch_cper_attachment(
     """
     url = f"{base_url}{uri}" if uri.startswith("/") else uri
     auth = httpx.BasicAuth(username, password)
-    async with httpx.AsyncClient(
-        auth=auth, verify=verify_ssl, timeout=timeout, follow_redirects=True
-    ) as client:
+    async with make_bmc_client(auth=auth, verify_ssl=verify_ssl, timeout=timeout) as client:
         resp = await client.get(url, headers={"Accept": "application/octet-stream, */*"})
         if resp.status_code in (404, 410):
             raise CperGoneError(f"attachment {uri} returned HTTP {resp.status_code}")
+        if resp.status_code >= 400:
+            # Surface the BMC's error body (truncated) — a bare "HTTP 400" gives
+            # operators nothing to act on. Some BMCs reject the attachment GET
+            # (wrong Accept, needs a session token, redirect dropped auth, etc.);
+            # logging the reason is the only way to diagnose per-fleet quirks.
+            body_preview = ""
+            with contextlib.suppress(Exception):
+                body_preview = resp.text[:300]
+            logger.warning(
+                "CPER attachment %s returned HTTP %s: %s",
+                uri,
+                resp.status_code,
+                body_preview,
+            )
         resp.raise_for_status()
         data = resp.content
         if len(data) > max_bytes:
@@ -124,6 +137,14 @@ async def decode_cper(
             await proc.wait()
             logger.warning("CPER decode timed out after %.0fs", timeout)
             return None
+        except BaseException:
+            # Worker cancelled (or any error) mid-decode: kill the child so it is
+            # not orphaned when its input temp file is unlinked below, then re-raise.
+            with contextlib.suppress(ProcessLookupError):
+                proc.kill()
+            with contextlib.suppress(Exception):
+                await proc.wait()
+            raise
 
         if proc.returncode != 0:
             logger.warning(

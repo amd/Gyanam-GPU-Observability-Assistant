@@ -21,7 +21,8 @@ on:
 jobs:
   analyze:
     name: Analyze (python)
-    runs-on: ubuntu-latest
+    # Pinned (ubuntu-latest migrates to Ubuntu 26 on 2026-10-19); bump when ready.
+    runs-on: ubuntu-24.04
     permissions:
       security-events: write   # upload SARIF to the Security tab
       actions: read
@@ -29,10 +30,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5   # v5 runs on Node 24 (v4 forced off deprecated Node 20)
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4   # v3 deprecated Dec 2026
         with:
           languages: python
           config-file: ./.github/codeql/codeql-config.yml
@@ -40,6 +41,6 @@ jobs:
       # Python is interpreted — no build step needed. If a compiled language
       # is added later, insert an autobuild (or manual build) step here.
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:python"

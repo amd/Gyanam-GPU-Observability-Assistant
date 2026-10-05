@@ -19,22 +19,24 @@
 # SOFTWARE.
 """Alert management endpoints."""
 
+import logging
 from datetime import UTC, datetime, timedelta
 from math import ceil
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 
 from ...config import get_config
 from ..auth import get_current_user
+from ..collector_client import get_json
 from ..csrf import generate_csrf_token
 from ..dependencies import get_repository
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
-# Collector service alert manager stats endpoint (internal docker network)
-COLLECTOR_ALERT_STATS_URL = "http://collector:8081/alerts/manager-stats"
+# Collector service alert manager stats path (internal docker network).
+COLLECTOR_ALERT_STATS_PATH = "/alerts/manager-stats"
 
 
 def _iso_utc(dt: datetime | None) -> str | None:
@@ -153,17 +155,109 @@ async def get_alert_stats_api(user: str = Depends(get_current_user)):
 
 @router.get("/api/manager-stats", summary="Get alert manager stats")
 async def get_manager_stats_api(user: str = Depends(get_current_user)):
-    """Get alert manager runtime statistics from collector service."""
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(COLLECTOR_ALERT_STATS_URL)
-            if response.status_code == 200:
-                return response.json()
-    except Exception:
-        # Collector unreachable / stats query failed — UI should still load
-        # with the "alerts disabled" state rather than throwing 500.
-        pass
+    """Get alert manager runtime statistics, aggregated across all shards.
+
+    Prefers the shared-DB aggregate (correct under ``--scale collector=N``);
+    falls back to the single-collector HTTP proxy before any collector has
+    published. Collector unreachable / non-200 -> the UI still loads with the
+    "alerts disabled" state rather than throwing 500.
+    """
+    repository = get_repository()
+    stats = await _aggregate_collector_stats(repository)
+    if stats is None:
+        stats = await get_json(COLLECTOR_ALERT_STATS_PATH, timeout=5.0)
+    if stats is not None:
+        return stats
     return {"enabled": False}
+
+
+async def _aggregate_collector_stats(repository) -> dict | None:
+    """Merge every live collector's stats into one fleet view.
+
+    With sharding each collector owns a disjoint slice, so subscriber/retry lists
+    concatenate and counters sum. Returns None when no collector has published yet,
+    or when the control DB is unreachable — in both cases the caller falls back to
+    the single-collector HTTP proxy / empty state rather than 500ing the alerts UI.
+    """
+    try:
+        rows = await repository.get_collector_stats()
+    except Exception as e:  # noqa: BLE001 — a DB blip must degrade, not 500 the UI
+        logger.warning("Collector-stats aggregation failed (%s); falling back", e)
+        return None
+    if not rows:
+        return None
+
+    # Process rows oldest-first so that, during a lease handoff where two
+    # collectors transiently report the same target, the newest owner's entry
+    # wins the per-target dedup.
+    rows = sorted(rows, key=lambda r: r.get("updated_at") or "")
+
+    # Per-target dedup: one subscriber / retry / failed entry per target_id,
+    # regardless of how many shards momentarily claim it. Subscription counts
+    # are then DERIVED from the deduped sets rather than summed across shards,
+    # so the handoff window can't inflate them.
+    subscribers_by_tid: dict = {}
+    retries_by_tid: dict = {}
+    failed_targets: dict = {}
+
+    # True cumulative counters: each is produced once per collector (an alert is
+    # received/written/dropped by whichever collector owns the target; CPER and
+    # baseline counters are per-collector work), so summing across shards does not
+    # double-count.
+    cumulative = (
+        "alerts_received",
+        "alerts_written",
+        "alerts_dropped",
+        "queue_size",
+        "cper_decoded",
+        "cper_failed",
+        "alerts_baseline_pulled",
+        "baseline_jobs_active",
+    )
+    sums = dict.fromkeys(cumulative, 0)
+    # cper_backlog is a per-status dict; merge by summing each status across shards.
+    backlog: dict = {}
+
+    enabled = False
+    for r in rows:
+        if "alerts_received" in r:
+            enabled = True
+        for sub in r.get("subscribers", []):
+            tid = sub.get("target_id")
+            subscribers_by_tid[tid] = sub  # newest wins (rows sorted ascending)
+        for ret in r.get("permanent_failure_retries", []):
+            retries_by_tid[ret.get("target_id") if isinstance(ret, dict) else ret] = ret
+        for tgt in r.get("permanently_failed_targets", []):
+            failed_targets[tgt] = tgt
+        for k in cumulative:
+            sums[k] += r.get(k) or 0
+        for status, count in (r.get("cper_backlog") or {}).items():
+            backlog[status] = backlog.get(status, 0) + (count or 0)
+
+    subscribers = list(subscribers_by_tid.values())
+    merged: dict = {
+        "subscribers": subscribers,
+        "permanent_failure_retries": list(retries_by_tid.values()),
+        "permanently_failed_targets": list(failed_targets.values()),
+        "active_subscriptions": len(subscribers),
+        "sse_subscriptions": sum(1 for s in subscribers if s.get("subscription_type") == "sse"),
+        "webhook_subscriptions": sum(
+            1 for s in subscribers if s.get("subscription_type") == "webhook"
+        ),
+        "permanently_failed": len(failed_targets),
+        "cper_backlog": backlog,
+        **sums,
+    }
+    if not enabled:
+        # No collector has published real alert data yet — e.g. only the initial
+        # membership row (published before the alert stats task's first run), or
+        # alerts genuinely disabled. Return None so the caller falls back to the
+        # single-collector HTTP proxy, which reports the true state, instead of
+        # showing "alerts disabled" during the startup window.
+        return None
+    merged["enabled"] = enabled
+    merged["collector_count"] = len(rows)
+    return merged
 
 
 @router.get("/api/subscription-status", summary="Get detailed subscription status")
@@ -171,17 +265,12 @@ async def get_subscription_status_api(user: str = Depends(get_current_user)):
     """Get detailed alert subscription status per target with alert counts."""
     repository = get_repository()
 
-    # Get manager stats from collector service
-    manager_stats = None
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(COLLECTOR_ALERT_STATS_URL)
-            if response.status_code == 200:
-                manager_stats = response.json()
-    except Exception:
-        # Collector unreachable — fall through and return an empty-state
-        # response below; the UI handles missing stats gracefully.
-        pass
+    # Prefer the shared-DB aggregate (works across N sharded collectors); fall
+    # back to the single-collector HTTP proxy before any collector has published.
+    # On any error the helper returns None and the empty-state response is used.
+    manager_stats = await _aggregate_collector_stats(repository)
+    if manager_stats is None:
+        manager_stats = await get_json(COLLECTOR_ALERT_STATS_PATH, timeout=5.0)
 
     if not manager_stats or not manager_stats.get("enabled"):
         return {
@@ -346,22 +435,34 @@ async def alerts_page(
     # docs/SCALABILITY.md). Severity breakdown is computed within the same
     # window+filters as the list so the header counts match "of N".
     base: dict = {"since": since, "target_id": tid, "search": q or None}
-    # One grouped count instead of one COUNT per severity.
-    by_sev = await repository.count_alerts_grouped_by_severity(**base)
-    window_critical = by_sev.get("Critical", 0)
-    window_warning = by_sev.get("Warning", 0)
+    # Guard the alert-store (Postgres) reads so a DB outage renders an empty page
+    # with a banner rather than 500ing the whole alerts UI.
+    alert_store_error = False
+    try:
+        # One grouped count instead of one COUNT per severity.
+        by_sev = await repository.count_alerts_grouped_by_severity(**base)
+        window_critical = by_sev.get("Critical", 0)
+        window_warning = by_sev.get("Warning", 0)
 
-    if severity in ("Critical", "Warning"):
-        filters = {**base, "severity": severity}
-        total = window_critical if severity == "Critical" else window_warning
-    else:
-        filters = {**base, "severity_in": ["Critical", "Warning"]}
-        total = window_critical + window_warning
+        if severity in ("Critical", "Warning"):
+            filters = {**base, "severity": severity}
+            total = window_critical if severity == "Critical" else window_warning
+        else:
+            filters = {**base, "severity_in": ["Critical", "Warning"]}
+            total = window_critical + window_warning
 
-    total_pages = max(1, ceil(total / PAGE_SIZE)) if total else 1
-    page = min(page, total_pages)
-    offset = (page - 1) * PAGE_SIZE
-    alerts = await repository.get_alerts(**filters, limit=PAGE_SIZE, offset=offset)
+        total_pages = max(1, ceil(total / PAGE_SIZE)) if total else 1
+        page = min(page, total_pages)
+        offset = (page - 1) * PAGE_SIZE
+        alerts = await repository.get_alerts(**filters, limit=PAGE_SIZE, offset=offset)
+    except Exception as e:  # noqa: BLE001 — degrade the page, don't 500 on a DB blip
+        logger.warning("Alert store unavailable; rendering empty alerts page: %s", e)
+        window_critical = window_warning = total = 0
+        total_pages = 1
+        page = 1
+        offset = 0
+        alerts = []
+        alert_store_error = True
 
     targets = await repository.get_all_targets(enabled_only=False)
     configured_severities = config.alerts.severities if config.alerts.enabled else []
@@ -389,5 +490,6 @@ async def alerts_page(
             "f_severity": severity or "",
             "f_target_id": str(tid) if tid is not None else "",
             "f_q": q or "",
+            "alert_store_error": alert_store_error,
         },
     )

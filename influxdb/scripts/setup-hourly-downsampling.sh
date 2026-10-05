@@ -29,6 +29,7 @@ echo "Creating bucket: ${HOURLY_BUCKET} (retention: ${HOURLY_RETENTION})"
 influx bucket create \
     --host "${INFLUX_HOST}" \
     --token "${INFLUX_TOKEN}" \
+    --org "${INFLUX_ORG}" \
     --name "${HOURLY_BUCKET}" \
     --retention "${HOURLY_RETENTION}" \
     2>/dev/null || echo "  Bucket already exists, skipping."
@@ -41,6 +42,7 @@ echo "Creating task: ${TASK_NAME}"
 EXISTING_TASK_ID=$(influx task list \
     --host "${INFLUX_HOST}" \
     --token "${INFLUX_TOKEN}" \
+    --org "${INFLUX_ORG}" \
     2>/dev/null | grep "${TASK_NAME}" | awk '{print $1}')
 
 if [ -n "${EXISTING_TASK_ID}" ]; then
@@ -88,6 +90,7 @@ echo "  Flux task written to ${TASK_FILE}"
 if influx task create \
     --host "${INFLUX_HOST}" \
     --token "${INFLUX_TOKEN}" \
+    --org "${INFLUX_ORG}" \
     --file "${TASK_FILE}"; then
     rm -f "${TASK_FILE}"
 else

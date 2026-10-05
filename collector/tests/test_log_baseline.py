@@ -137,3 +137,42 @@ def test_extract_origin_variants():
     assert _extract_origin({"OriginOfCondition": "/y/2"}) == "/y/2"
     assert _extract_origin({"Links": {"OriginOfCondition": {"@odata.id": "/z/3"}}}) == "/z/3"
     assert _extract_origin({}) is None
+
+
+# ---- pure helpers ----
+
+from src.redfish.log_baseline import (  # noqa: E402
+    _abs,
+    _naive_utc,
+    order_members_newest_first,
+)
+
+
+def test_abs_resolves():
+    assert _abs("https://bmc/", "/redfish/v1/x") == "https://bmc/redfish/v1/x"
+    assert _abs("https://bmc", "https://other/y") == "https://other/y"
+    assert _abs("https://bmc", "") == ""
+
+
+def test_order_members_newest_first_by_created():
+    members = [
+        {"@odata.id": "/e/1", "Created": "2026-01-01T00:00:00Z"},
+        {"@odata.id": "/e/2", "Created": "2026-06-01T00:00:00Z"},
+        {"@odata.id": "/e/3", "Created": "2026-03-01T00:00:00Z"},
+    ]
+    out = order_members_newest_first(members, max_entries=2)
+    assert [m["@odata.id"] for m in out] == ["/e/2", "/e/3"]  # newest 2
+
+
+def test_order_members_newest_first_by_numeric_id():
+    members = [{"@odata.id": "/e/10"}, {"@odata.id": "/e/2"}, {"@odata.id": "/e/40"}]
+    out = order_members_newest_first(members, max_entries=3)
+    assert [m["@odata.id"] for m in out] == ["/e/40", "/e/10", "/e/2"]
+
+
+def test_naive_utc_coerces():
+    aware = datetime.now(UTC)  # tz-aware
+    assert _naive_utc(aware).tzinfo is None
+    naive = datetime(2026, 4, 1, 12, 0)  # already naive
+    assert _naive_utc(naive) == naive
+    assert _naive_utc(None) is None

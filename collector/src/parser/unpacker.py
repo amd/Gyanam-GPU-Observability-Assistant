@@ -40,6 +40,15 @@ class ExtractedFile:
     path: Path
     original_name: str
     size: int
+    # Report-type tag applied to the metrics extracted from this file. Derived
+    # from the filename when not given. (The task-based extraction path in
+    # collector_main tags metrics with this; a missing value previously raised
+    # AttributeError and silently dropped every task-collected metric.)
+    report_type: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.report_type:
+            self.report_type = Path(self.original_name).stem or "telemetry"
 
 
 class BlobUnpacker:

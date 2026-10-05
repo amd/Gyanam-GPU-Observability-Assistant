@@ -24,6 +24,7 @@ as a fallback for BMCs with broken or missing SSE support.
 """
 
 import logging
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
@@ -36,6 +37,7 @@ from .alert_subscriber import (
     parse_redfish_timestamp,
     severity_allowed,
 )
+from .http_client import make_bmc_client
 
 logger = logging.getLogger(__name__)
 
@@ -122,9 +124,9 @@ class WebhookSubscriber:
         # subscription_payload["EventFormatType"] = "Event"
 
         try:
-            async with httpx.AsyncClient(
+            async with make_bmc_client(
                 auth=httpx.BasicAuth(self.username, self.password),
-                verify=self.verify_ssl,
+                verify_ssl=self.verify_ssl,
                 timeout=30.0,
             ) as client:
                 response = await client.post(
@@ -242,12 +244,74 @@ class WebhookSubscriber:
                 error_message=f"{type(e).__name__}: {str(e)[:100]}",
             )
 
+    async def _reconcile_by_context(self) -> bool:
+        """Reconcile BMC subscriptions for this target, matched by our Context.
+
+        Deletes subscriptions tagged ``target_{id}`` that point at a different
+        destination (orphans left by a crashed/relocated collector) and adopts
+        one that already points at our destination.
+
+        Returns True if an existing subscription with our destination was adopted
+        (so the caller can skip creating a duplicate); False otherwise.
+        """
+        context = f"target_{self.target_id}"
+        try:
+            async with make_bmc_client(
+                auth=httpx.BasicAuth(self.username, self.password),
+                verify_ssl=self.verify_ssl,
+                timeout=10.0,
+            ) as client:
+                resp = await client.get(f"{self.base_url}/redfish/v1/EventService/Subscriptions")
+                if resp.status_code != 200:
+                    return False
+                adopted = False
+                for member in resp.json().get("Members", []):
+                    odata = member.get("@odata.id")
+                    if not odata:
+                        continue
+                    detail = await client.get(f"{self.base_url}{odata}")
+                    if detail.status_code != 200:
+                        continue
+                    data = detail.json()
+                    if data.get("Context") != context:
+                        continue
+                    sub_id = odata.split("/")[-1]
+                    if data.get("Destination") == self.webhook_url:
+                        # Ours already exists — adopt the first match rather than
+                        # create a duplicate, but keep scanning so additional
+                        # orphans for this target are still cleaned up.
+                        if not adopted:
+                            self._subscription_id = sub_id
+                            self._subscription_url = f"{self.base_url}{odata}"
+                            adopted = True
+                            logger.info(
+                                "Adopted existing webhook subscription for %s: %s",
+                                self.target_name,
+                                sub_id,
+                            )
+                        continue
+                    # Orphan from a collector that no longer owns this target.
+                    with suppress(Exception):
+                        d = await client.delete(f"{self.base_url}{odata}")
+                        if d.status_code in (200, 204, 404):
+                            logger.warning(
+                                "Deleted stale webhook subscription %s for %s "
+                                "(orphaned destination %s)",
+                                sub_id,
+                                self.target_name,
+                                data.get("Destination"),
+                            )
+                return adopted
+        except Exception as e:  # noqa: BLE001 — reconcile is best-effort
+            logger.debug("Webhook reconcile-by-context failed for %s: %s", self.target_name, e)
+        return False
+
     async def _find_existing_subscription(self) -> None:
         """Try to find existing subscription matching our webhook URL."""
         try:
-            async with httpx.AsyncClient(
+            async with make_bmc_client(
                 auth=httpx.BasicAuth(self.username, self.password),
-                verify=self.verify_ssl,
+                verify_ssl=self.verify_ssl,
                 timeout=10.0,
             ) as client:
                 response = await client.get(
@@ -283,9 +347,9 @@ class WebhookSubscriber:
             return False
 
         try:
-            async with httpx.AsyncClient(
+            async with make_bmc_client(
                 auth=httpx.BasicAuth(self.username, self.password),
-                verify=self.verify_ssl,
+                verify_ssl=self.verify_ssl,
                 timeout=10.0,
             ) as client:
                 response = await client.delete(self._subscription_url)
@@ -326,15 +390,19 @@ class WebhookSubscriber:
             return False
 
         try:
-            async with httpx.AsyncClient(
+            async with make_bmc_client(
                 auth=httpx.BasicAuth(self.username, self.password),
-                verify=self.verify_ssl,
+                verify_ssl=self.verify_ssl,
                 timeout=10.0,
             ) as client:
                 response = await client.get(self._subscription_url)
                 return bool(response.status_code == 200)
 
-        except Exception:
+        except Exception as e:  # noqa: BLE001 — verification is best-effort
+            logger.warning(
+                f"Failed to verify webhook subscription for {self.target_name}: "
+                f"{type(e).__name__}: {e}"
+            )
             return False
 
     def parse_webhook_event(self, event_data: dict) -> list[AlertEvent]:

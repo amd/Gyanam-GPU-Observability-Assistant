@@ -17,7 +17,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Redfish API client for AMD Instinct GPU telemetry collection.
+"""Redfish API client for GPU UBB8 telemetry collection.
 
 Implements the Task-based asynchronous workflow for collecting diagnostic data:
 1. POST to initiate data collection (returns Task ID)
@@ -31,12 +31,10 @@ import logging
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
 
 import httpx
 
-if TYPE_CHECKING:
-    from .ssh_transport import SSHTransport
+from .http_client import make_bmc_client
 
 logger = logging.getLogger(__name__)
 
@@ -86,13 +84,13 @@ class RedfishResponse:
 class RedfishClient:
     """Async client for Redfish API communication.
 
-    Implements AMD Instinct Task-based telemetry collection workflow:
+    Implements GPU UBB8 Task-based telemetry collection workflow:
     1. POST to initiate diagnostic data collection
     2. Poll task until complete
     3. Download blob from task attachment
     """
 
-    # Default endpoint for AMD Instinct diagnostic data collection
+    # Default endpoint for GPU UBB8 diagnostic data collection
     DEFAULT_COLLECT_ENDPOINT = (
         "/redfish/v1/Systems/UBB/LogServices/DiagLogs/Actions/LogService.CollectDiagnosticData"
     )
@@ -112,7 +110,6 @@ class RedfishClient:
         task_timeout: int = 300,
         download_timeout: int = 300,
         cleanup_task_on_success: bool = True,
-        ssh_transport: Optional["SSHTransport"] = None,
     ):
         """Initialize the Redfish client.
 
@@ -138,10 +135,14 @@ class RedfishClient:
         self.task_timeout = task_timeout
         self.download_timeout = download_timeout
         self.cleanup_task_on_success = cleanup_task_on_success
-        self._ssh_transport = ssh_transport
 
         self._session_token: str | None = None
         self._client: httpx.AsyncClient | None = None
+        # Status/message of the most recent CollectDiagnosticData initiation,
+        # so callers can distinguish "action not found" (404 -> rediscover the
+        # endpoint) from other failures without re-parsing logs.
+        self._last_initiate_status: int = 0
+        self._last_initiate_error: str | None = None
 
     async def __aenter__(self) -> "RedfishClient":
         """Async context manager entry."""
@@ -154,17 +155,14 @@ class RedfishClient:
 
     async def connect(self) -> None:
         """Establish connection and authenticate."""
-        if self._ssh_transport:
-            await self._ssh_transport.connect()
-            # SSH transport always uses Basic Auth (passed per-request via curl -u)
-            # Session-based auth is not supported over SSH to avoid header parsing
-            if self.token:
-                self._session_token = self.token
-            logger.info("Using SSH proxy transport (Basic Auth mode)")
-            return
-
-        self._client = httpx.AsyncClient(
-            timeout=httpx.Timeout(self.timeout), verify=self.verify_ssl, follow_redirects=True
+        # Bound the per-client connection pool. One cached client exists per
+        # target (hundreds at fleet scale); with httpx's default pool (up to 100
+        # connections each) the aggregate socket count can exhaust the process
+        # file-descriptor limit. A target needs only a handful of parallel GETs
+        # (the 6 metric reports), so a small cap is ample.
+        self._client = make_bmc_client(
+            verify_ssl=self.verify_ssl,
+            timeout=self.timeout,
         )
 
         # If we have a pre-configured token, use it
@@ -223,50 +221,28 @@ class RedfishClient:
             return httpx.BasicAuth(self.username, self.password)
         return None
 
-    def _get_ssh_auth(self) -> tuple[str, str] | None:
-        """Get (username, password) tuple for SSH transport Basic Auth."""
-        if not self._session_token:
-            return (self.username, self.password)
-        return None
-
     def _is_connected(self) -> bool:
-        """Check if either transport is connected."""
-        return self._client is not None or self._ssh_transport is not None
+        """Check if the HTTP client is connected."""
+        return self._client is not None
 
     async def _http_get(
         self, url: str, headers: dict = None, timeout: float = None, binary: bool = False
     ):
-        """Transport-agnostic GET request."""
-        if self._ssh_transport:
-            ssh_headers = dict(headers or {})
-            if self._session_token:
-                ssh_headers["X-Auth-Token"] = self._session_token
-            return await self._ssh_transport.get(
-                url,
-                headers=ssh_headers,
-                auth=self._get_ssh_auth(),
-                timeout=int(timeout) if timeout else None,
-                binary=binary,
-            )
+        """HTTP GET request. ``binary`` is accepted for signature compatibility."""
         return await self._client.get(
             url,
             headers=headers or self._get_auth_headers(),
             auth=self._get_auth(),
-            timeout=httpx.Timeout(timeout) if timeout else None,
+            # When no per-request timeout is given, fall back to the client's
+            # configured timeout (set in make_bmc_client). Passing None here would
+            # instead DISABLE all timeouts (httpx treats None as "no timeout"),
+            # letting a wedged BMC hang a poll forever and permanently strand the
+            # target in poller._inflight.
+            timeout=httpx.Timeout(timeout) if timeout else httpx.USE_CLIENT_DEFAULT,
         )
 
     async def _http_post(self, url: str, headers: dict = None, json_body: dict = None):
-        """Transport-agnostic POST request."""
-        if self._ssh_transport:
-            ssh_headers = dict(headers or {})
-            if self._session_token:
-                ssh_headers["X-Auth-Token"] = self._session_token
-            return await self._ssh_transport.post(
-                url,
-                headers=ssh_headers,
-                auth=self._get_ssh_auth(),
-                json_body=json_body,
-            )
+        """HTTP POST request."""
         return await self._client.post(
             url,
             json=json_body,
@@ -275,14 +251,7 @@ class RedfishClient:
         )
 
     async def _http_delete(self, url: str, headers: dict = None):
-        """Transport-agnostic DELETE request."""
-        if self._ssh_transport:
-            ssh_headers = dict(headers or {})
-            if self._session_token:
-                ssh_headers["X-Auth-Token"] = self._session_token
-            return await self._ssh_transport.delete(
-                url, headers=ssh_headers, auth=self._get_ssh_auth()
-            )
+        """HTTP DELETE request."""
         return await self._client.delete(url, headers=headers or {}, auth=self._get_auth())
 
     async def collect_diagnostic_data(
@@ -290,7 +259,7 @@ class RedfishClient:
     ) -> RedfishResponse:
         """Collect diagnostic data using Task-based workflow.
 
-        This is the main method for AMD Instinct telemetry collection:
+        This is the main method for GPU UBB8 telemetry collection:
         1. POST to initiate collection (creates a task)
         2. Poll task until complete
         3. Download the attachment blob
@@ -313,59 +282,135 @@ class RedfishClient:
         task_uri = await self._initiate_collection(endpoint, body)
 
         if not task_uri:
+            # A 202 with no parseable task URI means the BMC *did* create a task
+            # we can't address to delete — it will leak in TaskService. We can't
+            # clean it up without the URI, but surface it loudly so operators can
+            # GC (a BMC whose task list fills up rejects new collections).
+            if self._last_initiate_status == 202:
+                logger.error(
+                    "CollectDiagnosticData returned 202 but no task URI (Location "
+                    "header and body both unusable) at %s — the created task cannot "
+                    "be addressed for deletion and may leak in TaskService.",
+                    endpoint,
+                )
             return RedfishResponse(
                 success=False,
-                status_code=0,
+                status_code=self._last_initiate_status,
                 content=b"",
                 content_type="",
-                error_message="Failed to initiate data collection task",
+                error_message=(
+                    self._last_initiate_error or "Failed to initiate data collection task"
+                ),
             )
 
         logger.info(f"Task created: {task_uri}")
 
-        # Step 2: Poll task until complete
-        task_status = await self._wait_for_task(task_uri)
+        # Once the task exists on the BMC it MUST be deleted on every exit path,
+        # not just on success. A timed-out or failed task that is never deleted
+        # stays registered in the BMC's TaskService; because each poll creates a
+        # new task, a repeatedly-failing target leaks tasks until the BMC rejects
+        # new CollectDiagnosticData requests — stalling collection fleet-wide.
+        try:
+            # Step 2: Poll task until complete
+            task_status = await self._wait_for_task(task_uri)
 
-        if not task_status:
-            return RedfishResponse(
-                success=False,
-                status_code=0,
-                content=b"",
-                content_type="",
-                error_message="Task polling failed or timed out",
-            )
+            if not task_status:
+                return RedfishResponse(
+                    success=False,
+                    status_code=0,
+                    content=b"",
+                    content_type="",
+                    error_message="Task polling failed or timed out",
+                )
 
-        if task_status.state != TaskState.COMPLETED:
-            return RedfishResponse(
-                success=False,
-                status_code=0,
-                content=b"",
-                content_type="",
-                error_message=f"Task failed with state: {task_status.state.value} - {task_status.message}",
-            )
+            if task_status.state != TaskState.COMPLETED:
+                return RedfishResponse(
+                    success=False,
+                    status_code=0,
+                    content=b"",
+                    content_type="",
+                    error_message=f"Task failed with state: {task_status.state.value} - {task_status.message}",
+                )
 
-        logger.info(f"Task completed: {task_status.task_id}")
+            logger.info(f"Task completed: {task_status.task_id}")
 
-        # Step 3: Download the attachment
-        attachment_uri = self._get_attachment_uri(task_status)
+            # Step 3: Download the attachment
+            attachment_uri = self._get_attachment_uri(task_status)
 
-        if not attachment_uri:
-            return RedfishResponse(
-                success=False,
-                status_code=0,
-                content=b"",
-                content_type="",
-                error_message="Could not determine attachment URI from task",
-            )
+            if not attachment_uri:
+                return RedfishResponse(
+                    success=False,
+                    status_code=0,
+                    content=b"",
+                    content_type="",
+                    error_message="Could not determine attachment URI from task",
+                )
 
-        logger.info(f"Downloading attachment from {attachment_uri}")
-        response = await self._download_attachment(attachment_uri)
+            logger.info(f"Downloading attachment from {attachment_uri}")
+            response = await self._download_attachment(attachment_uri)
+            return response
+        finally:
+            # Step 4: Always clean up the task (success, failure, or timeout).
+            if self.cleanup_task_on_success:
+                try:
+                    await self._delete_task(task_uri)
+                except Exception as e:  # noqa: BLE001 — cleanup must not mask the result
+                    logger.warning(f"Failed to delete task {task_uri}: {e}")
 
-        # Step 4: Clean up the task if download was successful
-        if response.success and self.cleanup_task_on_success:
-            await self._delete_task(task_uri)
+    async def _get_json_resource(self, uri: str) -> dict | None:
+        """GET a Redfish resource and return parsed JSON, or None on any error.
 
-        return response
+        Best-effort helper for discovery walks: a missing resource, non-200
+        status, or non-JSON body all degrade to None rather than raising.
+        """
+        url = f"{self.base_url}{uri}" if uri.startswith("/") else uri
+        try:
+            resp = await self._http_get(url)
+            if resp.status_code != 200:
+                return None
+            return resp.json()  # type: ignore[no-any-return]
+        except Exception:  # noqa: BLE001 — discovery must never raise
+            return None
+
+    async def discover_collect_endpoint(self) -> str | None:
+        """Discover this target's CollectDiagnosticData action URI.
+
+        The action lives on a LogService, but *where* varies by hardware and
+        firmware (e.g. ``Systems/UBB/LogServices/DiagLogs`` vs
+        ``Managers/Instinct_AMC/LogServices/Dump``). Rather than assume a
+        hardcoded path, walk the LogServices under both ``Systems`` and
+        ``Managers`` and return the first member advertising
+        ``#LogService.CollectDiagnosticData``.
+
+        Returns the action ``target`` URI, or None if none is found. Entirely
+        best-effort — every fetch degrades to a skip.
+        """
+        action_key = "#LogService.CollectDiagnosticData"
+        for root in ("/redfish/v1/Systems", "/redfish/v1/Managers"):
+            root_doc = await self._get_json_resource(root)
+            if not root_doc:
+                continue
+            for member in root_doc.get("Members", []):
+                member_id = member.get("@odata.id")
+                if not member_id:
+                    continue
+                node = await self._get_json_resource(member_id)
+                log_services = (node or {}).get("LogServices", {}).get("@odata.id")
+                if not log_services:
+                    continue
+                ls_doc = await self._get_json_resource(log_services)
+                if not ls_doc:
+                    continue
+                for ls_member in ls_doc.get("Members", []):
+                    ls_id = ls_member.get("@odata.id")
+                    if not ls_id:
+                        continue
+                    svc = await self._get_json_resource(ls_id)
+                    target = (svc or {}).get("Actions", {}).get(action_key, {}).get("target")
+                    if target:
+                        logger.info(f"Discovered CollectDiagnosticData action at {target}")
+                        return target  # type: ignore[no-any-return]
+        return None
 
     async def _initiate_collection(self, endpoint: str, body: dict) -> str | None:
         """Initiate diagnostic data collection.
@@ -378,6 +423,8 @@ class RedfishClient:
             Task URI if successful, None otherwise
         """
         url = f"{self.base_url}{endpoint}"
+        self._last_initiate_status = 0
+        self._last_initiate_error = None
 
         try:
             response = await self._http_post(
@@ -385,6 +432,7 @@ class RedfishClient:
                 headers=self._get_auth_headers(),
                 json_body=body,
             )
+            self._last_initiate_status = response.status_code
 
             # 202 Accepted indicates task was created
             if response.status_code == 202:
@@ -427,6 +475,7 @@ class RedfishClient:
                 except Exception:
                     # Body isn't JSON — keep the status-code-only error_msg.
                     pass
+                self._last_initiate_error = error_msg
                 logger.error(f"Failed to initiate collection: {error_msg}")
                 return None
 
@@ -593,7 +642,7 @@ class RedfishClient:
                 url,
                 headers=download_headers,
                 timeout=float(self.download_timeout),
-                binary=bool(self._ssh_transport),  # base64 transfer for SSH
+                binary=False,
             )
 
             content_type = response.headers.get("Content-Type", "application/octet-stream")
@@ -720,7 +769,7 @@ class RedfishClient:
     async def get_telemetry(self, endpoint: str) -> RedfishResponse:
         """Fetch telemetry data - now uses Task-based workflow.
 
-        For AMD Instinct, this calls collect_diagnostic_data().
+        For GPU UBB8, this calls collect_diagnostic_data().
         The endpoint parameter is used as the collection action endpoint.
 
         Args:
@@ -734,29 +783,12 @@ class RedfishClient:
     async def test_connection(self) -> tuple[bool, str]:
         """Test the connection to the Redfish service.
 
-        For SSH proxy mode, tests both SSH connectivity and Redfish access.
-
         Returns:
             Tuple of (success, message). Failure messages contain only the
             exception class name — the full exception is logged separately
             so the message can be safely surfaced to API responses without
             leaking stack-trace details.
         """
-        if self._ssh_transport:
-            # Two-stage test: SSH first, then Redfish via SSH
-            if not self._ssh_transport._conn:
-                try:
-                    await self._ssh_transport.connect()
-                except Exception as e:
-                    logger.warning(f"SSH test connection failed: {e}", exc_info=True)
-                    return False, f"SSH connection failed ({type(e).__name__})"
-
-            ssh_ok, ssh_msg = await self._ssh_transport.test_ssh_connection()
-            if not ssh_ok:
-                return False, ssh_msg
-
-            return await self._ssh_transport.test_redfish_access(self.base_url)
-
         if not self._client:
             try:
                 await self.connect()
@@ -828,12 +860,6 @@ class RedfishClient:
 
     async def close(self) -> None:
         """Close the client connection."""
-        if self._ssh_transport:
-            await self._ssh_transport.close()
-            self._ssh_transport = None
-            self._session_token = None
-            return
-
         if self._client:
             # Optionally delete the session
             if self._session_token and not self.token:

@@ -36,7 +36,7 @@ PYTHONPATH=. python -m pytest
 | `test_redfish_log_parser.py` / `test_unpacker.py` | log-block parsing, blob extraction + path-traversal / size limits |
 | `test_config.py` | YAML load, env overrides, alert defaults |
 | `test_csrf.py` / `test_auth.py` | CSRF tokens; password hashing, session cookies, request typing |
-| `test_exporters.py` / `test_influxdb_exporter.py` | Metric/Prometheus formatting; InfluxDB buffering, cap/drop, health |
+| `test_exporters.py` / `test_influxdb_exporter.py` | InfluxDB point formatting; buffering, cap/drop, reconnect, health |
 | `test_client.py` | Redfish client pure helpers (auth headers, attachment URI) |
 | `test_alert_subscriber_more.py` | SSE error classification, backoff, event parsing |
 | `test_validators.py` / `test_log_collector.py` | target name/host (SSRF) validators; filename sanitization + delete path-traversal |
@@ -54,19 +54,22 @@ PYTHONPATH=. python -m pytest
 
 ## Coverage
 
-`run-tests.sh` prints a coverage summary and enforces `--cov-fail-under=50`
-(on full runs; subset runs skip the gate). Current overall coverage is **~56%**
-across 220+ tests.
+`run-tests.sh` prints a coverage summary and enforces **`--cov-fail-under=95`**
+(on full runs; subset runs skip the gate). Current overall coverage is **~96%**
+across 1000+ tests — the run fails if coverage drops below 95%, so new code must
+land with tests.
 
 Well-covered: parser (extractor/discovery/schema/log-parser/unpacker), config,
-auth/CSRF, exporters (Prometheus + InfluxDB buffering/flush), Redfish client
-(helpers + HTTP task flow), webhook subscriber, baseline log pull, alert
-repository + manager + subscriber, validators, log-collector, the collector
-health app + webhook receiver, poller helpers, and the API routes (auth, CSRF,
-targets CRUD + bulk import, alerts, logs, schemas, health, login/pages).
+auth/CSRF, the InfluxDB exporter (buffering/flush/reconnect), Redfish client
+(helpers + HTTP task flow), metric-report discovery, inventory collection/
+enrichment, the policy engine, webhook subscriber + auto-retry, baseline log
+pull, alert repository + manager + subscriber, validators, log-collector, the
+collector health app + webhook receiver, poller helpers, the Data Hall heatmap
+cache/snapshot, and the API routes (auth, CSRF, targets CRUD + bulk import,
+alerts, logs, schemas, health, Redfish PolicyService, login/pages).
 
-**Lower coverage / future work** — the async orchestration loops that are
-costly/brittle to test in isolation: `poller` scheduling loop, `sse_subscriber`
-manager, `ssh_transport` (asyncssh), `alert_subscriber` reconnect loop,
-`influxdb` reconnect/flush-loop internals, and the `collector_main`/`api_main`
-lifespans. Raise the `--cov-fail-under` floor as these are covered.
+**Harder to cover** — the async orchestration loops that are costly/brittle to
+test in isolation (`poller` scheduling loop, `sse_subscriber` manager,
+`alert_subscriber` reconnect loop, `influxdb` reconnect/flush-loop internals, and
+the `collector_main`/`api_main` lifespans) are exercised by the live smoke suite
+(`scripts/smoke-test.sh`) against the real stack rather than mocked.

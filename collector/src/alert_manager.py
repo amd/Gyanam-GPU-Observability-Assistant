@@ -34,12 +34,15 @@ from datetime import UTC, datetime, timedelta
 from ipaddress import ip_address
 from urllib.parse import urlparse
 
-from prometheus_client import Counter, Gauge
-
 from .cper_worker import CperEnrichmentWorker
 from .database.models import Target
 from .database.repository import TargetRepository
-from .redfish.alert_subscriber import AlertCallback, AlertEvent, AlertSubscriber
+from .redfish.alert_subscriber import (
+    AlertCallback,
+    AlertEvent,
+    AlertSubscriber,
+    SubscriptionState,
+)
 from .redfish.log_baseline import pull_baseline_alerts
 from .redfish.sse_capability_check import SSESupport, check_sse_capability
 from .redfish.webhook_subscriber import SubscriptionFailureType, WebhookSubscriber
@@ -78,34 +81,6 @@ def _is_unreachable_from_bmc(url: str) -> tuple[bool, str]:
         pass
 
     return False, ""
-
-
-# Prometheus metrics for alert system monitoring
-ALERTS_RECEIVED_TOTAL = Counter(
-    "gyanam_alerts_received_total",
-    "Total number of alerts received from SSE streams",
-    ["target_name", "severity"],
-)
-
-ALERTS_WRITTEN_TOTAL = Counter(
-    "gyanam_alerts_written_total", "Total number of alerts written to database"
-)
-
-ALERTS_DROPPED_TOTAL = Counter(
-    "gyanam_alerts_dropped_total",
-    "Total number of alerts dropped due to queue full or rate limiting",
-    ["reason"],
-)
-
-ALERT_QUEUE_SIZE = Gauge(
-    "gyanam_alert_queue_size", "Current number of alerts waiting to be written"
-)
-
-ALERT_SUBSCRIPTIONS_ACTIVE = Gauge(
-    "gyanam_alert_subscriptions_active",
-    "Number of active alert subscriptions",
-    ["subscription_type"],
-)
 
 
 class RateLimiter:
@@ -200,6 +175,7 @@ class AlertManager:
         cper_decode_timeout: float = 15.0,
         cper_max_bytes: int = 8 * 1024 * 1024,
         cper_convert_path: str = "/usr/local/bin/cper-convert",
+        policy_engine=None,
     ):
         """Initialize alert manager.
 
@@ -245,6 +221,12 @@ class AlertManager:
         self.alert_callback = alert_callback
         self.enable_webhook_fallback = enable_webhook_fallback
         self.force_webhook_mode = force_webhook_mode
+        # Optional policy engine; fires automated functions (e.g. diagnostic-log
+        # collection) on live critical/fatal events. None disables it.
+        self._policy_engine = policy_engine
+        # Strong refs to in-flight policy tasks so they aren't garbage-collected
+        # mid-collection (asyncio only holds a weak ref to a bare create_task()).
+        self._policy_tasks: set[asyncio.Task] = set()
         self.baseline_pull_enabled = baseline_pull_enabled
         self.baseline_max_entries_per_log = baseline_max_entries_per_log
         self.baseline_repull_interval_minutes = baseline_repull_interval_minutes
@@ -274,6 +256,13 @@ class AlertManager:
         self._subscribers: dict[int, AlertSubscriber] = {}
         self._webhook_subscribers: dict[int, WebhookSubscriber] = {}
         self._subscription_types: dict[int, str] = {}  # Track type per target
+        # Webhook liveness: unlike SSE there's no passive reconnect signal, so a
+        # BMC that GC's/expires a webhook subscription stops delivering silently.
+        # Periodically re-verify each one against the BMC and drop dead ones so the
+        # next refresh re-creates them. Throttled per-target + bounded concurrency.
+        self._webhook_verified_at: dict[int, float] = {}  # target_id -> monotonic ts
+        self._webhook_verify_interval = 300.0  # seconds between per-target re-checks
+        self._webhook_verify_concurrency = 10
         self._permanently_failed: dict[int, datetime] = {}  # target_id -> next_retry_time
         # Per-target config fingerprint; a change (rotated password, moved
         # endpoint, toggled verify_ssl) triggers tear-down + re-subscribe so we
@@ -357,13 +346,8 @@ class AlertManager:
             await subscriber.stop()
         self._subscribers.clear()
 
-        # Delete all webhook subscriptions
-        for _target_id, webhook_sub in list(self._webhook_subscribers.items()):
-            await webhook_sub.delete_subscription()
-        self._webhook_subscribers.clear()
-        self._subscription_types.clear()
-
         # Cancel background tasks (including any in-flight one-shot baseline pulls)
+        # BEFORE flushing, so the flush drains a quiescent queue.
         pending = [
             self._refresh_task,
             self._batch_task,
@@ -380,8 +364,29 @@ class AlertManager:
                     _ = await task
         self._baseline_jobs.clear()
 
-        # Process remaining queued alerts
+        # Persist remaining queued alerts FIRST — a fast DB write — so they survive
+        # even if the slow webhook teardown below runs past stop_grace_period and
+        # gets SIGKILL'd.
         await self._flush_batch()
+
+        # Delete webhook subscriptions LAST and CONCURRENTLY. Each is a BMC HTTPS
+        # round-trip; doing ~N serially at fleet scale blew past the stop grace
+        # period and got SIGKILL'd, leaking a subscription on every BMC (whose
+        # small subscription tables then fill, silently rejecting new ones). Bound
+        # the concurrency and give each a timeout so a slow/dead BMC can't stall
+        # the whole teardown.
+        subs = list(self._webhook_subscribers.values())
+        if subs:
+            sem = asyncio.Semaphore(20)
+
+            async def _delete_one(sub) -> None:
+                async with sem:
+                    with suppress(Exception):
+                        await asyncio.wait_for(sub.delete_subscription(), timeout=10.0)
+
+            await asyncio.gather(*[_delete_one(s) for s in subs], return_exceptions=True)
+        self._webhook_subscribers.clear()
+        self._subscription_types.clear()
 
         logger.info(
             f"Alert manager stopped (received: {self._alerts_received}, "
@@ -404,10 +409,39 @@ class AlertManager:
 
     async def _refresh_subscriptions(self) -> None:
         """Sync alert subscriptions with current target configuration."""
-        targets = await self.repository.get_all_targets(enabled_only=True)
+        targets = await self.repository.get_active_targets()
 
         # Filter targets with alert subscription enabled
         alert_targets = [t for t in targets if t.enable_alert_subscription]
+
+        # Harvest SSE subscribers that permanently failed mid-stream. Without this
+        # they linger in _subscribers: never retried (unlike webhooks) and wrongly
+        # counted as active. Move them to the permanent-failure set so the
+        # cooldown-retry path below re-attempts them and the active count is honest.
+        for tid, sub in list(self._subscribers.items()):
+            if getattr(sub, "state", None) is SubscriptionState.FAILED_PERMANENT:
+                with suppress(Exception):
+                    await sub.stop()
+                self._subscribers.pop(tid, None)
+                self._subscription_types.pop(tid, None)
+                if tid not in self._permanently_failed:
+                    if self._permanent_failure_retry_hours > 0:
+                        retry_at = datetime.now(UTC) + timedelta(
+                            hours=self._permanent_failure_retry_hours
+                        )
+                        cooldown_note = (
+                            f"Will retry after {self._permanent_failure_retry_hours:.1f}h cooldown."
+                        )
+                    else:
+                        retry_at = datetime.max.replace(tzinfo=UTC)
+                        cooldown_note = "Auto-retry disabled (permanent_failure_retry_hours=0)."
+                    self._permanently_failed[tid] = retry_at
+                    logger.error(
+                        "PERMANENT SSE subscription failure for target %d: %s. %s",
+                        tid,
+                        getattr(sub, "failure_reason", None) or "unknown",
+                        cooldown_note,
+                    )
 
         # Combined current IDs from both SSE and webhook subscribers
         current_ids = set(self._subscribers.keys()) | set(self._webhook_subscribers.keys())
@@ -423,6 +457,28 @@ class AlertManager:
         }
         if changed_ids:
             logger.info("Re-subscribing %d target(s) after config change", len(changed_ids))
+
+        # A permanently-failed target that is NOT currently subscribed (e.g. an
+        # SSE subscriber harvested into _permanently_failed above) can never land
+        # in changed_ids, which is gated on current_ids. Without this, an operator
+        # credential/endpoint fix would go unnoticed and the target stay
+        # unmonitored until its cooldown elapses (up to permanent_failure_retry_hours,
+        # or forever when that is 0). Detect the fix by comparing the fingerprint
+        # we stored when it last subscribed (harvest leaves _sub_fingerprints
+        # intact) and clear the failure mark so to_add re-subscribes it this pass.
+        fixed_failed = {
+            tid
+            for tid in (self._permanently_failed.keys() & desired_ids)
+            if tid in self._sub_fingerprints
+            and self._sub_fingerprints[tid] != self._target_fingerprint(target_by_id[tid])
+        }
+        for tid in fixed_failed:
+            self._permanently_failed.pop(tid, None)
+            logger.info(
+                "Config change for permanently-failed target %d; clearing failure "
+                "mark to retry its alert subscription.",
+                tid,
+            )
 
         # Stop subscriptions for removed/disabled/changed targets
         to_remove = (current_ids - desired_ids) | changed_ids
@@ -446,20 +502,21 @@ class AlertManager:
             # attempt, so also clear it there to allow a retry.
             if target_id not in desired_ids or target_id in changed_ids:
                 self._permanently_failed.pop(target_id, None)
-            self._update_subscription_metrics()
 
         # Start subscriptions for new/re-enabled/changed targets. Skip
         # permanently-failed targets here (rather than inside _start_subscription)
         # so we emit one summary line instead of a per-target WARNING every minute.
         to_add = (desired_ids - current_ids) | changed_ids
 
+        # Retry permanently-failed targets whose cooldown has elapsed.
         if self._permanent_failure_retry_hours > 0:
             now = datetime.now(UTC)
             due = [tid for tid, retry_at in self._permanently_failed.items() if retry_at <= now]
             for tid in due:
                 self._permanently_failed.pop(tid, None)
                 logger.info(
-                    "Permanent webhook failure cooldown elapsed for target %d; will retry subscription",
+                    "Permanent webhook failure cooldown elapsed for target %d; "
+                    "will retry subscription",
                     tid,
                 )
 
@@ -491,6 +548,58 @@ class AlertManager:
                 # "already subscribed with matching config").
                 if target.id in self._subscribers or target.id in self._webhook_subscribers:
                     self._sub_fingerprints[target.id] = self._target_fingerprint(target)
+
+        # Confirm existing webhook subscriptions still exist on their BMCs and
+        # drop any the BMC has GC'd so the next refresh re-creates them.
+        await self._verify_webhook_subscriptions()
+
+    async def _verify_webhook_subscriptions(self) -> None:
+        """Re-verify webhook subscriptions against their BMCs; drop dead ones.
+
+        Unlike SSE (which reconnects and signals failure), a webhook subscription
+        the BMC has expired/garbage-collected stops delivering alerts SILENTLY
+        while the local object still looks healthy. Periodically GET each
+        subscription back from the BMC; if it's gone, delete our record so the next
+        refresh re-creates it. Throttled per target (``_webhook_verify_interval``)
+        and bounded in concurrency so a large fleet doesn't probe every BMC at once.
+        """
+        import time as _time
+
+        now = _time.monotonic()
+        due: list[int] = []
+        for tid in list(self._webhook_subscribers.keys()):
+            last = self._webhook_verified_at.get(tid)
+            if last is None:
+                # First time seen (just created) — seed and assume live.
+                self._webhook_verified_at[tid] = now
+            elif now - last >= self._webhook_verify_interval:
+                due.append(tid)
+        if not due:
+            return
+
+        sem = asyncio.Semaphore(self._webhook_verify_concurrency)
+
+        async def _check(tid: int) -> None:
+            sub = self._webhook_subscribers.get(tid)
+            if sub is None:
+                return
+            async with sem:
+                alive = await sub.verify_subscription()
+            self._webhook_verified_at[tid] = _time.monotonic()
+            if not alive:
+                logger.warning(
+                    "Webhook subscription for target %d is gone on the BMC; dropping "
+                    "it so the next refresh re-creates it.",
+                    tid,
+                )
+                with suppress(Exception):
+                    await sub.delete_subscription()
+                self._webhook_subscribers.pop(tid, None)
+                self._subscription_types.pop(tid, None)
+                self._sub_fingerprints.pop(tid, None)
+                self._webhook_verified_at.pop(tid, None)
+
+        await asyncio.gather(*[_check(tid) for tid in due], return_exceptions=True)
 
     @staticmethod
     def _target_fingerprint(target: Target) -> str:
@@ -567,8 +676,7 @@ class AlertManager:
 
         except Exception as e:
             logger.error(
-                f"Failed to start alert subscription for {target.name}: "
-                f"{type(e).__name__}: {e}",
+                f"Failed to start alert subscription for {target.name}: {type(e).__name__}: {e}",
                 exc_info=True,
             )
 
@@ -598,7 +706,6 @@ class AlertManager:
             await subscriber.start()
             self._subscribers[target.id] = subscriber
             self._subscription_types[target.id] = "sse"
-            self._update_subscription_metrics()
             logger.info(f"Started SSE subscription for {target.name}")
 
             # Populate existing/standing alerts once; SSE only streams new events.
@@ -606,7 +713,7 @@ class AlertManager:
 
         except Exception as e:
             logger.error(
-                f"Failed to start SSE subscription for {target.name}: " f"{type(e).__name__}: {e}",
+                f"Failed to start SSE subscription for {target.name}: {type(e).__name__}: {e}",
                 exc_info=True,
             )
 
@@ -628,18 +735,33 @@ class AlertManager:
                 severities=self.severities,
             )
 
+            # First reconcile any BMC-side subscription already tagged for this
+            # target (our deterministic Context). This deletes orphans left by a
+            # crashed/relocated collector — which otherwise leak until the BMC's
+            # subscription cap is hit and all new subscriptions fail — and adopts
+            # one already pointing at our address instead of creating a duplicate.
+            if (
+                hasattr(webhook_sub, "_reconcile_by_context")
+                and await webhook_sub._reconcile_by_context()
+            ):
+                self._webhook_subscribers[target.id] = webhook_sub
+                self._subscription_types[target.id] = "webhook"
+                logger.info(f"Adopted existing webhook subscription for {target.name}")
+                self._schedule_baseline_pull(target.id)
+                return
+
             # Create subscription on BMC
             result = await webhook_sub.create_subscription()
             if result.success:
                 self._webhook_subscribers[target.id] = webhook_sub
                 self._subscription_types[target.id] = "webhook"
-                self._update_subscription_metrics()
                 logger.info(f"Started webhook subscription for {target.name}")
 
                 # Populate existing/standing alerts once; the subscription only
                 # delivers events emitted after it was created.
                 self._schedule_baseline_pull(target.id)
             else:
+                # Check if this is a permanent failure
                 if result.failure_type == SubscriptionFailureType.PERMANENT:
                     if self._permanent_failure_retry_hours > 0:
                         retry_at = datetime.now(UTC) + timedelta(
@@ -671,18 +793,9 @@ class AlertManager:
 
         except Exception as e:
             logger.error(
-                f"Failed to start webhook subscription for {target.name}: "
-                f"{type(e).__name__}: {e}",
+                f"Failed to start webhook subscription for {target.name}: {type(e).__name__}: {e}",
                 exc_info=True,
             )
-
-    def _update_subscription_metrics(self) -> None:
-        """Update Prometheus metrics for subscription counts."""
-        sse_count = len(self._subscribers)
-        webhook_count = len(self._webhook_subscribers)
-
-        ALERT_SUBSCRIPTIONS_ACTIVE.labels(subscription_type="sse").set(sse_count)
-        ALERT_SUBSCRIPTIONS_ACTIVE.labels(subscription_type="webhook").set(webhook_count)
 
     async def process_webhook_event(self, target_id: int, event_data: dict) -> int:
         """Process incoming webhook event from a BMC.
@@ -702,12 +815,15 @@ class AlertManager:
             return 0
 
         # Verify the Context token we set at subscription time. This rejects
-        # blind POSTs to the (unauthenticated) webhook endpoint. NOTE: Context is
-        # guessable ("target_<id>") so this is not strong auth — a shared secret
-        # or mTLS is the follow-up for a hostile network.
+        # blind POSTs to the (unauthenticated) webhook endpoint. A MISSING Context
+        # must be rejected too — otherwise a POST that simply omits the field
+        # bypasses the check entirely and can inject forged alerts (and trigger
+        # policy-driven log collection). NOTE: Context is guessable ("target_<id>")
+        # so this is not strong auth — a shared secret or mTLS is the follow-up for
+        # a hostile network.
         expected_context = f"target_{target_id}"
         received_context = event_data.get("Context")
-        if received_context is not None and received_context != expected_context:
+        if received_context != expected_context:
             logger.warning(
                 "Webhook for target %d rejected: Context %r != expected",
                 int(target_id),
@@ -730,13 +846,31 @@ class AlertManager:
         # Check rate limit to prevent alert flooding from misbehaving BMCs
         if not self._rate_limiter.allow(alert.target_id):
             self._alerts_dropped += 1
-            ALERTS_DROPPED_TOTAL.labels(reason="rate_limit").inc()
             logger.warning(
                 f"Rate limit exceeded for {alert.target_name} "
                 f"(max {self._rate_limiter.max_alerts}/min), dropping alert"
             )
             return
         self._enqueue(alert)
+        self._dispatch_policy(alert)
+
+    def _dispatch_policy(self, alert: AlertEvent) -> None:
+        """Fire the policy engine for a live alert (fire-and-forget).
+
+        Only live events run the policy; baseline re-pulls of historical log
+        entries must not trigger collection on startup.
+        """
+        if self._policy_engine is None:
+            return
+        try:
+            task = asyncio.get_running_loop().create_task(self._policy_engine.on_alert(alert))
+        except RuntimeError:
+            # No running loop (e.g. a synchronous test harness) — skip silently.
+            logger.debug("No running loop to dispatch policy for %s", alert.target_name)
+            return
+        # Retain a strong ref until the task finishes (prevents mid-flight GC).
+        self._policy_tasks.add(task)
+        task.add_done_callback(self._policy_tasks.discard)
 
     def _on_baseline_alert(self, alert: AlertEvent) -> None:
         """Callback for baseline log-pull alerts - bypasses the rate limiter.
@@ -752,10 +886,6 @@ class AlertManager:
         try:
             self._alert_queue.put_nowait(alert)
             self._alerts_received += 1
-            ALERTS_RECEIVED_TOTAL.labels(
-                target_name=alert.target_name, severity=alert.severity
-            ).inc()
-            ALERT_QUEUE_SIZE.set(self._alert_queue.qsize())
 
             # Also invoke custom callback if provided
             if self.alert_callback:
@@ -763,7 +893,6 @@ class AlertManager:
 
         except asyncio.QueueFull:
             self._alerts_dropped += 1
-            ALERTS_DROPPED_TOTAL.labels(reason="queue_full").inc()
             logger.warning(
                 f"Alert queue full ({self.max_queue_size}), dropping alert from {alert.target_name}"
             )
@@ -876,7 +1005,6 @@ class AlertManager:
                             overflow = len(batch) - cap
                             del batch[:overflow]
                             self._alerts_dropped += overflow
-                            ALERTS_DROPPED_TOTAL.labels(reason="db_error").inc(overflow)
                             logger.error(
                                 "Alert store write failing; dropped %d oldest buffered "
                                 "alerts to bound memory (buffer cap %d)",
@@ -912,9 +1040,6 @@ class AlertManager:
         try:
             written = await self.repository.create_alerts_batch(batch)
             self._alerts_written += written
-            if written:
-                ALERTS_WRITTEN_TOTAL.inc(written)
-            ALERT_QUEUE_SIZE.set(self._alert_queue.qsize())
             logger.debug(
                 f"Wrote {written}/{len(batch)} alerts to database "
                 f"({len(batch) - written} deduplicated)"
@@ -1021,23 +1146,6 @@ class AlertManager:
             **self._cper_worker.stats(),
             "subscribers": sse_subscribers + webhook_subscribers,
         }
-
-    async def retry_subscription(self, target_id: int) -> bool:
-        """Manually retry a failed subscription.
-
-        Args:
-            target_id: Target ID to retry
-
-        Returns:
-            True if subscription was resumed, False if not found
-        """
-        subscriber = self._subscribers.get(target_id)
-        if not subscriber:
-            return False
-
-        logger.info(f"Manually retrying subscription for target {target_id}")
-        await subscriber.resume()
-        return True
 
     @property
     def is_running(self) -> bool:

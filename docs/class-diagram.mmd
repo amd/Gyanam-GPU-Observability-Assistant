@@ -42,19 +42,22 @@ classDiagram
         class RedfishClient {
             +connect()
             +collect_diagnostic_data()
+            +discover_collect_endpoint() str
             +get_metric_report(uri)
             +test_connection() tuple
             -_http_get / _http_post / _http_delete
         }
 
-        class SSHTransport {
-            +connect()
-            +get(url)
-            +post(url)
-            +delete(url)
-            +test_ssh_connection() tuple
-            +test_redfish_access(base_url) tuple
+        class ShardManager {
+            +balance: static | dynamic(HRW)
+            +claim_once() int
+            +run()
+            +release()
+            +owned_count int
+            -collector_id: str
+            -config: ShardConfig
         }
+
     }
 
     %% ============ ALERTING LAYER (Pink) ============
@@ -161,10 +164,56 @@ classDiagram
             -_consecutive_batch_failures: int
             -_reconnect_count: int
         }
+    }
 
-        class PrometheusExporter {
-            +write(metrics) bool
-            +generate_metrics() bytes
+    %% ============ DIGITAL TWIN / DATA HALL LAYER (Teal) ============
+    namespace Twin {
+        class DataHallView {
+            <<datahall routes>>
+            +datahall_layout() dict
+            +datahall_heatmap(metric) dict
+            +set_placement(target_id)
+            +resolve_placements()
+            -_build_layout(systems) dict
+            -_inventory_tooltip(target) dict
+        }
+
+        class InventoryEnricher {
+            +run()
+            -_needs_discovery(target) bool
+            -_discover_reports(target)
+            -repository, inv_config, location_config
+        }
+
+        class Inventory {
+            +gpu_count, gpu_model
+            +gpu_memory_gib, firmware
+            +height_u
+            +has_data() bool
+            +derive_height_u()
+            +tooltip() dict
+        }
+
+        class Placement {
+            +hall, row, rack
+            +unit, source
+            +has_location() bool
+            +to_columns() dict
+            +from_target(target) Placement
+        }
+
+        class LocationResolver {
+            <<location module>>
+            +parse_hostname(host) Placement
+            +parse_system_location(...) Placement
+            +placement_from_location(loc) Placement
+            +should_overwrite(old, new) bool
+        }
+
+        class HeatmapCache {
+            <<singleton HEATMAP>>
+            +record(host, name, value)
+            +latest(metric) dict
         }
     }
 
@@ -173,11 +222,17 @@ classDiagram
         class TargetRepository {
             +create_target()
             +get_all_targets()
-            +update_poll_status()
+            +get_active_targets() list
+            +claim_shard_targets(cid, cap, ttl) int
+            +get_owned_targets(cid, ttl) list
+            +release_shard_leases(cid)
+            +upsert_collector_stats(cid, data, owned)
+            +get_collector_stats(max_age) list
+            +upsert_heatmap_snapshot(metric, values, cid)
+            +get_heatmap_snapshot(metric) dict
             +update_poll_status_batch(updates)
-            +decrypt_password()
             +create_alerts_batch(alerts) int
-            +engine : SQLite (targets/logs)
+            +engine : SQLite (targets/logs/shards)
             +alert_engine : PostgreSQL (alerts)
         }
 
@@ -203,6 +258,27 @@ classDiagram
         class LogCollector {
             +collect_single(target_id) dict
             +collect_all() dict
+            -_collect_via_redfish(target) : rediscovers endpoint on 404
+        }
+
+        class ShardLease {
+            +target_id, collector_id
+            +updated_at
+        }
+
+        class CollectorStats {
+            +collector_id, data
+            +owned_targets, updated_at
+        }
+
+        class CollectorSlot {
+            +ordinal, token
+            +updated_at
+        }
+
+        class HeatmapSnapshot {
+            +collector_id, metric
+            +values (JSON), updated_at
         }
     }
 
@@ -225,7 +301,6 @@ classDiagram
 
     %% Collection caches (NOT creates) RedfishClient per target
     RedfishPoller --> RedfishClient : caches per target
-    RedfishClient --> SSHTransport : optional proxy
 
     %% SSE
     SSEManager --> SSEConnection : manages 0..*
@@ -246,7 +321,6 @@ classDiagram
 
     Metric ..> BaseExporter : written to
     BaseExporter <|-- InfluxDBExporter
-    BaseExporter <|-- PrometheusExporter
 
     %% Alerting flow
     AlertManager --> AlertSubscriber : manages SSE 0..*
@@ -259,13 +333,33 @@ classDiagram
     CperEnrichmentWorker ..> CperDecoder : uses
     CperEnrichmentWorker ..> TargetRepository : reads + updates alerts
 
+    %% Digital twin / Data Hall: enrich inventory + placement, snapshot heatmap, serve 3D scene
+    InventoryEnricher ..> RedfishClient : inventory walk (collect_inventory)
+    InventoryEnricher ..> LocationResolver : resolve placement
+    InventoryEnricher ..> Inventory : produces
+    LocationResolver ..> Placement : produces
+    InventoryEnricher --> TargetRepository : set_target_inventory + set_target_location
+    InfluxDBExporter ..> HeatmapCache : records live values
+    HeatmapCache ..> TargetRepository : snapshotted per collector (heatmap_snapshot_task)
+    DataHallView ..> TargetRepository : reads targets + placement + merged HeatmapSnapshot
+    DataHallView ..> Inventory : tooltip fields
+    Placement ..> Target : stored in placement columns
+    Inventory ..> Target : stored in inventory_json
+
+    %% Sharding: ShardManager reconciles leases (dynamic HRW / static greedy);
+    %% poller reads owned targets; stable id via slot claim in dynamic mode
+    ShardManager --> TargetRepository : reconcile / heartbeat / reclaim leases
+    TargetRepository --> ShardLease : manages
+    TargetRepository --> CollectorStats : manages
+    TargetRepository --> CollectorSlot : manages (stable ordinal)
+    LogCollector ..> RedfishClient : discover_collect_endpoint on 404
+
     %% Data layer
-    RedfishPoller --> TargetRepository : reads targets + batched status writes
+    RedfishPoller --> TargetRepository : reads owned targets + batched status writes
     SSEManager --> TargetRepository : reads SSE targets
     AlertManager --> TargetRepository : reads alert-subscription config
     LogCollector --> TargetRepository : reads targets / writes CollectedLog
     LogCollector --> RedfishClient : reuses cached or builds new
-    LogCollector --> SSHTransport : hwdiag + SCP path
     TargetRepository --> Target : manages
     TargetRepository --> CollectedLog : manages
     TargetRepository --> Alert : manages (PostgreSQL / alert_engine)
@@ -275,7 +369,7 @@ classDiagram
     style SSEManager fill:#dbeafe,stroke:#3b82f6
     style SSEConnection fill:#dbeafe,stroke:#3b82f6
     style RedfishClient fill:#dbeafe,stroke:#3b82f6
-    style SSHTransport fill:#dbeafe,stroke:#3b82f6
+    style ShardManager fill:#dbeafe,stroke:#3b82f6
 
     style AlertManager fill:#fce7f3,stroke:#ec4899
     style RateLimiter fill:#fce7f3,stroke:#ec4899
@@ -293,13 +387,23 @@ classDiagram
 
     style BaseExporter fill:#f3e8ff,stroke:#a855f7
     style InfluxDBExporter fill:#f3e8ff,stroke:#a855f7
-    style PrometheusExporter fill:#f3e8ff,stroke:#a855f7
 
     style TargetRepository fill:#fff7ed,stroke:#f97316
     style Target fill:#fff7ed,stroke:#f97316
     style CollectedLog fill:#fff7ed,stroke:#f97316
     style Alert fill:#fff7ed,stroke:#f97316
     style LogCollector fill:#fff7ed,stroke:#f97316
+    style ShardLease fill:#fff7ed,stroke:#f97316
+    style CollectorStats fill:#fff7ed,stroke:#f97316
+    style CollectorSlot fill:#fff7ed,stroke:#f97316
 
     style Metric fill:#f1f5f9,stroke:#94a3b8
     style PollResult fill:#f1f5f9,stroke:#94a3b8
+
+    style DataHallView fill:#ccfbf1,stroke:#14b8a6
+    style InventoryEnricher fill:#ccfbf1,stroke:#14b8a6
+    style Inventory fill:#ccfbf1,stroke:#14b8a6
+    style Placement fill:#ccfbf1,stroke:#14b8a6
+    style LocationResolver fill:#ccfbf1,stroke:#14b8a6
+    style HeatmapCache fill:#ccfbf1,stroke:#14b8a6
+    style HeatmapSnapshot fill:#fff7ed,stroke:#f97316

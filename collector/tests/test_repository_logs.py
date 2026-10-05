@@ -43,3 +43,29 @@ async def test_delete_log(repo):
     deleted = await repo.delete_collected_log(log.id)
     assert deleted is not None
     assert await repo.get_collected_log(log.id) is None
+
+
+async def test_delete_prior_target_logs_keeps_latest(repo):
+    # Two completed bundles for node 1, one for node 2, plus a failed node-1 row.
+    old1 = await _log(repo, target_id=1, filename="n1-old.gz", file_path="/d/n1-old.gz")
+    await repo.update_collected_log(old1.id, status="completed", file_size_bytes=10)
+    new1 = await _log(repo, target_id=1, filename="n1-new.gz", file_path="/d/n1-new.gz")
+    await repo.update_collected_log(new1.id, status="completed", file_size_bytes=20)
+    failed1 = await _log(repo, target_id=1, filename="n1-fail.gz", file_path="/d/n1-fail.gz")
+    await repo.update_collected_log(failed1.id, status="failed")
+    other = await _log(repo, target_id=2, filename="n2.gz", file_path="/d/n2.gz")
+    await repo.update_collected_log(other.id, status="completed", file_size_bytes=30)
+
+    removed = await repo.delete_prior_target_logs(target_id=1, keep_log_id=new1.id)
+
+    # Only node-1's older completed bundle is removed (returned for file cleanup).
+    assert {r.filename for r in removed} == {"n1-old.gz"}
+    remaining = {log.filename for log in await repo.get_all_collected_logs()}
+    assert "n1-old.gz" not in remaining
+    assert {"n1-new.gz", "n1-fail.gz", "n2.gz"} <= remaining  # latest + failed + other node
+
+
+async def test_delete_prior_target_logs_noop_when_only_one(repo):
+    only = await _log(repo, target_id=7, filename="solo.gz", file_path="/d/solo.gz")
+    await repo.update_collected_log(only.id, status="completed")
+    assert await repo.delete_prior_target_logs(target_id=7, keep_log_id=only.id) == []

@@ -1,0 +1,67 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: unit + live smoke
+    # Pinned (ubuntu-latest migrates to Ubuntu 26 on 2026-10-19); bump when ready.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5   # v5 runs on Node 24 (v4 forced off deprecated Node 20)
+
+      # A valid Fernet encryption key needs the `cryptography` lib so
+      # `./gyanam.sh init` generates a real key (not the openssl fallback).
+      - name: Ensure cryptography for key generation
+        run: python3 -m pip install --quiet cryptography
+
+      - name: Generate .env (disposable CI secrets)
+        run: ./gyanam.sh init
+
+      - name: Build images
+        run: ./gyanam.sh build
+
+      # ---- Tier 1: fast, fully-mocked unit suite + coverage gate (>=95%) ----
+      - name: Unit tests (mocked) + coverage gate
+        run: ./scripts/run-tests.sh
+
+      # ---- Tier 2: live smoke against the real stack -----------------------
+      - name: Start stack
+        run: docker compose -p gyanam up -d
+
+      - name: Wait for services to be healthy
+        run: |
+          for i in $(seq 1 60); do
+            api=$(docker inspect -f '{{.State.Health.Status}}' gyanam-api-1 2>/dev/null || echo starting)
+            col=$(docker inspect -f '{{.State.Health.Status}}' gyanam-collector-1 2>/dev/null || echo starting)
+            echo "attempt $i: api=$api collector=$col"
+            if [ "$api" = "healthy" ] && [ "$col" = "healthy" ]; then
+              echo "stack healthy"; exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::stack did not become healthy in time"
+          docker compose -p gyanam ps
+          docker compose -p gyanam logs --tail=100 collector api
+          exit 1
+
+      # CI stack is disposable, so the mutating round-trip (DB writes) is enabled.
+      - name: Live smoke tests
+        run: GYANAM_LIVE_MUTATE=1 ./scripts/smoke-test.sh
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose -p gyanam logs --tail=200 collector api
+
+      - name: Teardown
+        if: always()
+        run: docker compose -p gyanam down -v

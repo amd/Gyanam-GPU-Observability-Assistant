@@ -1,0 +1,463 @@
+{
+  "SchemaDefinition": "RedfishInteroperabilityProfile.v1_10_0",
+  "ProfileName": "GyanamTelemetryAggregator",
+  "ProfileVersion": "1.0.2",
+  "ProfileType": "Interop",
+  "OwningEntity": "gyanam",
+  "ContactInfo": "maintainers@example.invalid",
+  "Purpose": "Minimum Redfish functionality a BMC must implement for the gyanam telemetry/inventory aggregator to discover, inventory, stream metrics from, and collect diagnostic logs from a system without vendor-specific code. 'Mandatory' requirements are the core gyanam depends on to function; 'Recommended' requirements unlock the fuller feature set (GPU/firmware inventory, standards-based metric-unit resolution, event-driven diagnostic-log collection).",
+  "Protocol": {
+    "MinVersion": "1.6.0",
+    "ExpandQuery": "Recommended",
+    "FilterQuery": "Recommended"
+  },
+  "Resources": {
+    "ServiceRoot": {
+      "ReadRequirement": "Mandatory",
+      "PropertyRequirements": {
+        "RedfishVersion": {},
+        "UUID": {},
+        "Systems": {
+          "Purpose": "Inventory + per-system metric anchoring."
+        },
+        "Chassis": {
+          "Purpose": "Thermal and power telemetry."
+        },
+        "TelemetryService": {
+          "Purpose": "Metric report subscription and polling."
+        },
+        "EventService": {
+          "Purpose": "Alert and report delivery."
+        },
+        "Links": {
+          "PropertyRequirements": {
+            "Sessions": {}
+          }
+        }
+      }
+    },
+    "ComputerSystem": {
+      "ReadRequirement": "Mandatory",
+      "URIs": [
+        "/redfish/v1/Systems/{ComputerSystemId}"
+      ],
+      "PropertyRequirements": {
+        "Id": {},
+        "Name": {},
+        "UUID": {},
+        "Manufacturer": {},
+        "Model": {},
+        "SerialNumber": {},
+        "PowerState": {},
+        "BiosVersion": {
+          "ReadRequirement": "Recommended",
+          "Purpose": "Surfaced in gyanam's inventory tooltip."
+        },
+        "Status": {
+          "PropertyRequirements": {
+            "State": {},
+            "Health": {}
+          }
+        },
+        "ProcessorSummary": {
+          "ReadRequirement": "Recommended",
+          "Purpose": "Fast CPU count/model for inventory without walking Processors.",
+          "PropertyRequirements": {
+            "Count": {},
+            "Model": {
+              "ReadRequirement": "Recommended"
+            }
+          }
+        },
+        "MemorySummary": {
+          "ReadRequirement": "Recommended",
+          "Purpose": "Total system memory for inventory.",
+          "PropertyRequirements": {
+            "TotalSystemMemoryGiB": {}
+          }
+        },
+        "Processors": {},
+        "Memory": {},
+        "LogServices": {
+          "ReadRequirement": "Recommended"
+        }
+      }
+    },
+    "Processor": {
+      "UseCases": [
+        {
+          "UseCaseTitle": "GPU Processor Inventory",
+          "UseCaseComparison": "AnyOf",
+          "UseCaseKeyValues": [
+            "GPU",
+            "Accelerator"
+          ],
+          "PropertyRequirements": {
+            "Id": {},
+            "ProcessorType": {},
+            "Manufacturer": {},
+            "Model": {},
+            "SerialNumber": {
+              "ReadRequirement": "Recommended"
+            },
+            "Status": {
+              "PropertyRequirements": {
+                "State": {},
+                "Health": {}
+              }
+            },
+            "ProcessorMemory": {
+              "ReadRequirement": "Recommended",
+              "Purpose": "Per-GPU attached memory (e.g. HBM) capacity for inventory.",
+              "PropertyRequirements": {
+                "CapacityMiB": {}
+              }
+            },
+            "Metrics": {
+              "ReadRequirement": "Recommended",
+              "Purpose": "Per-GPU utilization and bandwidth counters."
+            }
+          },
+          "UseCaseKeyProperty": "ProcessorType"
+        },
+        {
+          "UseCaseTitle": "CPU Processor Inventory",
+          "UseCaseComparison": "Equal",
+          "UseCaseKeyValues": [
+            "CPU"
+          ],
+          "PropertyRequirements": {
+            "Id": {},
+            "ProcessorType": {},
+            "Manufacturer": {},
+            "Model": {},
+            "TotalCores": {},
+            "Status": {
+              "PropertyRequirements": {
+                "Health": {}
+              }
+            }
+          },
+          "UseCaseKeyProperty": "ProcessorType"
+        }
+      ]
+    },
+    "Chassis": {
+      "ReadRequirement": "Mandatory",
+      "PropertyRequirements": {
+        "Id": {},
+        "ChassisType": {},
+        "Manufacturer": {},
+        "Model": {},
+        "Status": {
+          "PropertyRequirements": {
+            "State": {},
+            "Health": {}
+          }
+        },
+        "ThermalSubsystem": {
+          "ConditionalRequirements": [
+            {
+              "Purpose": "Thermal telemetry required on physical enclosures.",
+              "ReadRequirement": "Mandatory",
+              "CompareProperty": "ChassisType",
+              "CompareType": "AnyOf",
+              "CompareValues": [
+                "RackMount",
+                "Sled",
+                "Drawer",
+                "Blade"
+              ]
+            }
+          ]
+        },
+        "PowerSubsystem": {
+          "ConditionalRequirements": [
+            {
+              "Purpose": "Power telemetry required on physical enclosures.",
+              "ReadRequirement": "Mandatory",
+              "CompareProperty": "ChassisType",
+              "CompareType": "AnyOf",
+              "CompareValues": [
+                "RackMount",
+                "Sled",
+                "Drawer",
+                "Blade"
+              ]
+            }
+          ]
+        },
+        "Sensors": {
+          "ReadRequirement": "Recommended"
+        }
+      }
+    },
+    "Sensor": {
+      "ReadRequirement": "Recommended",
+      "PropertyRequirements": {
+        "Id": {},
+        "Reading": {},
+        "ReadingUnits": {},
+        "ReadingType": {},
+        "Status": {
+          "PropertyRequirements": {
+            "State": {},
+            "Health": {}
+          }
+        }
+      }
+    },
+    "TelemetryService": {
+      "ReadRequirement": "Mandatory",
+      "MinVersion": "1.3.0",
+      "URIs": [
+        "/redfish/v1/TelemetryService"
+      ],
+      "PropertyRequirements": {
+        "Status": {
+          "PropertyRequirements": {
+            "State": {}
+          }
+        },
+        "MinCollectionInterval": {},
+        "SupportedCollectionFunctions": {
+          "ReadRequirement": "Recommended"
+        },
+        "MetricDefinitions": {},
+        "MetricReportDefinitions": {},
+        "MetricReports": {}
+      }
+    },
+    "MetricReportDefinitionCollection": {
+      "ReadRequirement": "Mandatory",
+      "CreateResource": true,
+      "Purpose": "gyanam creates its own report definitions rather than relying on vendor defaults."
+    },
+    "MetricReportDefinition": {
+      "ReadRequirement": "Mandatory",
+      "PropertyRequirements": {
+        "Id": {},
+        "MetricReportDefinitionEnabled": {
+          "WriteRequirement": "Mandatory"
+        },
+        "MetricReportDefinitionType": {
+          "Comparison": "AllOf",
+          "Values": [
+            "Periodic",
+            "OnRequest"
+          ],
+          "Purpose": "gyanam supports both scheduled push and on-demand pull."
+        },
+        "ReportUpdates": {
+          "Comparison": "AnyOf",
+          "Values": [
+            "Overwrite",
+            "AppendWrapsWhenFull"
+          ]
+        },
+        "Schedule": {
+          "ReadRequirement": "IfImplemented",
+          "PropertyRequirements": {
+            "RecurrenceInterval": {}
+          }
+        },
+        "Metrics": {
+          "MinCount": 1,
+          "PropertyRequirements": {
+            "MetricId": {},
+            "MetricProperties": {}
+          }
+        },
+        "MetricReport": {}
+      }
+    },
+    "MetricReport": {
+      "ReadRequirement": "Mandatory",
+      "PropertyRequirements": {
+        "Id": {},
+        "MetricReportDefinition": {},
+        "Timestamp": {},
+        "MetricValues": {
+          "MinCount": 1,
+          "PropertyRequirements": {
+            "MetricId": {},
+            "MetricValue": {},
+            "Timestamp": {},
+            "MetricProperty": {
+              "Purpose": "Required so gyanam can bind a reading back to the resource that produced it."
+            }
+          }
+        }
+      }
+    },
+    "MetricDefinition": {
+      "ReadRequirement": "Mandatory",
+      "PropertyRequirements": {
+        "Id": {},
+        "MetricType": {},
+        "MetricDataType": {},
+        "Units": {
+          "Purpose": "Unit normalization across vendors."
+        },
+        "Implementation": {
+          "ReadRequirement": "Recommended"
+        }
+      }
+    },
+    "EventService": {
+      "ReadRequirement": "Mandatory",
+      "MinVersion": "1.5.0",
+      "PropertyRequirements": {
+        "ServiceEnabled": {},
+        "DeliveryRetryAttempts": {},
+        "EventFormatTypes": {
+          "Comparison": "AllOf",
+          "Values": [
+            "Event",
+            "MetricReport"
+          ]
+        },
+        "Subscriptions": {},
+        "ServerSentEventUri": {
+          "ReadRequirement": "Recommended"
+        }
+      },
+      "ActionRequirements": {
+        "SubmitTestEvent": {
+          "ReadRequirement": "Recommended",
+          "Purpose": "Lets gyanam verify the delivery path at onboarding time.",
+          "ActionInfo": "Recommended"
+        }
+      }
+    },
+    "EventDestinationCollection": {
+      "ReadRequirement": "Mandatory",
+      "CreateResource": true,
+      "DeleteResource": true,
+      "Purpose": "gyanam subscribes for MetricReport push and alerts."
+    },
+    "EventDestination": {
+      "ReadRequirement": "Mandatory",
+      "PropertyRequirements": {
+        "Destination": {},
+        "EventFormatType": {},
+        "Context": {},
+        "SubscriptionType": {},
+        "Protocol": {
+          "Comparison": "AnyOf",
+          "Values": [
+            "Redfish"
+          ]
+        }
+      }
+    },
+    "LogService": {
+      "ReadRequirement": "Recommended",
+      "PropertyRequirements": {
+        "Id": {},
+        "Entries": {},
+        "OverWritePolicy": {}
+      },
+      "ActionRequirements": {
+        "ClearLog": {
+          "ReadRequirement": "Recommended"
+        },
+        "CollectDiagnosticData": {
+          "ReadRequirement": "Recommended",
+          "Purpose": "Lets gyanam's policy engine collect a diagnostic dump automatically on a fatal/critical event.",
+          "ActionInfo": "Recommended",
+          "Parameters": {
+            "DiagnosticDataType": {}
+          }
+        }
+      }
+    },
+    "LogEntry": {
+      "ReadRequirement": "Recommended",
+      "PropertyRequirements": {
+        "Id": {},
+        "Created": {},
+        "Severity": {},
+        "Message": {},
+        "MessageId": {
+          "ReadRequirement": "Recommended"
+        },
+        "EntryType": {}
+      }
+    },
+    "Memory": {
+      "UseCases": [
+        {
+          "UseCaseTitle": "Empty Memory Slot",
+          "UseCaseType": "AbsentResource",
+          "UseCaseKeyValues": [
+            "Absent"
+          ],
+          "PropertyRequirements": {
+            "Id": {},
+            "Status": {
+              "PropertyRequirements": {
+                "State": {}
+              }
+            }
+          }
+        },
+        {
+          "UseCaseTitle": "Populated Memory Module",
+          "PropertyRequirements": {
+            "Id": {},
+            "CapacityMiB": {},
+            "MemoryDeviceType": {},
+            "Manufacturer": {
+              "ReadRequirement": "Recommended"
+            },
+            "Status": {
+              "PropertyRequirements": {
+                "State": {},
+                "Health": {}
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Manager": {
+      "ReadRequirement": "Recommended",
+      "Purpose": "BMC firmware version for inventory.",
+      "PropertyRequirements": {
+        "Id": {},
+        "FirmwareVersion": {},
+        "Status": {
+          "PropertyRequirements": {
+            "State": {},
+            "Health": {}
+          }
+        }
+      }
+    },
+    "UpdateService": {
+      "ReadRequirement": "Recommended",
+      "Purpose": "Firmware inventory (component versions) surfaced in gyanam's inventory tooltip.",
+      "PropertyRequirements": {
+        "FirmwareInventory": {}
+      }
+    },
+    "SoftwareInventory": {
+      "ReadRequirement": "Recommended",
+      "Purpose": "Per-component firmware version under UpdateService/FirmwareInventory.",
+      "PropertyRequirements": {
+        "Id": {},
+        "Version": {},
+        "Name": {
+          "ReadRequirement": "Recommended"
+        }
+      }
+    }
+  },
+  "Registries": {
+    "Base": {
+      "ReadRequirement": "Mandatory",
+      "MinVersion": "1.0.0"
+    }
+  }
+}

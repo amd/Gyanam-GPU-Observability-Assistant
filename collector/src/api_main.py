@@ -42,8 +42,10 @@ from fastapi import FastAPI
 from .api.dependencies import app_state
 from .api.routes import (
     alerts_router,
+    datahall_router,
     health_router,
     logs_router,
+    redfish_router,
     schemas_router,
     targets_router,
 )
@@ -203,7 +205,6 @@ def create_app() -> FastAPI:
         verify_password,
     )
     from .api.csrf import generate_csrf_token, validate_csrf_token
-    from .api.dependencies import get_repository
 
     app = FastAPI(
         title="GPU Metrics Collector",
@@ -213,10 +214,15 @@ def create_app() -> FastAPI:
     )
 
     # Mount routes
-    app.include_router(targets_router, prefix="/targets", tags=["Targets"])
+    # Canonical mount is /systems; /targets stays as a hidden backward-compatible
+    # alias so old links/bookmarks keep working. All UI uses /systems.
+    app.include_router(targets_router, prefix="/systems", tags=["Systems"])
+    app.include_router(targets_router, prefix="/targets", tags=["Systems (alias)"])
+    app.include_router(datahall_router, prefix="/datahall", tags=["Data Hall"])
     app.include_router(logs_router, prefix="/logs", tags=["Logs"])
     app.include_router(alerts_router, prefix="/alerts", tags=["Alerts"])
     app.include_router(schemas_router, prefix="/schemas", tags=["Schemas"])
+    app.include_router(redfish_router, tags=["Redfish PolicyService"])
     app.include_router(health_router, tags=["health"])
 
     # Templates
@@ -235,17 +241,14 @@ def create_app() -> FastAPI:
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     # Add external service links as template globals (available on every page)
-    settings = get_settings()
     templates.env.globals["format_time_ago"] = _format_time_ago
     # Mint a CSRF token from any template (the logout form in base.html renders on
     # every page, so it can't depend on each route passing csrf_token in context).
     from .api.csrf import generate_csrf_token as _gen_csrf_token
 
     templates.env.globals["gen_csrf_token"] = _gen_csrf_token
-    templates.env.globals["metrics_backend"] = settings.metrics_backend
     templates.env.globals["grafana_port"] = os.environ.get("GRAFANA_PORT", "3000")
     templates.env.globals["influxdb_port"] = os.environ.get("INFLUXDB_PORT", "8086")
-    templates.env.globals["prometheus_port"] = os.environ.get("PROMETHEUS_PORT", "9090")
 
     # Login page
     @app.get("/login", response_class=HTMLResponse)
@@ -270,8 +273,15 @@ def create_app() -> FastAPI:
         # Check username and password
         import secrets
 
+        from .api.auth import default_password_blocks_login
+
         username_valid = secrets.compare_digest(username, config.ui.auth.username)
         password_valid = verify_password(password, config.ui.auth.password_hash)
+
+        # Fail closed on the shipped default credential unless explicitly allowed
+        # (parity with the Basic-auth path) — a known default is no auth at all.
+        if default_password_blocks_login(config.ui.auth.password_hash):
+            password_valid = False
 
         if not (username_valid and password_valid):
             return templates.TemplateResponse(
@@ -307,19 +317,11 @@ def create_app() -> FastAPI:
         return response
 
     # Main page
-    @app.get("/", response_class=HTMLResponse)
+    @app.get("/")
     async def index(request: Request, current_user: str = Depends(get_current_user)):
-        repository = get_repository()
-        targets = await repository.get_all_targets()
-        return templates.TemplateResponse(
-            request=request,
-            name="targets.html",
-            context={
-                "targets": targets,
-                "user": current_user,
-                "csrf_token": generate_csrf_token(),
-            },
-        )
+        # Redirect to the canonical Systems page so there's a single render path
+        # (and the system/GPU totals + active tab always show consistently).
+        return RedirectResponse(url="/systems", status_code=303)
 
     # Exception handlers
     @app.exception_handler(LoginRequiredError)
@@ -346,7 +348,7 @@ def create_app() -> FastAPI:
         404: ("Page not found", "The page or resource you requested doesn't exist."),
         422: (
             "Invalid request",
-            "Some required information was missing or invalid. Reload the page " "and try again.",
+            "Some required information was missing or invalid. Reload the page and try again.",
         ),
         500: (
             "Something went wrong",

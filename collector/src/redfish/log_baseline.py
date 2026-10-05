@@ -33,12 +33,14 @@ from datetime import UTC, datetime
 
 import httpx
 
+from ..util.timeutil import to_naive_utc as _naive_utc
 from .alert_subscriber import (
     AlertEvent,
     normalize_severity,
     parse_redfish_timestamp,
     severity_allowed,
 )
+from .http_client import make_bmc_client
 
 logger = logging.getLogger(__name__)
 
@@ -153,19 +155,6 @@ def order_members_newest_first(members: list, max_entries: int) -> list[dict]:
     if len(dicts) > max_entries:
         dicts = dicts[:max_entries]
     return dicts
-
-
-def _naive_utc(dt: datetime | None) -> datetime | None:
-    """Coerce a datetime to naive UTC for comparison with stored cursors.
-
-    ``parse_redfish_timestamp`` yields tz-aware datetimes, but cursors are
-    persisted as naive UTC. Comparing the two raises ``TypeError`` ("can't
-    compare offset-naive and offset-aware datetimes"), which previously killed
-    every incremental re-pull. Normalizing both sides here prevents that.
-    """
-    if dt is not None and dt.tzinfo is not None:
-        return dt.astimezone(UTC).replace(tzinfo=None)
-    return dt
 
 
 # Cap on pages followed via @odata.nextLink per collection, so a huge log can't
@@ -362,9 +351,7 @@ async def pull_baseline_alerts(
     auth = httpx.BasicAuth(username, password)
     emitted = 0
     try:
-        async with httpx.AsyncClient(
-            auth=auth, verify=verify_ssl, timeout=timeout, follow_redirects=True
-        ) as client:
+        async with make_bmc_client(auth=auth, verify_ssl=verify_ssl, timeout=timeout) as client:
             collections = await _discover_entry_collections(client, base_url)
             if not collections:
                 logger.debug("No log-entry collections discovered for %s", target_name)

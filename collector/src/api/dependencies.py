@@ -94,25 +94,9 @@ def get_exporter():
     )
 
 
-def get_unpacker():
-    """Get the unpacker instance - NOT AVAILABLE in API service."""
-    raise RuntimeError(
-        "Unpacker is not available in the API service. "
-        "Metric processing is handled by the separate collector service."
-    )
-
-
 def get_extractor():
     """Get the extractor instance - NOT AVAILABLE in API service."""
     raise RuntimeError(
         "Extractor is not available in the API service. "
         "Metric extraction is handled by the separate collector service."
-    )
-
-
-def get_discovery():
-    """Get the discovery instance - NOT AVAILABLE in API service."""
-    raise RuntimeError(
-        "Discovery is not available in the API service. "
-        "Metric discovery is handled by the separate collector service."
     )

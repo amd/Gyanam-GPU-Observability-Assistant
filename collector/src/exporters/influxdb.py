@@ -21,6 +21,7 @@
 
 import asyncio
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
@@ -31,9 +32,47 @@ from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 if TYPE_CHECKING:
     from influxdb_client.client.write_api_async import WriteApiAsync
 
+from ..metrics_cache import CACHED_METRIC_NAMES, HEATMAP
 from .base import BaseExporter, Metric
 
 logger = logging.getLogger(__name__)
+
+
+def _record_heatmap(metrics: list[Metric]) -> None:
+    """Feed the small set of heatmap-relevant metrics into the hot cache.
+
+    Cheap O(1) dict writes for a filtered subset — no effect on the export path
+    for the vast majority of metrics, which aren't cached.
+    """
+    for m in metrics:
+        if m.name in CACHED_METRIC_NAMES:
+            HEATMAP.record(m.tags.get("host"), m.name, m.value)
+
+
+# Batches at/above this point count serialize to line protocol off the event
+# loop; smaller ones encode inline to skip the thread-hop.
+_SERIALIZE_OFFLOAD_THRESHOLD = 256
+
+
+def _serialize_batch(batch: list[Point]) -> list[str]:
+    """Encode Points to InfluxDB line protocol (ms precision).
+
+    CPU-bound for large batches, so callers run it off the event loop. Pre-
+    serializing means the write path ships ready line protocol instead of
+    encoding synchronously inside the async write (which stalls polling + the
+    heatmap endpoint during a flush).
+    """
+    return [p.to_line_protocol(precision=WritePrecision.MS) for p in batch]
+
+
+def _describe_point(point: Point) -> str:
+    """Render one Point as line protocol for logging the offending value when a
+    batch is bisected down to its single rejected point. Falls back to repr()."""
+    try:
+        return _serialize_batch([point])[0]
+    except Exception:  # noqa: BLE001 — logging aid must never raise
+        return repr(point)
+
 
 # Force a reconnect after this many consecutive batch failures. Without this,
 # batch-level errors (ServerDisconnectedError, ClientOSError) never null
@@ -56,6 +95,10 @@ class InfluxDBExporter(BaseExporter):
 
     Supports batched async writes for high-volume metrics.
     """
+
+    # Absolute ceiling on buffered points during an outage, independent of
+    # batch_size, to bound worst-case memory (~hundreds of MB of Point objects).
+    _MAX_BUFFER_ABSOLUTE = 500_000
 
     def __init__(
         self,
@@ -99,11 +142,23 @@ class InfluxDBExporter(BaseExporter):
         self._connection_lock = asyncio.Lock()  # Protects _write_api state changes
         self._flush_task: asyncio.Task | None = None
         self._running = False
-        # Maximum buffer size to prevent memory issues during InfluxDB outages
-        # For 300+ endpoints, need much larger buffer to handle write latency spikes
-        self._max_buffer_size = batch_size * 200  # 200x batch size for high-scale buffering
+        # Maximum buffer size to prevent memory issues during InfluxDB outages.
+        # For 300+ endpoints we want a large buffer, but sizing it purely as a
+        # multiple of batch_size is a trap: raising batch_size for throughput
+        # (e.g. 10_000) would silently balloon the cap to millions of points and
+        # OOM the process during an outage. Keep the 200x heuristic but clamp it
+        # to an absolute ceiling that bounds worst-case memory.
+        self._max_buffer_size = min(batch_size * 200, self._MAX_BUFFER_ABSOLUTE)
         self._write_semaphore = asyncio.Semaphore(max_concurrent_writes)  # Limit concurrent writes
         self._dropped_points = 0
+        self._rejected_points = 0  # points dropped because InfluxDB rejected them (4xx)
+        # Dedicated small pool for line-protocol serialization so it never
+        # competes with the (much larger, GIL-heavy) metric-extraction pool that
+        # backs asyncio.to_thread. Serialization is light but must not queue
+        # behind extraction during a flush.
+        self._serialize_executor = ThreadPoolExecutor(
+            max_workers=2, thread_name_prefix="influx-serialize"
+        )
         self._reconnect_delay = 10.0  # seconds between reconnection attempts
         self._max_reconnect_delay = 300.0  # max backoff
 
@@ -292,6 +347,10 @@ class InfluxDBExporter(BaseExporter):
                 self._client = None
                 self._write_api = None
 
+        # Tear down the serialization pool (don't wait on in-flight — the final
+        # flush above already completed; threads are daemonic serializers).
+        self._serialize_executor.shutdown(wait=False, cancel_futures=True)
+
         logger.info("Disconnected from InfluxDB")
 
     async def write(self, metrics: list[Metric]) -> bool:
@@ -305,6 +364,7 @@ class InfluxDBExporter(BaseExporter):
         Returns:
             True if metrics were buffered successfully (always).
         """
+        _record_heatmap(metrics)
         points = [self._metric_to_point(m) for m in metrics]
 
         should_signal = False
@@ -389,57 +449,143 @@ class InfluxDBExporter(BaseExporter):
                 # Sleep before retrying to prevent tight error loop
                 await asyncio.sleep(self.flush_interval)
 
+    @staticmethod
+    def _is_unprocessable(error: Exception, err_text: str) -> bool:
+        """True when InfluxDB permanently rejected the payload (vs a transient
+        network/5xx error worth retrying).
+
+        A 400/422 is a client-side payload problem (malformed line protocol,
+        non-finite value, type conflict) — the identical batch will never be
+        accepted, so it must be dropped, not re-queued.
+        """
+        status = getattr(getattr(error, "response", None), "status", None)
+        if status is None:
+            status = getattr(error, "status", None)
+        if status in (400, 422):
+            return True
+        return any(
+            s in err_text
+            for s in ("unprocessable", "unable to parse", "partial write", "not finite")
+        )
+
     async def _write_batch_with_semaphore(
         self,
         write_api: "WriteApiAsync",
         batch: list[Point],
         batch_num: int,
         total_batches: int,
-    ) -> tuple[bool, list[Point], float]:
-        """Write a single batch with semaphore limiting for concurrency control.
+    ) -> tuple[list[Point], int, float]:
+        """Write a single batch, holding one write-semaphore slot for the whole
+        attempt (including any bisection), so overall write concurrency stays
+        bounded by max_concurrent_writes.
 
-        Args:
-            write_api: InfluxDB write API
-            batch: Points to write
-            batch_num: Batch number (1-indexed for logging)
-            total_batches: Total number of batches
-
-        Returns:
-            Tuple of (success: bool, failed_points: list, write_duration_ms: float)
+        Returns (retry_points, written_points, duration_ms):
+            retry_points   points to re-queue after a TRANSIENT failure ([] on
+                           clean success or on permanent rejection).
+            written_points count of points InfluxDB actually accepted.
+            duration_ms    latency sample for a clean single-shot write (0 when
+                           the batch was bisected or failed).
         """
         async with self._write_semaphore:
-            try:
-                write_start = datetime.now(UTC)
-                await asyncio.wait_for(
-                    write_api.write(bucket=self.bucket, org=self.org, record=batch),
-                    timeout=self.write_timeout_ms / 1000.0,
-                )
-                write_duration_ms = (datetime.now(UTC) - write_start).total_seconds() * 1000
+            return await self._write_or_bisect(write_api, batch, batch_num, total_batches)
 
-                return (True, [], write_duration_ms)
-
-            except TimeoutError:
-                logger.warning(
-                    f"Timeout writing batch {batch_num}/{total_batches} "
-                    f"({len(batch)} points) to InfluxDB after {self.write_timeout_ms}ms"
+    async def _write_or_bisect(
+        self,
+        write_api: "WriteApiAsync",
+        batch: list[Point],
+        batch_num: int,
+        total_batches: int,
+    ) -> tuple[list[Point], int, float]:
+        """Attempt one write; on a permanent 4xx rejection, bisect to isolate and
+        drop only the offending point(s). Assumes the caller holds the write
+        semaphore (recurses without re-acquiring it)."""
+        if not batch:
+            return ([], 0, 0.0)
+        try:
+            write_start = datetime.now(UTC)
+            # Serialize to line protocol off the event loop for big batches so a
+            # flush doesn't block polling + the heatmap endpoint; pass
+            # write_precision=ms since pre-serialized records carry no Point
+            # precision for the client to infer.
+            if len(batch) >= _SERIALIZE_OFFLOAD_THRESHOLD:
+                loop = asyncio.get_running_loop()
+                record = await loop.run_in_executor(
+                    self._serialize_executor, _serialize_batch, batch
                 )
-                return (False, batch, 0)
-            except Exception as batch_error:
+            else:
+                record = _serialize_batch(batch)
+            await asyncio.wait_for(
+                write_api.write(
+                    bucket=self.bucket,
+                    org=self.org,
+                    record=record,
+                    write_precision=WritePrecision.MS,
+                ),
+                timeout=self.write_timeout_ms / 1000.0,
+            )
+            write_duration_ms = (datetime.now(UTC) - write_start).total_seconds() * 1000
+            return ([], len(batch), write_duration_ms)
+
+        except TimeoutError:
+            logger.warning(
+                f"Timeout writing batch {batch_num}/{total_batches} "
+                f"({len(batch)} points) to InfluxDB after {self.write_timeout_ms}ms"
+            )
+            return (batch, 0, 0.0)
+        except Exception as batch_error:
+            logger.error(
+                f"Error writing batch {batch_num}/{total_batches} "
+                f"({len(batch)} points): {type(batch_error).__name__}: {batch_error}"
+            )
+            err_text = str(batch_error).lower()
+            # Diagnose the common, hard-to-root-cause auth failure once.
+            if not self._auth_hint_logged and ("401" in err_text or "unauthorized" in err_text):
+                self._auth_hint_logged = True
                 logger.error(
-                    f"Error writing batch {batch_num}/{total_batches}: "
-                    f"{type(batch_error).__name__}: {batch_error}"
+                    "InfluxDB rejected the token (401 Unauthorized). This usually "
+                    "means INFLUXDB_TOKEN no longer matches the token stored in the "
+                    "influxdb_data volume (e.g. .env was regenerated or a volume was "
+                    "copied/restored). Run './gyanam.sh doctor' to confirm and recover."
                 )
-                # Diagnose the common, hard-to-root-cause auth failure once.
-                err_text = str(batch_error).lower()
-                if not self._auth_hint_logged and ("401" in err_text or "unauthorized" in err_text):
-                    self._auth_hint_logged = True
-                    logger.error(
-                        "InfluxDB rejected the token (401 Unauthorized). This usually "
-                        "means INFLUXDB_TOKEN no longer matches the token stored in the "
-                        "influxdb_data volume (e.g. .env was regenerated or a volume was "
-                        "copied/restored). Run './gyanam.sh doctor' to confirm and recover."
-                    )
-                return (False, batch, 0)
+            # Permanent rejection (unparseable line protocol / unprocessable
+            # entity): retrying the identical batch will fail every cycle. Bisect
+            # to isolate the bad point(s) and drop only those — one NaN would
+            # otherwise take the whole (up to batch_size) batch of good points
+            # with it, silently losing a large share of fleet metrics.
+            if self._is_unprocessable(batch_error, err_text):
+                return await self._isolate_unprocessable(write_api, batch, batch_num, total_batches)
+            return (batch, 0, 0.0)
+
+    async def _isolate_unprocessable(
+        self,
+        write_api: "WriteApiAsync",
+        batch: list[Point],
+        batch_num: int,
+        total_batches: int,
+    ) -> tuple[list[Point], int, float]:
+        """Recursively bisect a permanently-rejected batch, writing the good
+        halves and dropping only the point(s) InfluxDB won't accept. A good
+        sub-batch is accepted whole and never re-sent, so each good point is
+        written exactly once; only sub-batches containing a bad point re-split."""
+        if len(batch) == 1:
+            self._rejected_points += 1
+            logger.error(
+                "Dropping 1 unprocessable point (batch %d/%d, total rejected: %d): %s "
+                "— likely a malformed value (NaN/Inf) or a field type conflict.",
+                batch_num,
+                total_batches,
+                self._rejected_points,
+                _describe_point(batch[0]),
+            )
+            return ([], 0, 0.0)
+        mid = len(batch) // 2
+        left_retry, left_written, _ = await self._write_or_bisect(
+            write_api, batch[:mid], batch_num, total_batches
+        )
+        right_retry, right_written, _ = await self._write_or_bisect(
+            write_api, batch[mid:], batch_num, total_batches
+        )
+        return (left_retry + right_retry, left_written + right_written, 0.0)
 
     async def _flush_buffer(self) -> None:
         """Flush the metric buffer to InfluxDB.
@@ -499,18 +645,22 @@ class InfluxDBExporter(BaseExporter):
                     failed_batches.append(batch)
                     self._failed_batches += 1
                 else:
-                    # Type narrowing: result is tuple here, not Exception
-                    batch_result = cast("tuple[bool, list, float]", result)
-                    success, _failed_points, duration_ms = batch_result
-                    if success:
+                    # Type narrowing: result is tuple here, not Exception.
+                    # (retry_points, written_points, duration_ms) — a bisected
+                    # batch can report BOTH written good points AND a transient
+                    # retry remainder; permanently-rejected points are already
+                    # tallied in _rejected_points and appear in neither.
+                    retry_points, written_points, duration_ms = cast(
+                        "tuple[list, int, float]", result
+                    )
+                    if written_points:
                         successful_batches += 1
-                        successful_points += len(
-                            batch
-                        )  # Count actual points, not assumed batch_size
+                        successful_points += written_points
                         self._successful_batches += 1
-                        write_durations.append(duration_ms)
-                    else:
-                        failed_batches.append(batch)
+                        if duration_ms:
+                            write_durations.append(duration_ms)
+                    if retry_points:
+                        failed_batches.append(retry_points)
                         self._failed_batches += 1
 
             # Update moving average of write latency using successful writes
@@ -571,8 +721,8 @@ class InfluxDBExporter(BaseExporter):
             await self._re_add_points(points)
 
         # If we've failed enough times in a row, force a reconnect. Without
-        # this the client object stays "connected" forever and writes silently
-        # stop — which is exactly the pathology we saw in the debug log.
+        # this the client object can stay "connected" while every write fails,
+        # so writes stop without the client ever reporting itself unhealthy.
         if self._consecutive_batch_failures >= _CONSECUTIVE_FAILURE_RECONNECT_THRESHOLD:
             logger.warning(
                 f"Forcing InfluxDB reconnect after "
@@ -708,9 +858,9 @@ class InfluxDBExporter(BaseExporter):
         buffer_utilization_pct = (len(self._buffer) / self._max_buffer_size) * 100
 
         # Connection state. The bare object check ("write_api is not None") is
-        # not enough: in the production lockup we observed, that object stayed
-        # alive for 7 hours while no writes were happening. So we also require
-        # a recent successful write (or no writes attempted yet).
+        # not enough: that object can stay alive indefinitely while no writes
+        # are landing. So we also require a recent successful write (or no
+        # writes attempted yet).
         write_api_alive = self._write_api is not None
         pipeline_recent = (
             self._last_write_time is None
@@ -722,6 +872,14 @@ class InfluxDBExporter(BaseExporter):
         # Calculate intelligent health metrics
         total_batches = self._successful_batches + self._failed_batches
         failure_rate_pct = (self._failed_batches / total_batches * 100) if total_batches > 0 else 0
+        # Rejected (dropped-as-unprocessable) points as a fraction of all points
+        # the pipeline tried to persist. A small rate is tolerable (one bad BMC
+        # value); a sustained high rate is a real, otherwise-invisible data-loss
+        # signal, so it degrades performance health.
+        attempted_points = self._total_points_written + self._rejected_points
+        rejected_rate_pct = (
+            (self._rejected_points / attempted_points * 100) if attempted_points > 0 else 0
+        )
 
         # Intelligent health assessment based on multiple factors
         # A system is healthy if it meets ALL critical criteria and MOST performance criteria
@@ -737,14 +895,15 @@ class InfluxDBExporter(BaseExporter):
             "acceptable_latency": self._write_latency_ms < 3000,  # 3s threshold (relaxed)
             "buffer_healthy": buffer_utilization_pct < 80,  # Ideal threshold
             "minimal_failures": self._write_failures_24h < 50,  # Scaled for volume
+            "low_rejected_rate": rejected_rate_pct <= 1.0,  # dropped-unprocessable visibility
         }
 
         # Critical checks must ALL pass
         critical_healthy = all(critical_checks.values())
 
-        # Performance checks - at least 3 out of 4 should pass
+        # Performance checks - tolerate at most one failing check.
         performance_score = sum(performance_checks.values())
-        performance_healthy = performance_score >= 3
+        performance_healthy = performance_score >= len(performance_checks) - 1
 
         # Overall health: critical checks pass AND performance is acceptable
         is_healthy = critical_healthy and performance_healthy
@@ -753,7 +912,7 @@ class InfluxDBExporter(BaseExporter):
         health_details = {
             "critical_checks": critical_checks,
             "performance_checks": performance_checks,
-            "performance_score": f"{performance_score}/4",
+            "performance_score": f"{performance_score}/{len(performance_checks)}",
             "write_api_alive": write_api_alive,
             "consecutive_batch_failures": self._consecutive_batch_failures,
             "reconnects": self._reconnect_count,
@@ -766,6 +925,7 @@ class InfluxDBExporter(BaseExporter):
             "total_batches_written": self._write_count,
             "total_points_written": self._total_points_written,
             "total_points_dropped": self._dropped_points,
+            "total_points_rejected": self._rejected_points,
             "write_failures_24h": self._write_failures_24h,
             "successful_batches": self._successful_batches,
             "failed_batches": self._failed_batches,

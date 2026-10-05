@@ -88,8 +88,19 @@ class LogCollector:
             self._target_locks[target_id] = asyncio.Lock()
         return self._target_locks[target_id]
 
-    async def collect_single(self, target_id: int) -> dict:
+    async def collect_single(
+        self,
+        target_id: int,
+        *,
+        trigger: str = "manual",
+        trigger_message_id: str | None = None,
+    ) -> dict:
         """Collect diagnostic logs from a single target.
+
+        Args:
+            target_id: Target to collect from.
+            trigger: What initiated this collection ("manual" | "policy" | "bulk").
+            trigger_message_id: Redfish MessageId that fired a policy collection.
 
         Returns:
             Dict with collection result info.
@@ -103,7 +114,9 @@ class LogCollector:
             return {"success": False, "error": "Collection already in progress for this target"}
 
         async with lock:
-            return await self._collect_from_target(target)
+            return await self._collect_from_target(
+                target, trigger=trigger, trigger_message_id=trigger_message_id
+            )
 
     async def collect_all(self) -> dict:
         """Collect logs from all enabled targets in parallel.
@@ -116,9 +129,12 @@ class LogCollector:
 
         self._bulk_in_progress = True
         try:
-            targets = await self.repository.get_all_targets(enabled_only=True)
+            # Shard-aware: only collect from targets this collector owns. Using
+            # get_all_targets here would make every replica collect logs from the
+            # entire fleet (duplicated collection) once sharding is enabled.
+            targets = await self.repository.get_active_targets()
             if not targets:
-                return {"success": True, "message": "No enabled targets", "results": []}
+                return {"success": True, "message": "No active targets", "results": []}
 
             async def _collect_with_semaphore(t: Target) -> dict:
                 async with self._semaphore:
@@ -131,7 +147,7 @@ class LogCollector:
                             "error": "Already in progress",
                         }
                     async with lock:
-                        return await self._collect_from_target(t)
+                        return await self._collect_from_target(t, trigger="bulk")
 
             results = await asyncio.gather(
                 *[_collect_with_semaphore(t) for t in targets],
@@ -169,7 +185,13 @@ class LogCollector:
         finally:
             self._bulk_in_progress = False
 
-    async def _collect_from_target(self, target: Target) -> dict:
+    async def _collect_from_target(
+        self,
+        target: Target,
+        *,
+        trigger: str = "manual",
+        trigger_message_id: str | None = None,
+    ) -> dict:
         """Download the diagnostic log bundle from a single target."""
         start_time = datetime.now(UTC)
         timestamp_str = start_time.strftime("%Y%m%d_%H%M%S_%f")
@@ -185,21 +207,14 @@ class LogCollector:
             filename=filename,
             file_path=str(file_path),
             status="collecting",
+            trigger=trigger,
+            trigger_message_id=trigger_message_id,
         )
 
         try:
-            # SSH proxy with custom tool: use hwdiag + SCP approach
-            if (
-                target.connection_mode == "ssh_proxy"
-                and target.ssh_command_template
-                and target.ssh_command_template.strip()
-            ):
-                await self._collect_via_ssh_tool(target, file_path)
-                file_size = file_path.stat().st_size
-            else:
-                content = await self._collect_via_redfish(target)
-                file_path.write_bytes(content)
-                file_size = len(content)
+            content = await self._collect_via_redfish(target)
+            file_path.write_bytes(content)
+            file_size = len(content)
 
             end_time = datetime.now(UTC)
             duration_ms = (end_time - start_time).total_seconds() * 1000
@@ -210,6 +225,21 @@ class LogCollector:
                 file_size_bytes=file_size,
                 duration_ms=duration_ms,
             )
+
+            # Keep only the latest bundle per node: delete this target's older
+            # completed logs (and their files) so we don't retain duplicate
+            # copies from the same node. Best-effort — a cleanup failure must not
+            # fail the collection that just succeeded.
+            try:
+                superseded = await self.repository.delete_prior_target_logs(
+                    target.id, log_record.id
+                )
+                for old in superseded:
+                    self.delete_file(old.file_path)
+                if superseded:
+                    logger.info(f"Pruned {len(superseded)} superseded log(s) for {target.name}")
+            except Exception as e:  # noqa: BLE001 — cleanup is best-effort
+                logger.warning(f"Could not prune old logs for {target.name}: {e}")
 
             logger.info(
                 f"Collected logs from {target.name}: {filename} "
@@ -258,23 +288,6 @@ class LogCollector:
         password = self.repository.decrypt_password(target)
         token = self.repository.decrypt_token(target)
 
-        # Create SSH transport if target uses proxy mode (curl-based SSH)
-        ssh_transport = None
-        if target.connection_mode == "ssh_proxy":
-            from .redfish.ssh_transport import SSHTransport
-
-            ssh_key = self.repository.decrypt_ssh_key(target)
-            ssh_password = self.repository.decrypt_ssh_password(target)
-            ssh_transport = SSHTransport(
-                proxy_host=target.ssh_proxy_host,
-                proxy_port=target.ssh_proxy_port or 22,
-                proxy_username=target.ssh_proxy_username or "root",
-                ssh_key=ssh_key,
-                ssh_password=ssh_password,
-                command_timeout=self.download_timeout,
-                verify_ssl=target.verify_ssl,
-            )
-
         async with RedfishClient(
             base_url=target.base_url,
             username=target.username,
@@ -286,7 +299,6 @@ class LogCollector:
             task_timeout=self.task_timeout,
             download_timeout=self.download_timeout,
             cleanup_task_on_success=True,
-            ssh_transport=ssh_transport,
         ) as client:
             endpoint = target.telemetry_endpoint or self.collect_endpoint
             response = await client.collect_diagnostic_data(
@@ -294,85 +306,31 @@ class LogCollector:
                 collect_body=self.collect_body,
             )
 
+            # Self-heal a wrong/hardcoded action URI. The CollectDiagnosticData
+            # action lives at different paths across hardware (Systems/UBB vs
+            # Managers/Instinct_AMC, etc.); a target configured with the wrong
+            # one returns 404 forever. Gate on the *initiate* 404 specifically
+            # (client._last_initiate_status) — a 404 from a later stage (e.g. an
+            # expired attachment) means the endpoint was correct, so we must not
+            # rediscover and clobber it. On a genuine initiate-404, discover the
+            # real action target, persist it, and retry once.
+            if not response.success and client._last_initiate_status == 404:
+                discovered = await client.discover_collect_endpoint()
+                if discovered and discovered != endpoint:
+                    logger.info(
+                        f"Rediscovered CollectDiagnosticData endpoint for {target.name}: "
+                        f"{discovered} (was {endpoint})"
+                    )
+                    await self.repository.update_target(target.id, telemetry_endpoint=discovered)
+                    response = await client.collect_diagnostic_data(
+                        collect_endpoint=discovered,
+                        collect_body=self.collect_body,
+                    )
+
         if not response.success:
             raise RuntimeError(response.error_message or "Collection failed")
 
         return response.content
-
-    async def _collect_via_ssh_tool(self, target: Target, local_path: Path) -> None:
-        """Collect logs via SSH using hwdiag + SCP.
-
-        For SSH proxy targets with a custom CLI tool:
-        1. Run 'hwdiag gpu get_bmc_log all' on the proxy BMC
-        2. Parse output for the log file path (/diag/log/...)
-        3. SCP the file back to the collector's local storage
-        """
-        import asyncssh
-
-        from .redfish.ssh_transport import SSHTransport
-
-        ssh_key = self.repository.decrypt_ssh_key(target)
-        ssh_password = self.repository.decrypt_ssh_password(target)
-        transport = SSHTransport(
-            proxy_host=target.ssh_proxy_host,
-            proxy_port=target.ssh_proxy_port or 22,
-            proxy_username=target.ssh_proxy_username or "root",
-            ssh_key=ssh_key,
-            ssh_password=ssh_password,
-            command_timeout=self.task_timeout,
-            verify_ssl=target.verify_ssl,
-        )
-
-        try:
-            await transport.connect()
-
-            # Step 1: Run hwdiag to collect logs (may take several minutes)
-            logger.info(f"Running hwdiag log collection on {target.ssh_proxy_host}...")
-            result = await transport._exec(
-                "hwdiag gpu get_bmc_log all",
-                timeout=self.task_timeout,
-            )
-
-            if result.exit_status != 0:
-                stderr = (result.stderr or "").strip()
-                stdout = (result.stdout or "").strip()
-                raise RuntimeError(f"hwdiag failed (exit {result.exit_status}): {stderr or stdout}")
-
-            stdout = result.stdout or ""
-            logger.debug(f"hwdiag output: {stdout[:500]}")
-
-            # Step 2: Find the log file path in the output
-            remote_path = None
-            for line in stdout.splitlines():
-                line = line.strip()
-                # Look for path starting with /diag/log/ (exclude trailing punctuation)
-                match = re.search(r"(/diag/log/[^\s,;:)\"\']+)", line)
-                if match:
-                    remote_path = match.group(1)
-                    break
-
-            if not remote_path:
-                raise RuntimeError(
-                    f"Could not find log file path in hwdiag output. Output: {stdout[:500]}"
-                )
-
-            logger.info(f"Log file on proxy: {remote_path}")
-
-            # Step 3: SCP the file from the proxy BMC to local storage
-            logger.info(f"SCP {target.ssh_proxy_host}:{remote_path} -> {local_path}")
-            await asyncssh.scp(
-                (transport._conn, remote_path),
-                str(local_path),
-            )
-
-            file_size = local_path.stat().st_size
-            logger.info(
-                f"Transferred {file_size / 1024 / 1024:.1f} MB from "
-                f"{target.ssh_proxy_host}:{remote_path}"
-            )
-
-        finally:
-            await transport.close()
 
     def delete_file(self, file_path: str) -> bool:
         """Remove a collected log file from disk.

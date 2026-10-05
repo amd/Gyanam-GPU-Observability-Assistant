@@ -7,6 +7,10 @@ docs/*.pdf            linguist-documentation
 docs/*.mmd            linguist-documentation
 reference_artifacts/* linguist-documentation
 
+# Vendored third-party JS (three.js) — keep out of language stats and diffs
+collector/src/api/static/vendor/**  linguist-vendored
+collector/src/api/static/vendor/**  -diff
+
 # Always treat binary so git doesn't try to diff them as text
 *.png  binary
 *.jpg  binary

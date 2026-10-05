@@ -19,6 +19,9 @@ class FakeRepo:
     async def get_all_targets(self, enabled_only=False):
         return self.targets
 
+    async def get_active_targets(self):
+        return self.targets
+
 
 def _target(tid=1, **kw):
     d = {
@@ -64,6 +67,53 @@ async def test_start_webhook_subscription(monkeypatch):
 
     monkeypatch.setattr(am, "WebhookSubscriber", StubWH)
     mgr = AlertManager(FakeRepo(), enable_webhook_fallback=True)
+    await mgr._start_webhook_subscription(_target(), "pw")
+    assert 1 in mgr._webhook_subscribers
+
+
+async def test_refresh_harvests_permanently_failed_sse(monkeypatch):
+    # An SSE subscriber that permanently failed mid-stream must be removed from
+    # the active set and moved to the permanent-failure set (retry-eligible), not
+    # left lingering (never retried, miscounted as active).
+    from src.redfish.alert_subscriber import SubscriptionState
+
+    repo = FakeRepo(targets=[_target(1)])
+    mgr = AlertManager(repo)
+
+    class DeadSub:
+        state = SubscriptionState.FAILED_PERMANENT
+        failure_reason = "401 Unauthorized"
+
+        async def stop(self):
+            pass
+
+    mgr._subscribers[1] = DeadSub()
+    monkeypatch.setattr(mgr, "_start_subscription", lambda t: _noop())
+    await mgr._refresh_subscriptions()
+    assert 1 not in mgr._subscribers
+    assert 1 in mgr._permanently_failed
+
+
+async def _noop():
+    return None
+
+
+async def test_start_webhook_adopts_via_reconcile(monkeypatch):
+    # When the BMC already holds our subscription (reconcile adopts it), we must
+    # NOT create a duplicate.
+    class StubWH:
+        def __init__(self, **kw):
+            self.target_id = kw["target_id"]
+
+        async def _reconcile_by_context(self):
+            return True
+
+        async def create_subscription(self):
+            raise AssertionError("must not create when an existing sub is adopted")
+
+    monkeypatch.setattr(am, "WebhookSubscriber", StubWH)
+    mgr = AlertManager(FakeRepo(), enable_webhook_fallback=True)
+    monkeypatch.setattr(mgr, "_schedule_baseline_pull", lambda tid: None)
     await mgr._start_webhook_subscription(_target(), "pw")
     assert 1 in mgr._webhook_subscribers
 

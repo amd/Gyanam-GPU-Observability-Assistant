@@ -31,6 +31,8 @@ from enum import Enum
 
 import httpx
 
+from .http_client import make_bmc_client
+
 logger = logging.getLogger(__name__)
 
 
@@ -79,9 +81,9 @@ async def check_sse_capability(
 
     # Step 1: Check if EventService exists and is enabled
     try:
-        async with httpx.AsyncClient(
+        async with make_bmc_client(
             auth=httpx.BasicAuth(username, password),
-            verify=verify_ssl,
+            verify_ssl=verify_ssl,
             timeout=10.0,
         ) as client:
             # Check EventService
@@ -167,13 +169,12 @@ async def _test_sse_endpoint(
         SSECapabilityResult
     """
     try:
-        timeout = httpx.Timeout(10.0, read=test_duration + 2.0)
-
         async with (
-            httpx.AsyncClient(
+            make_bmc_client(
                 auth=httpx.BasicAuth(username, password),
-                verify=verify_ssl,
-                timeout=timeout,
+                verify_ssl=verify_ssl,
+                timeout=10.0,
+                read_timeout=test_duration + 2.0,
             ) as client,
             client.stream("GET", sse_url) as response,
         ):

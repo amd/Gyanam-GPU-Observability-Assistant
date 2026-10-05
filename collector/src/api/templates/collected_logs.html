@@ -18,6 +18,16 @@
         <span id="filter-count" style="font-size: 0.8rem; color: #64748b;"></span>
     </div>
 
+    {% if total is defined and total > page_size %}
+    <div style="display: flex; gap: 12px; padding: 8px 16px; align-items: center; justify-content: space-between; font-size: 0.8rem; color: #64748b; border-bottom: 1px solid var(--border-color, #e2e8f0);">
+        <span>Showing {{ offset + 1 }}–{{ offset + logs|length }} of {{ total }} (search filters this page)</span>
+        <span>
+            {% if has_prev %}<a href="/logs?offset={{ prev_offset }}" class="btn btn-sm">← Newer</a>{% endif %}
+            {% if has_next %}<a href="/logs?offset={{ next_offset }}" class="btn btn-sm">Older →</a>{% endif %}
+        </span>
+    </div>
+    {% endif %}
+
     <table>
         <thead>
             <tr>

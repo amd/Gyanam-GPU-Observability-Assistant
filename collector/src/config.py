@@ -19,13 +19,17 @@
 # SOFTWARE.
 """Configuration loader for the GPU Metrics Collector."""
 
+import logging
 import os
+import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 import yaml
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 
 class PollingConfig(BaseModel):
@@ -142,12 +146,6 @@ class CollectedLogsConfig(BaseModel):
     download_timeout: int = 600
 
 
-class PrometheusConfig(BaseModel):
-    """Prometheus exporter configuration."""
-
-    metrics_path: str = "/metrics"
-
-
 class SSEConfig(BaseModel):
     """SSE (Server-Sent Events) subscription configuration."""
 
@@ -244,6 +242,170 @@ class AlertsConfig(BaseModel):
         return v
 
 
+def _default_location_token_rules() -> list[dict]:
+    """Generic prefix rules for decoding placement from a hostname token.
+
+    Each rule matches a single ``- _ .``-delimited token and claims a field.
+    Deliberately conservative and reorderable — operators tailor these (and add
+    ``name_patterns``) to their own site convention. Note ``r<n>`` maps to a
+    rack by common convention; sites that spell racks differently should adjust.
+    """
+    return [
+        {"field": "hall", "pattern": r"dh(\d+)"},
+        {"field": "hall", "pattern": r"hall(\d+)"},
+        {"field": "row", "pattern": r"row(\d+)"},
+        {"field": "rack", "pattern": r"rack(\d+)"},
+        {"field": "rack", "pattern": r"r(\d+)"},
+        {"field": "rack", "pattern": r"k(\d+)"},
+        {"field": "rack_u", "pattern": r"ru(\d+)"},
+        {"field": "rack_u", "pattern": r"u(\d+)"},
+    ]
+
+
+class LocationTokenRule(BaseModel):
+    """A single hostname-token placement rule: (field, single-token regex)."""
+
+    field: str
+    pattern: str
+
+    @field_validator("field")
+    @classmethod
+    def _validate_field(cls, v: str) -> str:
+        allowed = {"site", "hall", "row", "rack", "rack_u", "height"}
+        if v not in allowed:
+            raise ValueError(f"location token rule field must be one of {sorted(allowed)}")
+        return v
+
+
+class LocationConfig(BaseModel):
+    """Data-hall placement configuration (rack geometry + hostname decoding)."""
+
+    # Rack height in rack units. Default is an OCP Open Rack v3 frame (48 OpenU).
+    # OCP Open Rack v3 reference: 600 mm external width, ~1200 mm depth, and an
+    # "OpenU" (OU) pitch of 48 mm (vs 44.45 mm for a 19" EIA-310 RU).
+    rack_height_u: int = Field(default=48, gt=0)
+    gpus_per_system: int = Field(default=8, ge=0)
+    # Default chassis height in rack units when a system's height isn't known.
+    # Defaulted to 4U as a conservative single-system footprint (overridden by a
+    # BMC-reported height or a hostname-encoded height when available).
+    default_system_height_u: int = Field(default=4, gt=0)
+    # Rack-unit standard assumed when a source doesn't specify one:
+    # "OpenU" (OCP Open Rack, 48 mm) or "EIA_310" (19" rack, 1.75 in / 44.45 mm).
+    default_unit_type: str = "OpenU"
+    # Full-hostname regexes with named groups (site/hall/row/rack/rack_u/height),
+    # tried before token rules. Empty by default — add site-specific patterns here.
+    name_patterns: list[str] = Field(default_factory=list)
+    token_rules: list[LocationTokenRule] = Field(
+        default_factory=lambda: [LocationTokenRule(**r) for r in _default_location_token_rules()]
+    )
+
+
+class InventoryConfig(BaseModel):
+    """Background Redfish inventory-enrichment configuration."""
+
+    enabled: bool = True
+    # How often the enricher loop wakes to look for systems needing inventory.
+    collect_interval_seconds: int = Field(default=300, gt=0)
+    # Re-pull inventory for a system once it's older than this (staleness).
+    # 0 means pull exactly once per system and never refresh.
+    refresh_interval_hours: float = Field(default=24, ge=0)
+    # Max concurrent BMC inventory fetches.
+    max_concurrent: int = Field(default=8, gt=0)
+    # Per-request timeout for inventory GETs (seconds).
+    request_timeout: int = Field(default=30, gt=0)
+    # Drop pre-aggregated statistical MetricReports (e.g. AvgPowerConsumptionHour)
+    # during discovery — GYANAM downsamples itself, so polling them just multiplies
+    # per-cycle GETs. Operators can still pin one via a per-target report override.
+    discovery_exclude_aggregate_reports: bool = True
+
+
+class PolicyConfig(BaseModel):
+    """Automated diagnostic-log-collection policy.
+
+    Models the gyanam-owned Redfish PolicyService (exposed read-only at
+    /redfish/v1/PolicyService): on a fatal/critical event gyanam collects a
+    diagnostic dump, with a per-target rearm window (hysteresis) so a storm of
+    events can't trigger a tight collection loop. The standard Redfish Policy
+    schema has no rearm property, so rearm_seconds is enforced by the engine and
+    surfaced as Oem.Gyanam.RearmSeconds on the exposed Policy.
+    """
+
+    enabled: bool = True
+    # Disabled | AlertOnly | Enabled (mirrors PolicyService.OperatingMode).
+    # "Enabled" = collect; "AlertOnly" = evaluate/log but don't collect.
+    operating_mode: str = "Enabled"
+    # Per-target hysteresis: minimum seconds between policy-triggered collections
+    # for the same target. Default 2h.
+    rearm_seconds: int = Field(default=7200, ge=0)
+    # Event severities that fire the policy (case-insensitive).
+    trigger_severities: list[str] = Field(default_factory=lambda: ["Critical", "Fatal"])
+    # Optional allow-list of Redfish MessageIds; empty = any MessageId at a
+    # triggering severity.
+    trigger_message_ids: list[str] = Field(default_factory=list)
+
+
+class ShardConfig(BaseModel):
+    """Horizontal sharding: distribute targets across multiple collector processes.
+
+    Off by default — a single collector owns every target (current behavior, no
+    lease bookkeeping). When enabled, each collector claims up to
+    ``max_targets_per_shard`` targets via DB leases, renews them as a heartbeat,
+    and reclaims targets whose owner's heartbeat went stale. Scale the collector
+    replica count up/down (docker compose --scale / k8s) and targets rebalance
+    automatically.
+    """
+
+    enabled: bool = False
+    # Assignment strategy:
+    #   "dynamic" — Rendezvous (HRW) hashing: targets are balanced across live
+    #     collectors to within ±1 and rebalance with minimal movement as replicas
+    #     come and go (recommended default).
+    #   "static"  — greedy id-order claiming up to max_targets_per_shard per
+    #     collector (fills replicas in turn; one may sit idle). The proven
+    #     fallback — flip here or via COLLECTOR_BALANCE if dynamic misbehaves.
+    balance: Literal["static", "dynamic"] = "dynamic"
+    # Max targets one collector will own. In dynamic mode this is a SAFETY CEILING
+    # (the fair share ceil(N/live) is the real per-pass bound); in static mode it
+    # is the claim cap. 200 covers a ~500-target fleet across 3 replicas.
+    max_targets_per_shard: int = Field(default=200, gt=0)
+    # Seconds between claim/renew passes.
+    claim_interval_seconds: float = Field(default=20.0, gt=0)
+    # A lease older than this (owner stopped heartbeating) is reclaimable.
+    lease_ttl_seconds: float = Field(default=75.0, gt=0)
+    # Dynamic mode: a collector is "live" if its stats row is fresher than this.
+    # Must be >= 2x the claim interval (so one missed pass doesn't flap a live
+    # collector out of the set) and <= lease_ttl (so a dead collector leaves the
+    # live set no later than its leases go stale, keeping the view conservative).
+    membership_ttl_seconds: float = Field(default=75.0, gt=0)
+
+    @model_validator(mode="after")
+    def _check_heartbeat_margin(self) -> "ShardConfig":
+        # The heartbeat cadence equals claim_interval; the TTL must comfortably
+        # exceed it so a live collector never lets its own leases expire between
+        # passes (which would flap ownership). Require at least a 2x margin to
+        # tolerate one missed/slow pass.
+        if self.lease_ttl_seconds < 2 * self.claim_interval_seconds:
+            raise ValueError(
+                "sharding.lease_ttl_seconds must be >= 2 * claim_interval_seconds "
+                f"(got ttl={self.lease_ttl_seconds}, interval={self.claim_interval_seconds}); "
+                "otherwise a live collector's leases can expire between heartbeats"
+            )
+        if self.membership_ttl_seconds < 2 * self.claim_interval_seconds:
+            raise ValueError(
+                "sharding.membership_ttl_seconds must be >= 2 * claim_interval_seconds "
+                f"(got {self.membership_ttl_seconds}, interval={self.claim_interval_seconds}); "
+                "otherwise one missed heartbeat flaps a live collector out of the set"
+            )
+        if self.membership_ttl_seconds > self.lease_ttl_seconds:
+            raise ValueError(
+                "sharding.membership_ttl_seconds must be <= lease_ttl_seconds "
+                f"(got membership={self.membership_ttl_seconds}, lease={self.lease_ttl_seconds}); "
+                "otherwise a dead collector stays in the live set after its leases go "
+                "stale, so survivors exclude its (now unowned) targets and orphan them"
+            )
+        return self
+
+
 class AppConfig(BaseModel):
     """Main application configuration."""
 
@@ -251,20 +413,20 @@ class AppConfig(BaseModel):
     redfish: RedfishConfig = Field(default_factory=RedfishConfig)
     sse: SSEConfig = Field(default_factory=SSEConfig)
     alerts: AlertsConfig = Field(default_factory=AlertsConfig)
-    prometheus: PrometheusConfig = Field(default_factory=PrometheusConfig)
     influxdb: InfluxDBConfig = Field(default_factory=InfluxDBConfig)
     ui: UIConfig = Field(default_factory=UIConfig)
     blob: BlobConfig = Field(default_factory=BlobConfig)
     collected_logs: CollectedLogsConfig = Field(default_factory=CollectedLogsConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     parser: ParserConfig = Field(default_factory=ParserConfig)
+    location: LocationConfig = Field(default_factory=LocationConfig)
+    inventory: InventoryConfig = Field(default_factory=InventoryConfig)
+    policy: PolicyConfig = Field(default_factory=PolicyConfig)
+    sharding: ShardConfig = Field(default_factory=ShardConfig)
 
 
 class Settings(BaseSettings):
     """Environment-based settings that override config file."""
-
-    # Metrics backend selection: "influxdb" (default) or "prometheus"
-    metrics_backend: str = "influxdb"
 
     # InfluxDB settings from environment
     # Defaults are empty so YAML config values aren't silently overridden.
@@ -282,6 +444,19 @@ class Settings(BaseSettings):
     alert_webhook_base_url: str = ""  # Empty = use config.yaml default
     alert_enable_webhook_fallback: bool | None = None  # None = use config.yaml default
     alert_force_webhook_mode: bool = False  # Force webhook mode for testing
+
+    # Horizontal sharding (multi-collector). COLLECTOR_SHARDING enables it;
+    # COLLECTOR_ID distinguishes replicas (defaults to the hostname, which is
+    # unique per docker/k8s replica). MAX_TARGETS_PER_SHARD overrides the cap.
+    collector_sharding: bool | None = None  # None = use config.yaml default
+    collector_id: str = ""  # Empty = slot-claimed ordinal (dynamic) or hostname
+    max_targets_per_shard: int = 0  # 0 = use config.yaml default
+    collector_balance: str = ""  # "static"|"dynamic"; empty = use config.yaml default
+
+    # UI credentials from environment (preferred over editing config.yaml).
+    # UI_PASSWORD is bcrypt-hashed at load; UI_USERNAME overrides the admin name.
+    ui_username: str = ""
+    ui_password: str = ""
 
     # Database
     database_url: str = "sqlite:///data/targets.db"
@@ -309,6 +484,19 @@ def load_yaml_config(config_path: str) -> dict[str, Any]:
 
     # Expand environment variables in the config
     content = os.path.expandvars(content)
+
+    # os.path.expandvars silently leaves unresolved references (an unset ${VAR},
+    # or the unsupported ${VAR:-default} form) as literal text — which would
+    # become a literal config value like "${INFLUXDB_URL}" and fail obscurely
+    # downstream. Fail fast instead so misconfiguration is caught at startup.
+    residual = re.findall(r"\$\{[^}]+\}", content)
+    if residual:
+        unique = sorted(set(residual))
+        raise ValueError(
+            "Unresolved environment variable(s) in config: "
+            f"{', '.join(unique)}. Set the variable(s); note that the "
+            "${VAR:-default} syntax is not supported."
+        )
     return yaml.safe_load(content) or {}
 
 
@@ -346,6 +534,37 @@ def load_config() -> tuple[AppConfig, Settings]:
     if settings.alert_force_webhook_mode:
         app_config.alerts.force_webhook_mode = settings.alert_force_webhook_mode
 
+    # Sharding overrides from environment.
+    if settings.collector_sharding is not None:
+        app_config.sharding.enabled = settings.collector_sharding
+    if settings.max_targets_per_shard > 0:
+        app_config.sharding.max_targets_per_shard = settings.max_targets_per_shard
+    if settings.collector_balance:
+        # Direct assignment bypasses the Literal validator, so guard the value.
+        if settings.collector_balance in ("static", "dynamic"):
+            app_config.sharding.balance = cast(
+                'Literal["static", "dynamic"]', settings.collector_balance
+            )
+        else:
+            logger.warning(
+                "Ignoring invalid COLLECTOR_BALANCE=%r (expected 'static' or 'dynamic'); "
+                "using config.yaml default %r",
+                settings.collector_balance,
+                app_config.sharding.balance,
+            )
+
+    # UI credentials from environment take precedence over config.yaml. Hashing
+    # UI_PASSWORD here lets operators set a real password without committing a
+    # bcrypt hash to config.yaml (and avoids the default-password lockout).
+    if settings.ui_username:
+        app_config.ui.auth.username = settings.ui_username
+    if settings.ui_password:
+        import bcrypt
+
+        app_config.ui.auth.password_hash = bcrypt.hashpw(
+            settings.ui_password.encode(), bcrypt.gensalt()
+        ).decode()
+
     return app_config, settings
 
 
@@ -368,3 +587,36 @@ def get_settings() -> Settings:
     if _settings is None:
         _config, _settings = load_config()
     return _settings
+
+
+def get_collector_id() -> str:
+    """Explicit identity for this collector process, or the hostname fallback.
+
+    ``COLLECTOR_ID`` if set, else the hostname. NOTE: in dynamic (HRW) sharding
+    the id must be STABLE across restarts, not merely unique — the hostname is
+    unique per container but changes on recreate, so dynamic mode slot-claims a
+    stable ``collector-<ordinal>`` instead (see collector_main._init_sharding).
+    This fallback is for static mode or an explicitly-pinned id (e.g. a k8s
+    StatefulSet pod name).
+    """
+    import socket
+
+    return get_settings().collector_id or socket.gethostname()
+
+
+# Header carrying the internal service-to-service token on the collector's
+# control endpoints (e.g. POST /poll). The API and collector containers share
+# ENCRYPTION_KEY, so we derive a token from it rather than add new config.
+INTERNAL_AUTH_HEADER = "X-Gyanam-Internal"
+
+
+def internal_service_token() -> str | None:
+    """Shared secret for internal API→collector control calls, derived from the
+    ENCRYPTION_KEY both processes already share. Returns None if no key is set
+    (in which case callers should skip enforcement rather than fail closed)."""
+    import hashlib
+
+    key = get_settings().encryption_key
+    if not key:
+        return None
+    return hashlib.sha256(b"gyanam-internal-v1:" + key.encode()).hexdigest()

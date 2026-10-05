@@ -34,6 +34,21 @@ def test_to_numeric_int_float_str():
     assert ex._to_numeric("12.5") == 12.5
 
 
+def test_to_numeric_rejects_nan_inf():
+    # Non-finite values must become None: InfluxDB rejects NaN/Inf line protocol
+    # at write time, which would fail (and re-queue) the whole batch forever.
+    ex = _extractor()
+    assert ex._to_numeric(float("nan")) is None
+    assert ex._to_numeric(float("inf")) is None
+    assert ex._to_numeric(float("-inf")) is None
+    assert ex._to_numeric("NaN") is None
+    assert ex._to_numeric("Infinity") is None
+    assert ex._to_numeric("-inf") is None
+    # A 300-digit JSON integer OverflowErrors on float() -> must degrade to None,
+    # not propagate and drop the whole poll result.
+    assert ex._to_numeric(10**400) is None
+
+
 def test_to_numeric_word_mappings():
     ex = _extractor()
     assert ex._to_numeric("OK") == 1.0

@@ -3,6 +3,11 @@
 """Shared pytest fixtures for the collector/api test suite."""
 
 import os
+
+# The test config ships the default 'changeme' password hash; allow it so the
+# login-path tests can authenticate. Production refuses it unless this is set.
+os.environ.setdefault("GYANAM_ALLOW_DEFAULT_PASSWORD", "1")
+
 from unittest.mock import MagicMock
 
 import httpx

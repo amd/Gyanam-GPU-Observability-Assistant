@@ -31,6 +31,11 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel, field_validator
 
+from ...config import get_config
+from ...inventory import collect_inventory
+from ...inventory.enricher import apply_inventory
+from ...location import Placement
+from ...location.hostname_parser import parse_system_location
 from ...redfish.client import RedfishClient
 from ..auth import get_current_user
 from ..csrf import generate_csrf_token, validate_csrf_token
@@ -148,12 +153,6 @@ class TargetCreate(BaseModel):
     metric_reports_override: list | None = None
     connection_mode: str = "direct"
     sse_endpoint: str | None = None
-    ssh_proxy_host: str | None = None
-    ssh_proxy_port: int = 22
-    ssh_proxy_username: str | None = None
-    ssh_key: str | None = None
-    ssh_password: str | None = None
-    ssh_command_template: str | None = None
 
     @field_validator("name")
     @classmethod
@@ -175,22 +174,8 @@ class TargetCreate(BaseModel):
     @field_validator("connection_mode")
     @classmethod
     def validate_connection_mode(cls, v: str) -> str:
-        if v not in ("direct", "ssh_proxy", "sse"):
-            raise ValueError("connection_mode must be 'direct', 'ssh_proxy', or 'sse'")
-        return v
-
-    @field_validator("ssh_proxy_host")
-    @classmethod
-    def validate_ssh_proxy_host(cls, v: str | None) -> str | None:
-        if v is not None and v.strip():
-            return validate_host(v)
-        return v
-
-    @field_validator("ssh_proxy_port")
-    @classmethod
-    def validate_ssh_proxy_port(cls, v: int) -> int:
-        if not 1 <= v <= 65535:
-            raise ValueError("SSH proxy port must be between 1 and 65535")
+        if v not in ("direct", "sse"):
+            raise ValueError("connection_mode must be 'direct' or 'sse'")
         return v
 
 
@@ -210,12 +195,6 @@ class TargetUpdate(BaseModel):
     metric_reports_override: list | None = None
     connection_mode: str | None = None
     sse_endpoint: str | None = None
-    ssh_proxy_host: str | None = None
-    ssh_proxy_port: int | None = None
-    ssh_proxy_username: str | None = None
-    ssh_key: str | None = None
-    ssh_password: str | None = None
-    ssh_command_template: str | None = None
 
     @field_validator("name")
     @classmethod
@@ -241,22 +220,8 @@ class TargetUpdate(BaseModel):
     @field_validator("connection_mode")
     @classmethod
     def validate_connection_mode(cls, v: str | None) -> str | None:
-        if v is not None and v not in ("direct", "ssh_proxy", "sse"):
-            raise ValueError("connection_mode must be 'direct', 'ssh_proxy', or 'sse'")
-        return v
-
-    @field_validator("ssh_proxy_host")
-    @classmethod
-    def validate_ssh_proxy_host(cls, v: str | None) -> str | None:
-        if v is not None and v.strip():
-            return validate_host(v)
-        return v
-
-    @field_validator("ssh_proxy_port")
-    @classmethod
-    def validate_ssh_proxy_port(cls, v: int | None) -> int | None:
-        if v is not None and not 1 <= v <= 65535:
-            raise ValueError("SSH proxy port must be between 1 and 65535")
+        if v is not None and v not in ("direct", "sse"):
+            raise ValueError("connection_mode must be 'direct' or 'sse'")
         return v
 
 
@@ -314,6 +279,53 @@ def _build_metric_reports_map(target) -> dict:
     return result
 
 
+async def _seed_location(repository, target_id: int, name: str, host: str) -> None:
+    """Best-effort: derive placement from the system name (then BMC host).
+
+    Called right after a target is created. The location convention lives in the
+    system *name*; the BMC *host* is only a fallback. Never raises — a system
+    that can't be placed simply lands in the Data Hall "Unplaced" tray. The
+    repository's precedence guard means this won't clobber a manual/Redfish
+    placement on re-runs.
+    """
+    try:
+        placement = parse_system_location(name, host)
+        if placement:
+            await repository.set_target_location(target_id, placement)
+    except Exception as e:  # noqa: BLE001 — placement is auxiliary, never fatal
+        logger.debug("Location seed failed for %s: %s", name, e)
+
+
+def _placement_from_csv_row(row: dict) -> Placement | None:
+    """Build a manual placement from a CSV row's loc_* columns, or None if blank.
+
+    An explicit placement in the import file represents operator intent, so it is
+    tagged ``manual`` and wins over the hostname-derived seed.
+    """
+
+    def _str(key: str) -> str | None:
+        return (row.get(key) or "").strip() or None
+
+    def _int(key: str) -> int | None:
+        raw = (row.get(key) or "").strip()
+        return int(raw) if raw else None
+
+    try:
+        placement = Placement(
+            site=_str("loc_site"),
+            hall=_str("loc_hall"),
+            row=_str("loc_row"),
+            rack=_str("loc_rack"),
+            rack_u=_int("loc_rack_u"),
+            height_u=_int("loc_rack_u_height"),
+            unit_type=_str("loc_unit_type"),
+            source="manual",
+        )
+    except ValueError:
+        return None
+    return placement if placement.has_location() else None
+
+
 # API Endpoints
 
 
@@ -334,7 +346,6 @@ async def list_targets_api(user: str = Depends(get_current_user)):
             "username": t.username,
             "enabled": t.enabled,
             "connection_mode": t.connection_mode,
-            "ssh_proxy_host": t.ssh_proxy_host,
             "metric_reports_override": json.loads(t.metric_reports_override)
             if t.metric_reports_override
             else None,
@@ -351,17 +362,10 @@ async def create_target_api(target: TargetCreate, user: str = Depends(get_curren
     """Create a new target configuration."""
     repository = get_repository()
 
-    # Check for duplicate: use ssh_proxy_host for SSH proxy targets, host for direct
-    if target.connection_mode == "ssh_proxy" and target.ssh_proxy_host:
-        existing = await repository.get_target_by_ssh_proxy_host(target.ssh_proxy_host)
-        if existing:
-            raise HTTPException(
-                status_code=400, detail="Target with this SSH proxy host already exists"
-            )
-    else:
-        existing = await repository.get_target_by_host(target.host)
-        if existing:
-            raise HTTPException(status_code=400, detail="Target with this host already exists")
+    # Check for duplicate host
+    existing = await repository.get_target_by_host(target.host)
+    if existing:
+        raise HTTPException(status_code=400, detail="Target with this host already exists")
 
     new_target = await repository.create_target(
         name=target.name,
@@ -377,40 +381,72 @@ async def create_target_api(target: TargetCreate, user: str = Depends(get_curren
         metric_reports_override=target.metric_reports_override,
         connection_mode=target.connection_mode,
         sse_endpoint=target.sse_endpoint,
-        ssh_proxy_host=target.ssh_proxy_host,
-        ssh_proxy_port=target.ssh_proxy_port,
-        ssh_proxy_username=target.ssh_proxy_username,
-        ssh_key=target.ssh_key,
-        ssh_password=target.ssh_password,
-        ssh_command_template=target.ssh_command_template,
     )
+
+    await _seed_location(repository, new_target.id, new_target.name, new_target.host)
 
     return {"id": new_target.id, "message": "Target created successfully"}
 
 
-# CSV column definitions for export/import
-_CSV_COLUMNS = [
-    "name",
-    "host",
-    "port",
-    "use_ssl",
-    "verify_ssl",
-    "telemetry_endpoint",
-    "username",
-    "password",
-    "token",
-    "enabled",
-    "poll_interval_override",
-    "tags",
-    "connection_mode",
-    "sse_endpoint",
-    "ssh_proxy_host",
-    "ssh_proxy_port",
-    "ssh_proxy_username",
-    "ssh_key",
-    "ssh_password",
-    "ssh_command_template",
+# CSV export schema: (column header, internal Target field).
+#
+# Headers are operator-friendly ("host name", "bmc address") rather than the
+# internal field names, which were confusing (`name` is the system/host name;
+# `host` is the BMC's address). Location columns (loc_*) are intentionally NOT
+# exported — placement/inventory is managed inside the app, not round-tripped
+# through this CSV. Credentials export blank and are re-entered on import.
+_EXPORT_FIELDS: list[tuple[str, str]] = [
+    ("host name", "name"),
+    ("bmc address", "host"),
+    ("port", "port"),
+    ("use_ssl", "use_ssl"),
+    ("verify_ssl", "verify_ssl"),
+    ("telemetry_endpoint", "telemetry_endpoint"),
+    ("username", "username"),
+    ("password", "password"),
+    ("token", "token"),
+    ("enabled", "enabled"),
+    ("poll_interval_override", "poll_interval_override"),
+    ("tags", "tags"),
+    ("connection_mode", "connection_mode"),
+    ("sse_endpoint", "sse_endpoint"),
 ]
+
+_EXPORT_HEADERS = [header for header, _ in _EXPORT_FIELDS]
+
+# Credentials are never written out (blank on export, re-entered on import).
+_EXPORT_BLANK_FIELDS = {"password", "token"}
+
+# Import accepts either the friendly export headers above or the legacy/internal
+# names, so both freshly-exported files and older CSVs import cleanly. Any header
+# not listed passes through as-is (lowercased). Keys are lowercased headers.
+_IMPORT_COLUMN_ALIASES = {
+    "host name": "name",
+    "hostname": "name",
+    "host_name": "name",
+    "name": "name",
+    "bmc address": "host",
+    "bmc_address": "host",
+    "bmc": "host",
+    "host": "host",
+}
+
+# The only columns an import file MUST contain; everything else defaults.
+_IMPORT_REQUIRED_COLUMNS = {"name", "host"}
+
+
+def _normalize_import_header(header: str | None) -> str:
+    """Map a CSV header to its internal field name (alias-aware, lowercased)."""
+    key = (header or "").strip().lower()
+    return _IMPORT_COLUMN_ALIASES.get(key, key)
+
+
+def _normalize_import_row(row: dict) -> dict:
+    """Rewrite a CSV row's keys to internal field names via the alias map."""
+    normalized: dict = {}
+    for key, value in row.items():
+        normalized[_normalize_import_header(key)] = value
+    return normalized
 
 
 def _csv_safe(value: str) -> str:
@@ -424,39 +460,28 @@ def _csv_safe(value: str) -> str:
 async def export_targets_csv(user: str = Depends(get_current_user)):
     """Export all targets as a CSV spreadsheet.
 
-    Credentials (password, token, ssh_key, ssh_password) are left blank
+    Credentials (password, token) are left blank
     for security — they must be re-entered on import.
     """
     repository = get_repository()
     targets = await repository.get_all_targets()
 
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=_CSV_COLUMNS)
+    writer = csv.DictWriter(output, fieldnames=_EXPORT_HEADERS)
     writer.writeheader()
 
     for t in targets:
-        row = {
-            "name": _csv_safe(t.name),
-            "host": _csv_safe(t.host),
-            "port": t.port,
-            "use_ssl": t.use_ssl,
-            "verify_ssl": t.verify_ssl,
-            "telemetry_endpoint": _csv_safe(t.telemetry_endpoint),
-            "username": _csv_safe(t.username),
-            "password": "",
-            "token": "",
-            "enabled": t.enabled,
-            "poll_interval_override": t.poll_interval_override or "",
-            "tags": t.tags or "",
-            "connection_mode": t.connection_mode,
-            "sse_endpoint": t.sse_endpoint or "",
-            "ssh_proxy_host": _csv_safe(t.ssh_proxy_host or ""),
-            "ssh_proxy_port": t.ssh_proxy_port,
-            "ssh_proxy_username": _csv_safe(t.ssh_proxy_username or ""),
-            "ssh_key": "",
-            "ssh_password": "",
-            "ssh_command_template": _csv_safe(t.ssh_command_template or ""),
-        }
+        row = {}
+        for header, field in _EXPORT_FIELDS:
+            if field in _EXPORT_BLANK_FIELDS:
+                row[header] = ""
+                continue
+            value = getattr(t, field, None)
+            if value is None:
+                value = ""
+            elif isinstance(value, str):
+                value = _csv_safe(value)
+            row[header] = value
         writer.writerow(row)
 
     output.seek(0)
@@ -499,62 +524,48 @@ async def import_targets_csv(
     if not reader.fieldnames:
         raise HTTPException(status_code=400, detail="CSV file is empty or has no header row")
 
-    missing = {"name", "host", "username"} - set(reader.fieldnames)
+    # Only the identity columns are mandatory; every other field defaults when
+    # absent. Accept friendly ("host name"/"bmc address") or legacy header names.
+    present_columns = {_normalize_import_header(f) for f in reader.fieldnames}
+    missing = _IMPORT_REQUIRED_COLUMNS - present_columns
     if missing:
+        # Report the friendly header names so the message matches the export.
+        friendly = {"name": "host name", "host": "bmc address"}
         raise HTTPException(
             status_code=400,
-            detail=f"CSV missing required columns: {', '.join(sorted(missing))}",
+            detail=f"CSV missing required columns: {', '.join(sorted(friendly[m] for m in missing))}",
         )
 
     repository = get_repository()
 
-    # Pre-fetch existing identifiers for dedup
-    # Direct targets dedup by host; SSH proxy targets dedup by ssh_proxy_host
+    # Pre-fetch existing hosts for dedup
     existing_targets = await repository.get_all_targets()
-    existing_hosts = {t.host.lower() for t in existing_targets if t.connection_mode != "ssh_proxy"}
-    existing_ssh_proxy_hosts = {
-        t.ssh_proxy_host.lower()
-        for t in existing_targets
-        if t.connection_mode == "ssh_proxy" and t.ssh_proxy_host
-    }
+    existing_hosts = {t.host.lower() for t in existing_targets}
 
     created = []
     skipped = []
     errors = []
 
-    for row_num, row in enumerate(reader, start=2):  # start=2 because row 1 is header
+    for row_num, raw_row in enumerate(reader, start=2):  # start=2 because row 1 is header
+        row = _normalize_import_row(raw_row)
         row_name = row.get("name", "").strip()
         row_host = row.get("host", "").strip()
-        row_conn_mode = row.get("connection_mode", "direct").strip() or "direct"
-        row_ssh_host = row.get("ssh_proxy_host", "").strip()
 
         # Skip empty rows
         if not row_name and not row_host:
             continue
 
-        # Check for duplicate: ssh_proxy_host for SSH proxy targets, host for direct
-        if row_conn_mode == "ssh_proxy" and row_ssh_host:
-            if row_ssh_host.lower() in existing_ssh_proxy_hosts:
-                skipped.append(
-                    {
-                        "row": row_num,
-                        "name": row_name,
-                        "host": row_ssh_host,
-                        "reason": "SSH proxy host already exists",
-                    }
-                )
-                continue
-        else:
-            if row_host.lower() in existing_hosts:
-                skipped.append(
-                    {
-                        "row": row_num,
-                        "name": row_name,
-                        "host": row_host,
-                        "reason": "Host already exists",
-                    }
-                )
-                continue
+        # Check for duplicate host
+        if row_host.lower() in existing_hosts:
+            skipped.append(
+                {
+                    "row": row_num,
+                    "name": row_name,
+                    "host": row_host,
+                    "reason": "Host already exists",
+                }
+            )
+            continue
 
         try:
             # Validate and parse fields
@@ -576,18 +587,16 @@ async def import_targets_csv(
 
             # Connection mode (parse early — affects credential requirements)
             connection_mode = row.get("connection_mode", "direct").strip() or "direct"
-            if connection_mode not in ("direct", "ssh_proxy", "sse"):
+            if connection_mode not in ("direct", "sse"):
                 raise ValueError(f"Invalid connection_mode: {connection_mode}")
 
             username = row.get("username", "").strip()
             password = row.get("password", "").strip()
 
-            # Direct mode requires Redfish credentials; SSH proxy does not
-            if connection_mode != "ssh_proxy":
-                if not username:
-                    raise ValueError("Username is required for direct connection mode")
-                if not password:
-                    raise ValueError("Password is required for direct connection mode")
+            if not username:
+                raise ValueError("Username is required for direct connection mode")
+            if not password:
+                raise ValueError("Password is required for direct connection mode")
 
             token = row.get("token", "").strip() or None
 
@@ -601,26 +610,7 @@ async def import_targets_csv(
             # SSE fields
             sse_endpoint = row.get("sse_endpoint", "").strip() or None
 
-            # SSH proxy fields
-            ssh_proxy_host = row.get("ssh_proxy_host", "").strip() or None
-            ssh_proxy_port = int(row.get("ssh_proxy_port", "22").strip() or "22")
-            if not 1 <= ssh_proxy_port <= 65535:
-                raise ValueError("SSH proxy port must be between 1 and 65535")
-            ssh_proxy_username = row.get("ssh_proxy_username", "").strip() or None
-            ssh_key = row.get("ssh_key", "").strip() or None
-            ssh_password = row.get("ssh_password", "").strip() or None
-            ssh_command_template = row.get("ssh_command_template", "").strip() or None
-
-            if connection_mode == "ssh_proxy":
-                if not ssh_proxy_host:
-                    raise ValueError("SSH proxy host is required for ssh_proxy mode")
-                ssh_proxy_host = validate_host(ssh_proxy_host)
-                if not ssh_proxy_username:
-                    raise ValueError("SSH proxy username is required for ssh_proxy mode")
-                if not ssh_key and not ssh_password:
-                    raise ValueError("SSH key or password is required for ssh_proxy mode")
-
-            await repository.create_target(
+            created_target = await repository.create_target(
                 name=validated_name,
                 host=validated_host,
                 port=port,
@@ -635,33 +625,34 @@ async def import_targets_csv(
                 tags=tags,
                 connection_mode=connection_mode,
                 sse_endpoint=sse_endpoint,
-                ssh_proxy_host=ssh_proxy_host,
-                ssh_proxy_port=ssh_proxy_port,
-                ssh_proxy_username=ssh_proxy_username,
-                ssh_key=ssh_key,
-                ssh_password=ssh_password,
-                ssh_command_template=ssh_command_template,
             )
+            await _seed_location(repository, created_target.id, validated_name, validated_host)
+            csv_placement = _placement_from_csv_row(row)
+            if csv_placement:
+                await repository.set_target_location(created_target.id, csv_placement)
 
             created.append({"row": row_num, "name": validated_name, "host": validated_host})
             # Track for within-file dedup
-            if connection_mode == "ssh_proxy" and ssh_proxy_host:
-                existing_ssh_proxy_hosts.add(ssh_proxy_host.lower())
-            else:
-                existing_hosts.add(validated_host.lower())
+            existing_hosts.add(validated_host.lower())
 
         except Exception as e:
-            # Log full exception with stack trace server-side.
-            # Return a generic message to avoid exposing internal details.
-            logger.warning(
-                f"Bulk-create row {row_num} failed: {e}", exc_info=True
-            )
+            # Log full exception with stack trace server-side. Surface a
+            # bounded form to the UI: type name + first line of message,
+            # truncated. Bulk-import errors are almost always validation
+            # messages ("invalid IP", "duplicate host") that operators
+            # need to see to fix their CSV — type-name alone would force
+            # them to dig through server logs for every row.
+            logger.warning(f"Bulk-create row {row_num} failed: {e}", exc_info=True)
+            # Take first line only and cap length; strip control chars
+            # so the message can't break the JSON or log lines.
+            first_line = str(e).split("\n", 1)[0]
+            safe_msg = "".join(c for c in first_line if c.isprintable())[:200]
             errors.append(
                 {
                     "row": row_num,
                     "name": row_name,
                     "host": row_host,
-                    "error": "Failed to create target for this row",
+                    "error": f"{type(e).__name__}: {safe_msg}",
                 }
             )
 
@@ -696,10 +687,6 @@ async def get_target_api(target_id: int, user: str = Depends(get_current_user)):
         "username": target.username,
         "enabled": target.enabled,
         "connection_mode": target.connection_mode,
-        "ssh_proxy_host": target.ssh_proxy_host,
-        "ssh_proxy_port": target.ssh_proxy_port,
-        "ssh_proxy_username": target.ssh_proxy_username,
-        "ssh_command_template": target.ssh_command_template,
         "metric_reports_override": json.loads(target.metric_reports_override)
         if target.metric_reports_override
         else None,
@@ -750,22 +737,6 @@ async def test_target_connection(target_id: int, user: str = Depends(get_current
     password = repository.decrypt_password(target)
     token = repository.decrypt_token(target)
 
-    ssh_transport = None
-    if target.connection_mode == "ssh_proxy":
-        from ...redfish.ssh_transport import SSHTransport
-
-        ssh_key = repository.decrypt_ssh_key(target)
-        ssh_password = repository.decrypt_ssh_password(target)
-        ssh_transport = SSHTransport(
-            proxy_host=target.ssh_proxy_host,
-            proxy_port=target.ssh_proxy_port or 22,
-            proxy_username=target.ssh_proxy_username or "root",
-            ssh_key=ssh_key,
-            ssh_password=ssh_password,
-            verify_ssl=target.verify_ssl,
-            command_template=target.ssh_command_template,
-        )
-
     async with RedfishClient(
         base_url=target.base_url,
         username=target.username,
@@ -773,9 +744,20 @@ async def test_target_connection(target_id: int, user: str = Depends(get_current
         token=token,
         timeout=30,
         verify_ssl=target.verify_ssl,
-        ssh_transport=ssh_transport,
     ) as client:
         success, message = await client.test_connection()
+
+        # Opportunistically read basic inventory (+ authoritative placement +
+        # chassis height) from standard Redfish resources while the session is
+        # open. Best-effort: never let it affect the connection-test result.
+        if success:
+            try:
+                cfg = get_config().location
+                inv = await collect_inventory(client, cfg.default_unit_type, cfg.gpus_per_system)
+                if inv is not None:
+                    await apply_inventory(repository, target, inv, cfg)
+            except Exception as e:  # noqa: BLE001
+                logger.debug("Inventory fetch failed for target %s: %s", target_id, e)
 
     # Sanitise: strip newlines from any embedded exception text so it can't
     # corrupt the JSON response or log lines on the client side.
@@ -793,7 +775,15 @@ async def trigger_poll(target_id: int, user: str = Depends(get_current_user)):
             # formatted URL cannot be hijacked — the int is the only value
             # that flows into the path segment.
             url = COLLECTOR_POLL_URL.format(target_id=int(target_id))
-            response = await client.post(url)
+            # Authenticate the internal call with the shared token so the
+            # collector's control endpoint can reject unauthenticated callers.
+            from ...config import INTERNAL_AUTH_HEADER, internal_service_token
+
+            headers = {}
+            token = internal_service_token()
+            if token:
+                headers[INTERNAL_AUTH_HEADER] = token
+            response = await client.post(url, headers=headers)
 
             if response.status_code == 200:
                 return response.json()
@@ -823,11 +813,27 @@ async def targets_page(request: Request, user: str = Depends(get_current_user)):
     repository = get_repository()
     targets = await repository.get_all_targets()
 
+    # Connected systems first; offline/unavailable (and never-polled) sink to the
+    # end of the list, alphabetical within each group.
+    targets = sorted(
+        targets,
+        key=lambda t: (t.last_poll_status != "success", (t.name or "").lower()),
+    )
+
+    total_systems = len(targets)
+    total_gpus = total_systems * get_config().location.gpus_per_system
+
     templates = request.app.state.templates
     return templates.TemplateResponse(
         request=request,
         name="targets.html",
-        context={"targets": targets, "user": user, "csrf_token": generate_csrf_token()},
+        context={
+            "targets": targets,
+            "user": user,
+            "csrf_token": generate_csrf_token(),
+            "total_systems": total_systems,
+            "total_gpus": total_gpus,
+        },
     )
 
 
@@ -888,18 +894,13 @@ async def add_target_form(
     enabled: str | None = Form(None),
     connection_mode: str = Form("direct"),
     sse_endpoint: str | None = Form(None),
-    ssh_proxy_host: str | None = Form(None),
-    ssh_proxy_port: int = Form(22),
-    ssh_proxy_username: str | None = Form(None),
-    ssh_key: str | None = Form(None),
-    ssh_password: str | None = Form(None),
-    ssh_command_template: str | None = Form(None),
     metric_report_processor: str | None = Form(None),
     metric_report_memory: str | None = Form(None),
     metric_report_interconnect: str | None = Form(None),
     metric_report_platform: str | None = Form(None),
     metric_report_health: str | None = Form(None),
     metric_report_comprehensive: str | None = Form(None),
+    metric_discovery_mode: str = Form("auto"),
     enable_alert_subscription: str | None = Form(None),
     csrf_token: str = Form(...),
     user: str = Depends(get_current_user),
@@ -923,24 +924,11 @@ async def add_target_form(
         enabled_bool = enabled is not None
         enable_alert_subscription_bool = enable_alert_subscription is not None
 
-        # Validate mode-specific fields
-        validated_ssh_host = None
-        if connection_mode == "ssh_proxy":
-            if not ssh_proxy_host or not ssh_proxy_host.strip():
-                raise ValueError("SSH proxy host is required for SSH Proxy mode")
-            validated_ssh_host = validate_host(ssh_proxy_host)
-            if not ssh_proxy_username or not ssh_proxy_username.strip():
-                raise ValueError("SSH proxy username is required for SSH Proxy mode")
-            if not ssh_key and not ssh_password:
-                raise ValueError(
-                    "Either SSH private key or SSH password is required for SSH Proxy mode"
-                )
-        else:
-            # Direct mode requires Redfish credentials
-            if not username or not username.strip():
-                raise ValueError("Username is required for Direct connection mode")
-            if not password:
-                raise ValueError("Password is required for Direct connection mode")
+        # Direct mode requires Redfish credentials
+        if not username or not username.strip():
+            raise ValueError("Username is required for Direct connection mode")
+        if not password:
+            raise ValueError("Password is required for Direct connection mode")
 
         reports_override = _build_metric_reports_override(
             metric_report_processor=metric_report_processor,
@@ -951,7 +939,7 @@ async def add_target_form(
             metric_report_comprehensive=metric_report_comprehensive,
         )
 
-        await repository.create_target(
+        new_target = await repository.create_target(
             name=validated_name,
             host=validated_host,
             port=port,
@@ -964,16 +952,12 @@ async def add_target_form(
             enabled=enabled_bool,
             enable_alert_subscription=enable_alert_subscription_bool,
             metric_reports_override=reports_override,
+            metric_discovery_mode=("manual" if metric_discovery_mode == "manual" else "auto"),
             connection_mode=connection_mode,
             sse_endpoint=sse_endpoint.strip() if sse_endpoint else None,
-            ssh_proxy_host=validated_ssh_host,
-            ssh_proxy_port=ssh_proxy_port,
-            ssh_proxy_username=ssh_proxy_username.strip() if ssh_proxy_username else None,
-            ssh_key=ssh_key.strip() if ssh_key else None,
-            ssh_password=ssh_password if ssh_password else None,
-            ssh_command_template=ssh_command_template.strip() if ssh_command_template else None,
         )
-        return RedirectResponse(url="/targets", status_code=303)
+        await _seed_location(repository, new_target.id, validated_name, validated_host)
+        return RedirectResponse(url="/systems", status_code=303)
     except Exception as e:
         templates = request.app.state.templates
         return templates.TemplateResponse(
@@ -1007,18 +991,13 @@ async def edit_target_form(
     enabled: str | None = Form(None),
     connection_mode: str = Form("direct"),
     sse_endpoint: str | None = Form(None),
-    ssh_proxy_host: str | None = Form(None),
-    ssh_proxy_port: int = Form(22),
-    ssh_proxy_username: str | None = Form(None),
-    ssh_key: str | None = Form(None),
-    ssh_password: str | None = Form(None),
-    ssh_command_template: str | None = Form(None),
     metric_report_processor: str | None = Form(None),
     metric_report_memory: str | None = Form(None),
     metric_report_interconnect: str | None = Form(None),
     metric_report_platform: str | None = Form(None),
     metric_report_health: str | None = Form(None),
     metric_report_comprehensive: str | None = Form(None),
+    metric_discovery_mode: str = Form("auto"),
     enable_alert_subscription: str | None = Form(None),
     csrf_token: str = Form(...),
     user: str = Depends(get_current_user),
@@ -1036,38 +1015,17 @@ async def edit_target_form(
         if not 1 <= port <= 65535:
             raise ValueError("Port must be between 1 and 65535")
 
-        # Validate SSH proxy fields
-        validated_ssh_host = None
-        if connection_mode == "ssh_proxy":
-            if not ssh_proxy_host or not ssh_proxy_host.strip():
-                raise ValueError("SSH proxy host is required for SSH Proxy mode")
-            validated_ssh_host = validate_host(ssh_proxy_host)
-            if not ssh_proxy_username or not ssh_proxy_username.strip():
-                raise ValueError("SSH proxy username is required for SSH Proxy mode")
-            # On edit, key/password may already be stored — only require if neither is provided
-            # and no existing credentials exist
+        # Direct mode requires Redfish credentials
+        if not username or not username.strip():
+            raise ValueError("Username is required for Direct connection mode")
+        # On edit, password may already be stored — only require if no real password exists
+        if not password:
             existing = await repository.get_target(target_id)
-            has_existing_ssh_creds = existing and (
-                existing.encrypted_ssh_key or existing.encrypted_ssh_password
+            has_real_password = (
+                existing and existing.encrypted_password and repository.decrypt_password(existing)
             )
-            if not ssh_key and not ssh_password and not has_existing_ssh_creds:
-                raise ValueError(
-                    "Either SSH private key or SSH password is required for SSH Proxy mode"
-                )
-        else:
-            # Direct mode requires Redfish credentials
-            if not username or not username.strip():
-                raise ValueError("Username is required for Direct connection mode")
-            # On edit, password may already be stored — only require if no real password exists
-            if not password:
-                existing = await repository.get_target(target_id)
-                has_real_password = (
-                    existing
-                    and existing.encrypted_password
-                    and repository.decrypt_password(existing)
-                )
-                if not has_real_password:
-                    raise ValueError("Password is required for Direct connection mode")
+            if not has_real_password:
+                raise ValueError("Password is required for Direct connection mode")
 
         reports_override = _build_metric_reports_override(
             metric_report_processor=metric_report_processor,
@@ -1090,12 +1048,9 @@ async def edit_target_form(
             "enabled": enabled is not None,
             "enable_alert_subscription": enable_alert_subscription is not None,
             "metric_reports_override": reports_override,
+            "metric_discovery_mode": ("manual" if metric_discovery_mode == "manual" else "auto"),
             "connection_mode": connection_mode,
             "sse_endpoint": sse_endpoint.strip() if sse_endpoint else None,
-            "ssh_proxy_host": validated_ssh_host,
-            "ssh_proxy_port": ssh_proxy_port,
-            "ssh_proxy_username": ssh_proxy_username.strip() if ssh_proxy_username else None,
-            "ssh_command_template": ssh_command_template.strip() if ssh_command_template else None,
         }
 
         # Only update password if provided
@@ -1106,20 +1061,8 @@ async def edit_target_form(
         if token:
             update_data["token"] = token
 
-        # SSH credentials: update if provided, or clear if switching to direct mode
-        if connection_mode == "direct":
-            # Clear stored SSH credentials when switching away from SSH proxy
-            update_data["ssh_key"] = ""
-            update_data["ssh_password"] = ""
-        else:
-            # Only update SSH credentials if provided (leave existing if blank)
-            if ssh_key:
-                update_data["ssh_key"] = ssh_key.strip()
-            if ssh_password:
-                update_data["ssh_password"] = ssh_password
-
         await repository.update_target(target_id, **update_data)
-        return RedirectResponse(url="/targets", status_code=303)
+        return RedirectResponse(url="/systems", status_code=303)
     except Exception as e:
         target = await repository.get_target(target_id)
         metric_reports_map = _build_metric_reports_map(target)
@@ -1147,4 +1090,4 @@ async def delete_target_form(
     deleted = await repository.delete_target(target_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Target not found")
-    return RedirectResponse(url="/targets", status_code=303)
+    return RedirectResponse(url="/systems", status_code=303)
